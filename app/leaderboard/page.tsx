@@ -3,9 +3,8 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
-import { ArrowUp, ArrowDown, Trophy, Crown, Medal, Flame, TrendingUp } from "lucide-react"
-import Link from "next/link"
-import Image from "next/image"
+import { ArrowUp, ArrowDown, Crown, Medal, Flame, TrendingUp } from "lucide-react"
+import { BottomNav } from "@/components/bottom-nav"
 
 export default function LeaderboardPage() {
   const [activeTab, setActiveTab] = useState<"cohort" | "challenge">("cohort")
@@ -86,37 +85,8 @@ export default function LeaderboardPage() {
   const displayedUsers = getDisplayedUsers()
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header - same mobile responsive pattern */}
-      <header className="sticky top-0 z-50 border-b border-border/50 backdrop-blur-xl bg-background/80">
-        <div className="container mx-auto px-4 py-3">
-          <nav className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Image src="/images/logo.png" alt="EliteScore" width={40} height={40} className="w-6 h-6 md:w-7 md:h-7" />
-              <span className="text-base md:text-lg font-bold bg-gradient-to-r from-[#2bbcff] to-[#a855f7] bg-clip-text text-transparent">
-                ELITESCORE
-              </span>
-            </div>
-            <div className="flex items-center gap-2 md:gap-3">
-              <Button size="sm" variant="ghost" className="hidden sm:flex text-xs h-8" asChild>
-                <Link href="/dashboard">Dashboard</Link>
-              </Button>
-              <Button size="sm" variant="ghost" className="hidden sm:flex text-xs h-8" asChild>
-                <Link href="/challenges">Challenges</Link>
-              </Button>
-              <Button size="sm" variant="ghost" className="hidden sm:flex text-xs h-8" asChild>
-                <Link href="/leaderboard">Leaderboard</Link>
-              </Button>
-              <div className="flex items-center gap-2 px-2 md:px-3 py-1.5 rounded-full bg-gradient-to-r from-[#2bbcff]/10 to-[#a855f7]/10 border border-[#2bbcff]/30">
-                <Trophy className="w-3 h-3 md:w-3.5 md:h-3.5 text-[#2bbcff]" />
-                <span className="text-[10px] md:text-xs font-bold">{currentUser.score}</span>
-              </div>
-            </div>
-          </nav>
-        </div>
-      </header>
-
-      {/* Hero - mobile responsive */}
+    <div className="min-h-screen bg-background pb-20">
+      {/* Hero Section */}
       <section className="relative overflow-hidden pt-8 md:pt-12 pb-6 md:pb-8">
         <div className="absolute inset-0 bg-gradient-to-br from-[#2bbcff]/5 via-background to-[#a855f7]/5" />
         <div className="relative z-10 container mx-auto px-4">
@@ -385,6 +355,8 @@ export default function LeaderboardPage() {
           </Card>
         </div>
       )}
+
+      <BottomNav />
     </div>
   )
 }

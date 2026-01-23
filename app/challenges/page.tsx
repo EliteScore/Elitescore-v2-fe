@@ -18,8 +18,21 @@ import {
   AlertTriangle,
   ChevronRight,
   History,
+  Users,
+  Mail,
+  X,
+  Check,
+  Send,
+  UserPlus,
 } from "lucide-react"
-import Image from "next/image"
+import { BottomNav } from "@/components/bottom-nav"
+
+interface Supporter {
+  id: string
+  email: string
+  name?: string
+  status: "pending" | "accepted" | "declined"
+}
 
 const activeChallenges = [
   {
@@ -138,37 +151,88 @@ export default function ChallengesPage() {
   const [selectedChallenge, setSelectedChallenge] = useState<number | null>(null)
   const [showLockInModal, setShowLockInModal] = useState(false)
   const [showProofModal, setShowProofModal] = useState(false)
+  
+  // Supporter lock-in flow state
+  const [lockInStep, setLockInStep] = useState<"invite" | "confirm" | "success">("invite")
+  const [supporters, setSupporters] = useState<Supporter[]>([])
+  const [newSupporterEmail, setNewSupporterEmail] = useState("")
+  const [emailError, setEmailError] = useState("")
 
   const selectedChallengeData = challengeLibrary.find((c) => c.id === selectedChallenge)
 
-  return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-50 border-b border-border/50 backdrop-blur-xl bg-background/80">
-        <div className="container mx-auto px-4 py-3">
-          <nav className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Image src="/images/logo.png" alt="EliteScore" width={40} height={40} className="w-6 h-6 md:w-7 md:h-7" />
-              <span className="text-base md:text-lg font-bold bg-gradient-to-r from-[#2bbcff] to-[#a855f7] bg-clip-text text-transparent">
-                ELITESCORE
-              </span>
-            </div>
-            <div className="flex items-center gap-2 md:gap-3">
-              <Button size="sm" variant="ghost" className="hidden sm:flex text-xs h-8">
-                Dashboard
-              </Button>
-              <Button size="sm" variant="ghost" className="hidden sm:flex text-xs h-8">
-                Leaderboard
-              </Button>
-              <div className="flex items-center gap-2 px-2 md:px-3 py-1.5 rounded-full bg-gradient-to-r from-[#2bbcff]/10 to-[#a855f7]/10 border border-[#2bbcff]/30">
-                <Trophy className="w-3 h-3 md:w-3.5 md:h-3.5 text-[#2bbcff]" />
-                <span className="text-[10px] md:text-xs font-bold">1,250</span>
-              </div>
-            </div>
-          </nav>
-        </div>
-      </header>
+  const validateEmail = (email: string) => {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+  }
 
+  const addSupporter = () => {
+    if (!newSupporterEmail.trim()) {
+      setEmailError("Email is required")
+      return
+    }
+    if (!validateEmail(newSupporterEmail)) {
+      setEmailError("Please enter a valid email")
+      return
+    }
+    if (supporters.length >= 3) {
+      setEmailError("Maximum 3 supporters allowed")
+      return
+    }
+    if (supporters.some(s => s.email.toLowerCase() === newSupporterEmail.toLowerCase())) {
+      setEmailError("This email is already added")
+      return
+    }
+    
+    setSupporters([...supporters, {
+      id: Date.now().toString(),
+      email: newSupporterEmail,
+      status: "pending"
+    }])
+    setNewSupporterEmail("")
+    setEmailError("")
+  }
+
+  const removeSupporter = (id: string) => {
+    setSupporters(supporters.filter(s => s.id !== id))
+  }
+
+  const handleLockInStart = () => {
+    setLockInStep("invite")
+    setSupporters([])
+    setNewSupporterEmail("")
+    setEmailError("")
+    setShowLockInModal(true)
+  }
+
+  const handleSendInvites = () => {
+    if (supporters.length === 0) {
+      setEmailError("Add at least one supporter to continue")
+      return
+    }
+    // Simulate sending invites (frontend only)
+    setLockInStep("confirm")
+  }
+
+  const handleConfirmLockIn = () => {
+    setLockInStep("success")
+    // Auto close after showing success
+    setTimeout(() => {
+      setShowLockInModal(false)
+      setSelectedChallenge(null)
+      setLockInStep("invite")
+      setSupporters([])
+    }, 2000)
+  }
+
+  const handleCloseLockIn = () => {
+    setShowLockInModal(false)
+    setLockInStep("invite")
+    setSupporters([])
+    setNewSupporterEmail("")
+    setEmailError("")
+  }
+
+  return (
+    <div className="min-h-screen bg-background pb-20">
       {/* Hero Section */}
       <section className="relative overflow-hidden pt-8 md:pt-12 pb-6 md:pb-8">
         <div className="absolute inset-0 bg-gradient-to-br from-[#2bbcff]/5 via-background to-[#a855f7]/5" />
@@ -363,7 +427,6 @@ export default function ChallengesPage() {
                     onClick={(e) => {
                       e.stopPropagation()
                       setSelectedChallenge(challenge.id)
-                      setShowLockInModal(true)
                     }}
                   >
                     View Details
@@ -535,7 +598,7 @@ export default function ChallengesPage() {
               <Button
                 size="lg"
                 className="w-full bg-gradient-to-r from-[#a855f7] to-[#2bbcff] hover:opacity-90 text-white border-0 text-sm h-11"
-                onClick={() => setShowLockInModal(true)}
+                onClick={handleLockInStart}
               >
                 Lock In Challenge
               </Button>
@@ -544,71 +607,331 @@ export default function ChallengesPage() {
         </div>
       )}
 
-      {/* Lock-In Confirmation Modal */}
+      {/* Lock-In Multi-Step Modal with Supporters - Advanced UI */}
       {showLockInModal && selectedChallenge && (
         <div
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-          onClick={() => setShowLockInModal(false)}
+          className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4"
+          onClick={handleCloseLockIn}
         >
           <div
-            className="glass-card rounded-2xl border border-orange-500/30 bg-card/95 backdrop-blur-xl p-6 max-w-md w-full"
+            className="relative w-full max-w-lg overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="text-center space-y-4">
-              <div className="w-16 h-16 rounded-full bg-orange-500/10 flex items-center justify-center mx-auto">
-                <AlertTriangle className="w-8 h-8 text-orange-500" />
+            {/* Animated Background Glow */}
+            <div className="absolute -top-20 -left-20 w-40 h-40 bg-[#a855f7]/30 rounded-full blur-[80px] animate-pulse" />
+            <div className="absolute -bottom-20 -right-20 w-40 h-40 bg-[#2bbcff]/30 rounded-full blur-[80px] animate-pulse" />
+            
+            <div className="relative glass-card rounded-3xl border border-white/10 bg-card/95 backdrop-blur-2xl overflow-hidden">
+              {/* Progress Bar */}
+              <div className="h-1 bg-white/5">
+                <div 
+                  className="h-full bg-gradient-to-r from-[#a855f7] to-[#2bbcff] transition-all duration-500"
+                  style={{ width: lockInStep === "invite" ? "33%" : lockInStep === "confirm" ? "66%" : "100%" }}
+                />
               </div>
 
-              <div>
-                <h2 className="text-xl font-bold mb-2">Lock In Challenge?</h2>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  This decision is <span className="font-bold text-orange-500">irreversible</span>. Once locked in, you
-                  must submit proof daily or your EliteScore will decay.
-                </p>
-              </div>
+              <div className="p-6 md:p-8">
+                {/* Step 1: Invite Supporters */}
+                {lockInStep === "invite" && (
+                  <div className="space-y-6">
+                    {/* Header */}
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#a855f7]/20 to-[#2bbcff]/20 flex items-center justify-center">
+                            <Users className="w-4 h-4 text-[#a855f7]" />
+                          </div>
+                          <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Step 1 of 2</span>
+                        </div>
+                        <h2 className="text-xl font-bold">Who's got your back?</h2>
+                        <p className="text-sm text-muted-foreground">Add people who'll keep you accountable</p>
+                      </div>
+                      <button 
+                        onClick={handleCloseLockIn} 
+                        className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
 
-              <div className="bg-[#2bbcff]/5 rounded-lg p-4 border border-[#2bbcff]/20 space-y-2">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">Challenge:</span>
-                  <span className="font-bold">{selectedChallengeData?.name}</span>
-                </div>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">Start Date:</span>
-                  <span className="font-medium">Today</span>
-                </div>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">End Date:</span>
-                  <span className="font-medium">
-                    {new Date(
-                      Date.now() + (selectedChallengeData?.duration || 0) * 24 * 60 * 60 * 1000,
-                    ).toLocaleDateString()}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between text-sm pt-2 border-t border-border/30">
-                  <span className="text-muted-foreground">Potential Reward:</span>
-                  <span className="font-bold text-[#a855f7]">+{selectedChallengeData?.reward} EliteScore</span>
-                </div>
-              </div>
+                    {/* Challenge Preview Card */}
+                    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#a855f7]/10 to-[#2bbcff]/10 border border-white/10 p-4">
+                      <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-[#a855f7]/20 to-transparent rounded-full blur-2xl -mr-16 -mt-16" />
+                      <div className="relative flex items-center justify-between">
+                        <div>
+                          <p className="text-xs text-muted-foreground mb-1">You're locking in</p>
+                          <h3 className="font-bold">{selectedChallengeData?.name}</h3>
+                          <div className="flex items-center gap-3 mt-2">
+                            <span className="text-xs text-muted-foreground">{selectedChallengeData?.duration} days</span>
+                            <span className="text-xs text-[#a855f7] font-medium">+{selectedChallengeData?.reward} pts</span>
+                          </div>
+                        </div>
+                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#a855f7] to-[#2bbcff] flex items-center justify-center">
+                          <Trophy className="w-6 h-6 text-white" />
+                        </div>
+                      </div>
+                    </div>
 
-              <div className="flex gap-3 pt-2">
-                <Button
-                  size="lg"
-                  variant="outline"
-                  onClick={() => setShowLockInModal(false)}
-                  className="flex-1 text-sm h-10 bg-transparent"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  size="lg"
-                  className="flex-1 bg-gradient-to-r from-[#a855f7] to-[#2bbcff] hover:opacity-90 text-white border-0 text-sm h-10"
-                  onClick={() => {
-                    setShowLockInModal(false)
-                    setSelectedChallenge(null)
-                  }}
-                >
-                  Confirm Lock In
-                </Button>
+                    {/* Why Supporters Matter */}
+                    <div className="flex items-start gap-3 p-4 rounded-xl bg-white/5 border border-white/5">
+                      <div className="w-10 h-10 rounded-full bg-[#2bbcff]/10 flex items-center justify-center flex-shrink-0">
+                        <span className="text-lg">💪</span>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium mb-1">Accountability partners increase success by 65%</p>
+                        <p className="text-xs text-muted-foreground leading-relaxed">
+                          Your supporters will receive daily updates and can send you motivation when you need it most.
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Email Input */}
+                    <div className="space-y-3">
+                      <label className="text-sm font-medium">Add supporter email</label>
+                      <div className="flex gap-2">
+                        <div className="relative flex-1">
+                          <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                          <input
+                            type="email"
+                            value={newSupporterEmail}
+                            onChange={(e) => {
+                              setNewSupporterEmail(e.target.value)
+                              setEmailError("")
+                            }}
+                            onKeyDown={(e) => e.key === "Enter" && addSupporter()}
+                            placeholder="friend@email.com"
+                            className="w-full pl-11 pr-4 py-3 text-sm rounded-xl border border-white/10 bg-white/5 focus:outline-none focus:ring-2 focus:ring-[#a855f7]/50 focus:bg-white/10 transition-all"
+                          />
+                        </div>
+                        <Button
+                          size="sm"
+                          onClick={addSupporter}
+                          disabled={supporters.length >= 3}
+                          className="h-12 px-4 bg-gradient-to-r from-[#a855f7] to-[#2bbcff] hover:opacity-90 text-white border-0 rounded-xl"
+                        >
+                          <UserPlus className="w-4 h-4" />
+                        </Button>
+                      </div>
+                      {emailError && (
+                        <p className="text-xs text-red-500 flex items-center gap-1">
+                          <span className="w-1 h-1 rounded-full bg-red-500" />
+                          {emailError}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Supporters List */}
+                    {supporters.length > 0 && (
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <label className="text-sm font-medium">Your squad</label>
+                          <span className="text-xs text-muted-foreground">{supporters.length}/3 added</span>
+                        </div>
+                        <div className="space-y-2">
+                          {supporters.map((supporter, index) => (
+                            <div
+                              key={supporter.id}
+                              className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors group"
+                            >
+                              <div className="flex items-center gap-3">
+                                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#a855f7]/20 to-[#2bbcff]/20 flex items-center justify-center">
+                                  <span className="text-sm font-bold bg-gradient-to-r from-[#a855f7] to-[#2bbcff] bg-clip-text text-transparent">
+                                    {supporter.email.charAt(0).toUpperCase()}
+                                  </span>
+                                </div>
+                                <div>
+                                  <span className="text-sm font-medium">{supporter.email}</span>
+                                  <p className="text-xs text-muted-foreground">Supporter #{index + 1}</p>
+                                </div>
+                              </div>
+                              <button
+                                onClick={() => removeSupporter(supporter.id)}
+                                className="w-8 h-8 rounded-full opacity-0 group-hover:opacity-100 bg-red-500/10 hover:bg-red-500/20 flex items-center justify-center transition-all"
+                              >
+                                <X className="w-3.5 h-3.5 text-red-500" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Empty State */}
+                    {supporters.length === 0 && (
+                      <div className="text-center py-6 border border-dashed border-white/10 rounded-xl">
+                        <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-3">
+                          <Users className="w-5 h-5 text-muted-foreground" />
+                        </div>
+                        <p className="text-sm text-muted-foreground">No supporters added yet</p>
+                        <p className="text-xs text-muted-foreground mt-1">Add at least one to continue</p>
+                      </div>
+                    )}
+
+                    {/* Action Buttons */}
+                    <div className="flex gap-3 pt-2">
+                      <Button
+                        size="lg"
+                        variant="outline"
+                        onClick={handleCloseLockIn}
+                        className="flex-1 h-12 bg-transparent border-white/10 hover:bg-white/5 rounded-xl"
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        size="lg"
+                        onClick={handleSendInvites}
+                        disabled={supporters.length === 0}
+                        className="flex-1 h-12 bg-gradient-to-r from-[#a855f7] to-[#2bbcff] hover:opacity-90 text-white border-0 rounded-xl disabled:opacity-50"
+                      >
+                        <Send className="w-4 h-4 mr-2" />
+                        Continue
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Step 2: Confirm Lock-In */}
+                {lockInStep === "confirm" && (
+                  <div className="space-y-6">
+                    {/* Header */}
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 rounded-xl bg-orange-500/20 flex items-center justify-center">
+                            <AlertTriangle className="w-4 h-4 text-orange-500" />
+                          </div>
+                          <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Step 2 of 2</span>
+                        </div>
+                        <h2 className="text-xl font-bold">Final confirmation</h2>
+                        <p className="text-sm text-muted-foreground">This is a serious commitment</p>
+                      </div>
+                      <button 
+                        onClick={handleCloseLockIn} 
+                        className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+
+                    {/* Warning Box */}
+                    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-orange-500/10 to-red-500/10 border border-orange-500/20 p-5">
+                      <div className="absolute top-0 right-0 w-24 h-24 bg-orange-500/20 rounded-full blur-2xl -mr-12 -mt-12" />
+                      <div className="relative space-y-3">
+                        <div className="flex items-center gap-2">
+                          <Lock className="w-4 h-4 text-orange-500" />
+                          <span className="text-sm font-bold text-orange-500">Point of no return</span>
+                        </div>
+                        <p className="text-sm text-muted-foreground leading-relaxed">
+                          Once you lock in, there's <span className="font-bold text-foreground">no backing out</span>. 
+                          Miss a day without proof and your EliteScore takes a hit. 
+                          This is how we separate the serious from the casual.
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Supporters Confirmed */}
+                    <div className="rounded-2xl bg-green-500/5 border border-green-500/20 p-4">
+                      <div className="flex items-center gap-2 mb-3">
+                        <div className="w-6 h-6 rounded-full bg-green-500/20 flex items-center justify-center">
+                          <Check className="w-3.5 h-3.5 text-green-500" />
+                        </div>
+                        <span className="text-sm font-medium text-green-500">Invites queued</span>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {supporters.map((supporter) => (
+                          <div key={supporter.id} className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10">
+                            <div className="w-5 h-5 rounded-full bg-gradient-to-br from-[#a855f7]/20 to-[#2bbcff]/20 flex items-center justify-center">
+                              <span className="text-[10px] font-bold">{supporter.email.charAt(0).toUpperCase()}</span>
+                            </div>
+                            <span className="text-xs">{supporter.email.split("@")[0]}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Challenge Summary */}
+                    <div className="space-y-3">
+                      <h3 className="text-sm font-medium">Challenge details</h3>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="p-3 rounded-xl bg-white/5 border border-white/5">
+                          <p className="text-xs text-muted-foreground mb-1">Start</p>
+                          <p className="text-sm font-medium">Today</p>
+                        </div>
+                        <div className="p-3 rounded-xl bg-white/5 border border-white/5">
+                          <p className="text-xs text-muted-foreground mb-1">End</p>
+                          <p className="text-sm font-medium">
+                            {new Date(Date.now() + (selectedChallengeData?.duration || 0) * 24 * 60 * 60 * 1000).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                          </p>
+                        </div>
+                        <div className="p-3 rounded-xl bg-white/5 border border-white/5">
+                          <p className="text-xs text-muted-foreground mb-1">Duration</p>
+                          <p className="text-sm font-medium">{selectedChallengeData?.duration} days</p>
+                        </div>
+                        <div className="p-3 rounded-xl bg-gradient-to-br from-[#a855f7]/10 to-[#2bbcff]/10 border border-[#a855f7]/20">
+                          <p className="text-xs text-muted-foreground mb-1">Reward</p>
+                          <p className="text-sm font-bold text-[#a855f7]">+{selectedChallengeData?.reward} pts</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex gap-3 pt-2">
+                      <Button
+                        size="lg"
+                        variant="outline"
+                        onClick={() => setLockInStep("invite")}
+                        className="flex-1 h-12 bg-transparent border-white/10 hover:bg-white/5 rounded-xl"
+                      >
+                        Back
+                      </Button>
+                      <Button
+                        size="lg"
+                        onClick={handleConfirmLockIn}
+                        className="flex-1 h-12 bg-gradient-to-r from-orange-500 to-red-500 hover:opacity-90 text-white border-0 rounded-xl font-bold"
+                      >
+                        Lock In Now
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Step 3: Success */}
+                {lockInStep === "success" && (
+                  <div className="text-center py-8 space-y-6">
+                    {/* Success Animation */}
+                    <div className="relative">
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="w-24 h-24 rounded-full bg-green-500/20 animate-ping" />
+                      </div>
+                      <div className="relative w-20 h-20 rounded-full bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center mx-auto shadow-lg shadow-green-500/30">
+                        <CheckCircle2 className="w-10 h-10 text-white" />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <h2 className="text-2xl font-bold">You're locked in!</h2>
+                      <p className="text-sm text-muted-foreground max-w-xs mx-auto">
+                        Your journey starts now. Your supporters have been notified and are ready to cheer you on.
+                      </p>
+                    </div>
+
+                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10">
+                      <Users className="w-4 h-4 text-[#a855f7]" />
+                      <span className="text-sm">{supporters.length} supporter{supporters.length > 1 ? "s" : ""} watching</span>
+                    </div>
+
+                    <div className="pt-4">
+                      <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground">
+                        <span>Redirecting to your challenge</span>
+                        <span className="flex gap-0.5">
+                          <span className="w-1 h-1 rounded-full bg-muted-foreground animate-bounce" style={{ animationDelay: "0ms" }} />
+                          <span className="w-1 h-1 rounded-full bg-muted-foreground animate-bounce" style={{ animationDelay: "150ms" }} />
+                          <span className="w-1 h-1 rounded-full bg-muted-foreground animate-bounce" style={{ animationDelay: "300ms" }} />
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -687,6 +1010,9 @@ export default function ChallengesPage() {
           </div>
         </div>
       )}
+
+      {/* Bottom Navigation */}
+      <BottomNav />
     </div>
   )
 }

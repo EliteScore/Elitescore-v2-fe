@@ -1,7 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -24,6 +23,7 @@ import {
   Briefcase,
   GraduationCap,
 } from "lucide-react"
+import { BottomNav } from "@/components/bottom-nav"
 
 export default function ProfilePage() {
   const [showSettings, setShowSettings] = useState(false)
@@ -112,31 +112,8 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header - mobile responsive */}
-      <header className="sticky top-0 z-50 border-b border-border/50 backdrop-blur-xl bg-background/80">
-        <div className="container mx-auto px-4 py-3">
-          <nav className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Image src="/images/logo.png" alt="EliteScore" width={40} height={40} className="w-6 h-6 md:w-7 md:h-7" />
-              <span className="text-base md:text-lg font-bold bg-gradient-to-r from-[#2bbcff] to-[#a855f7] bg-clip-text text-transparent">
-                ELITESCORE
-              </span>
-            </div>
-            <div className="flex items-center gap-2 md:gap-3">
-              <Button size="sm" variant="ghost" className="hidden sm:flex text-xs h-8">
-                Dashboard
-              </Button>
-              <Button size="sm" variant="ghost" className="hidden sm:flex text-xs h-8">
-                Challenges
-              </Button>
-              <Button size="sm" variant="ghost" className="hidden sm:flex text-xs h-8">
-                Leaderboard
-              </Button>
-            </div>
-          </nav>
-        </div>
-      </header>
+    <div className="min-h-screen bg-background pb-20">
+      {/* Unified Navbar */}
 
       <div className="container mx-auto px-4 py-6 md:py-8 max-w-5xl">
         {/* Profile Header */}
@@ -546,6 +523,8 @@ export default function ProfilePage() {
           </div>
         </div>
       </div>
+
+      <BottomNav />
     </div>
   )
 }
