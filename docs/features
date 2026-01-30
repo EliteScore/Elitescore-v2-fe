@@ -1,0 +1,47 @@
+Core Features 
+A. The Dashboard (Home) 
+The central hub for the user's daily activity and motivation. 
+● EliteScore Display: visualization of current points. 
+● Global Rank: Real-time standing against all other users. 
+● Streaks: Consecutive days of activity check-ins. 
+● Basic Stats:Score Gain: Points earned in the last 7 days. 
+○ Movement: Number of positions climbed or dropped on the leaderboard. 
+● Active Challenge Card: Shows currently enrolled challenges, specific sub-tasks for the 
+day and "Submit" buttons for deadlines. 
+● Leaderboard Preview: A Top 5 snippet to keep competition visible. 
+● Recommended Challenges: category-based suggestions from the library. 
+B. The Challenge Concept 
+Challenges are structured commitments with high stakes. 
+● Library: Users browse challenges by Difficulty, Duration (e.g., 21 days), and Base Reward 
+(EliteScore). 
+● The Accountability Wall: Before joining, a user must invite a Spectator (friend/family) 
+via email or WhatsApp link. 
+○ The Spectator must click "I Agree" to be linked. 
+○ The Spectator receives automated notifications of the user's Success or Failure. 
+● Weekly Breakdown: Challenges are segmented by week (e.g., Python Challenge: Week 
+1: Basics, Week 2: Build, Week 3: Deploy). 
+● Check-ins: Users must submit "Proof of Work" twice a week. 
+● Verification: Once proof is submitted and approved, the EliteScore increases. 
+C. The EliteScore Economy 
+The score is Public and Loud. It determines the user's reputation. 
+● Starting Point: 0 EliteScore. 
+● Gains (+): 
+○ Daily Challenge: +20 
+○ Big Challenge Completion: +50 to +100 
+○ Approved Proof: Incremental gains. 
+● Penalties (-): 
+○ Failing/Quitting a challenge: -60 
+○ Submitting wrong/fake proof: Penalty. 
+○ Missing a deadline: Penalty. 
+D. Leaderboard & Social 
+● Beta Enrollment: All new users are automatically entered into the Beta Signup 
+leaderboard. 
+● Elite Access: High EliteScores unlock "Elite Challenges" that are hidden from 
+lower-ranked users. 
+E. User Profile 
+A hybrid of a gaming profile and a professional resume. 
+● Identity: Name, Username, Bio, Profile Picture. 
+● Performance: EliteScore, Streak, Consistency % (on-time submissions). 
+● History: Categorized list of Failed vs. Completed challenges. 
+● Resume/Background: * Manual Entry: Education, Roles, Achievements, Links. 
+○ AI Extraction: Upload a PDF resume to automatically populate the profile.

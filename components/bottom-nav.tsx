@@ -14,6 +14,11 @@ const navItems = [
 export function BottomNav() {
   const pathname = usePathname()
 
+  // Hide navbar on login and signup pages
+  if (pathname === "/login" || pathname === "/signup") {
+    return null
+  }
+
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-xl border-t border-white/10 pb-safe">
       <div className="container mx-auto px-4">

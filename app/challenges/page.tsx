@@ -26,6 +26,7 @@ import {
   UserPlus,
 } from "lucide-react"
 import { BottomNav } from "@/components/bottom-nav"
+import Link from "next/link"
 
 interface Supporter {
   id: string
@@ -151,12 +152,18 @@ export default function ChallengesPage() {
   const [selectedChallenge, setSelectedChallenge] = useState<number | null>(null)
   const [showLockInModal, setShowLockInModal] = useState(false)
   const [showProofModal, setShowProofModal] = useState(false)
+  const [showQuitConfirm, setShowQuitConfirm] = useState<number | null>(null)
   
   // Supporter lock-in flow state
   const [lockInStep, setLockInStep] = useState<"invite" | "confirm" | "success">("invite")
   const [supporters, setSupporters] = useState<Supporter[]>([])
   const [newSupporterEmail, setNewSupporterEmail] = useState("")
   const [emailError, setEmailError] = useState("")
+
+  // Max 2 active challenges limit
+  const MAX_ACTIVE_CHALLENGES = 2
+  const activeCount = activeChallenges.length
+  const canJoinChallenge = activeCount < MAX_ACTIVE_CHALLENGES
 
   const selectedChallengeData = challengeLibrary.find((c) => c.id === selectedChallenge)
 
@@ -196,11 +203,24 @@ export default function ChallengesPage() {
   }
 
   const handleLockInStart = () => {
+    if (!canJoinChallenge) {
+      return // Don't allow joining if at max capacity
+    }
     setLockInStep("invite")
     setSupporters([])
     setNewSupporterEmail("")
     setEmailError("")
     setShowLockInModal(true)
+  }
+
+  const handleQuitChallenge = (challengeId: number) => {
+    setShowQuitConfirm(challengeId)
+  }
+
+  const confirmQuitChallenge = () => {
+    // In a real app, this would remove the challenge from active challenges
+    console.log("Quitting challenge:", showQuitConfirm)
+    setShowQuitConfirm(null)
   }
 
   const handleSendInvites = () => {
@@ -270,6 +290,41 @@ export default function ChallengesPage() {
           <TabsContent value="active" className="space-y-4 md:space-y-6">
             {activeChallenges.length > 0 ? (
               <>
+                {/* Active Challenge Counter */}
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h2 className="text-lg font-bold">Your Active Challenges</h2>
+                    <p className="text-xs text-muted-foreground">
+                      {activeCount}/{MAX_ACTIVE_CHALLENGES} slots used
+                    </p>
+                  </div>
+                  <Badge
+                    variant="secondary"
+                    className={`${
+                      activeCount >= MAX_ACTIVE_CHALLENGES
+                        ? "bg-orange-500/10 text-orange-500 border-orange-500/30"
+                        : "bg-[#2bbcff]/10 text-[#2bbcff] border-[#2bbcff]/30"
+                    }`}
+                  >
+                    {activeCount}/{MAX_ACTIVE_CHALLENGES} Active
+                  </Badge>
+                </div>
+
+                {/* Warning when at limit */}
+                {activeCount >= MAX_ACTIVE_CHALLENGES && (
+                  <div className="glass-card rounded-xl border border-orange-500/30 bg-orange-500/5 backdrop-blur-sm p-4">
+                    <div className="flex items-start gap-3">
+                      <AlertTriangle className="w-5 h-5 text-orange-500 flex-shrink-0 mt-0.5" />
+                      <div className="flex-1">
+                        <h3 className="text-sm font-bold text-orange-500 mb-1">Maximum Active Challenges</h3>
+                        <p className="text-xs text-muted-foreground">
+                          You've reached the maximum of {MAX_ACTIVE_CHALLENGES} active challenges. Complete or quit one to join another.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 <div className="grid md:grid-cols-2 gap-4">
                   {activeChallenges.map((challenge) => (
                     <div
@@ -327,18 +382,23 @@ export default function ChallengesPage() {
                       <div className="flex gap-2">
                         <Button
                           size="sm"
-                          onClick={() => setShowProofModal(true)}
+                          asChild
                           className="flex-1 bg-gradient-to-r from-[#2bbcff] to-[#a855f7] hover:opacity-90 text-white border-0 text-xs h-8"
                         >
-                          <Upload className="w-3 h-3 mr-1.5" />
-                          Submit Proof
+                          <Link href={`/challenges/${challenge.id}`}>
+                            View Details
+                          </Link>
                         </Button>
                         <Button
                           size="sm"
                           variant="outline"
-                          className="border-[#2bbcff]/50 hover:bg-[#2bbcff]/10 text-xs h-8 bg-transparent"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleQuitChallenge(challenge.id)
+                          }}
+                          className="border-red-500/50 hover:bg-red-500/10 text-red-500 text-xs h-8 bg-transparent"
                         >
-                          Details
+                          Quit
                         </Button>
                       </div>
                     </div>
@@ -423,15 +483,22 @@ export default function ChallengesPage() {
 
                   <Button
                     size="sm"
-                    className="w-full bg-gradient-to-r from-[#a855f7] to-[#2bbcff] hover:opacity-90 text-white border-0 text-xs h-8"
+                    className="w-full bg-gradient-to-r from-[#a855f7] to-[#2bbcff] hover:opacity-90 text-white border-0 text-xs h-8 disabled:opacity-50 disabled:cursor-not-allowed"
                     onClick={(e) => {
                       e.stopPropagation()
                       setSelectedChallenge(challenge.id)
                     }}
+                    disabled={!canJoinChallenge}
+                    title={!canJoinChallenge ? `Maximum ${MAX_ACTIVE_CHALLENGES} active challenges reached` : ""}
                   >
                     View Details
                     <ChevronRight className="ml-1 h-3 w-3" />
                   </Button>
+                  {!canJoinChallenge && (
+                    <p className="text-[10px] text-center text-orange-500 mt-2">
+                      Max challenges reached
+                    </p>
+                  )}
                 </div>
               ))}
             </div>
@@ -597,11 +664,19 @@ export default function ChallengesPage() {
 
               <Button
                 size="lg"
-                className="w-full bg-gradient-to-r from-[#a855f7] to-[#2bbcff] hover:opacity-90 text-white border-0 text-sm h-11"
+                className="w-full bg-gradient-to-r from-[#a855f7] to-[#2bbcff] hover:opacity-90 text-white border-0 text-sm h-11 disabled:opacity-50 disabled:cursor-not-allowed"
                 onClick={handleLockInStart}
+                disabled={!canJoinChallenge}
               >
-                Lock In Challenge
+                {canJoinChallenge 
+                  ? "Lock In Challenge" 
+                  : `Maximum ${MAX_ACTIVE_CHALLENGES} Active Challenges Reached`}
               </Button>
+              {!canJoinChallenge && (
+                <p className="text-xs text-center text-orange-500 mt-3">
+                  Complete or quit an active challenge to join a new one
+                </p>
+              )}
             </div>
           </div>
         </div>
@@ -1012,6 +1087,46 @@ export default function ChallengesPage() {
       )}
 
       {/* Bottom Navigation */}
+      {/* Quit Challenge Confirmation Modal */}
+      {showQuitConfirm && (
+        <div
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          onClick={() => setShowQuitConfirm(null)}
+        >
+          <div
+            className="glass-card rounded-2xl border border-red-500/30 bg-card/95 backdrop-blur-xl p-6 max-w-md w-full"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start gap-3 mb-4">
+              <div className="w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center flex-shrink-0">
+                <AlertTriangle className="w-5 h-5 text-red-500" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold mb-1">Quit Challenge?</h3>
+                <p className="text-sm text-muted-foreground">
+                  Quitting will result in a failed challenge and -35 EliteScore penalty. This action cannot be undone.
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                onClick={() => setShowQuitConfirm(null)}
+                className="flex-1 border-border/50 hover:bg-muted/50 bg-transparent"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={confirmQuitChallenge}
+                className="flex-1 bg-red-500 hover:bg-red-600 text-white border-0"
+              >
+                Quit Challenge
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <BottomNav />
     </div>
   )

@@ -3,7 +3,8 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Trophy, Target, Clock, TrendingUp, Flame, ChevronRight, FileText, Calendar } from "lucide-react"
+import { Trophy, Target, Clock, TrendingUp, Flame, ChevronRight, Calendar, Zap, Award, Sparkles, BookOpen } from "lucide-react"
+import { TodaysTasks } from "@/components/todays-tasks"
 
 const userData = {
   eliteScore: 8247,
@@ -15,9 +16,6 @@ const userData = {
   weeklyConsistency: 6,
   isActive: true,
   leaderboardMovement: 23,
-  xp: 450,
-  level: 12,
-  levelProgress: 65,
 }
 
 const activeChallenges = [
@@ -51,126 +49,156 @@ const recommendedChallenges = [
   { id: 5, name: "14-Day Portfolio Builder", difficulty: "Difficulty: 4/5", participants: "189 students" },
 ]
 
+const todaysTasks = [
+  {
+    id: "task1",
+    title: "Complete 3 LeetCode medium problems",
+    duration: "30 min",
+    category: "Skills",
+    challengeName: "30-Day Python Mastery",
+  },
+  {
+    id: "task2",
+    title: "Post career insight on LinkedIn",
+    duration: "15 min",
+    category: "Career",
+    challengeName: "14-Day LinkedIn Growth",
+  },
+  {
+    id: "task3",
+    title: "Update portfolio with new project",
+    duration: "20 min",
+    category: "Projects",
+  },
+]
+
 export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-background pb-20">
       {/* Main Content */}
       <section className="container mx-auto px-4 py-6 md:py-8">
         <div className="max-w-6xl mx-auto">
-          {/* Hero Stats - EliteScore Focus */}
-          <div className="glass-card rounded-2xl border border-[#2bbcff]/20 bg-gradient-to-br from-card/80 to-background backdrop-blur-md p-6 md:p-10 mb-6 md:mb-8 text-center shadow-2xl relative overflow-hidden">
-            {/* Background Accent */}
+          {/* Hero: EliteScore + Streak + Stats in one card */}
+          <div className="glass-card rounded-2xl border border-[#2bbcff]/20 bg-gradient-to-br from-card/80 to-background backdrop-blur-md p-6 md:p-8 mb-6 md:mb-8 shadow-2xl relative overflow-hidden">
             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-64 bg-gradient-to-r from-[#2bbcff]/20 to-[#a855f7]/20 blur-[100px] rounded-full -z-10" />
-
-            <div className="space-y-4">
-              <div className="text-[10px] md:text-xs font-bold text-muted-foreground uppercase tracking-[0.2em]">
-                EliteScore • Credibility
-              </div>
-              <div className="text-6xl md:text-8xl font-black bg-gradient-to-r from-[#2bbcff] via-[#a855f7] to-[#2bbcff] bg-clip-text text-transparent animate-gradient-x py-2 drop-shadow-sm">
-                {userData.eliteScore}
-              </div>
-              <div className="flex flex-col items-center gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-6 md:gap-8">
+              {/* Left: EliteScore + Rank + Tagline */}
+              <div className="md:col-span-6 flex flex-col items-center md:items-start justify-center text-center md:text-left">
+                <div className="text-[10px] md:text-xs font-bold text-muted-foreground uppercase tracking-[0.2em] mb-2">
+                  EliteScore • Credibility
+                </div>
+                <div className="text-5xl sm:text-6xl md:text-7xl font-black bg-gradient-to-r from-[#2bbcff] via-[#a855f7] to-[#2bbcff] bg-clip-text text-transparent animate-gradient-x py-1 drop-shadow-sm">
+                  {userData.eliteScore}
+                </div>
                 <Badge
                   variant="secondary"
-                  className="bg-white/5 text-white border-white/10 px-4 py-1 text-xs backdrop-blur-md"
+                  className="mt-3 bg-white/5 text-white border-white/10 px-4 py-1 text-xs backdrop-blur-md"
+                  aria-label={`World rank ${userData.rank}`}
                 >
                   World Rank #{userData.rank}
                 </Badge>
-                <p className="text-xs text-muted-foreground max-w-sm mx-auto leading-relaxed">
+                <p className="text-xs text-muted-foreground max-w-sm mt-3 leading-relaxed">
                   Your credibility is earned through finished work. Maintain your standing by completing your active
                   challenges.
                 </p>
               </div>
-            </div>
-          </div>
-
-          {/* XP & Level - Identity Track */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-            <div className="md:col-span-2 glass-card rounded-xl border border-white/10 bg-card/40 backdrop-blur-sm p-6 flex flex-col justify-center">
-              <div className="flex items-center justify-between mb-4">
-                <div className="space-y-1">
-                  <div className="text-[10px] text-[#2bbcff] font-bold uppercase tracking-wider">
-                    Level Progress • Identity
+              {/* Right: Streak + Stats grid */}
+              <div className="md:col-span-6 flex flex-col gap-4">
+                <div className="glass-card rounded-xl border border-orange-500/20 bg-orange-500/5 backdrop-blur-sm p-4 flex flex-row items-center gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-orange-500/10 flex items-center justify-center flex-shrink-0" aria-hidden="true">
+                    <Flame className="w-6 h-6 text-orange-500 animate-pulse" />
                   </div>
-                  <h3 className="text-xl font-bold">Level {userData.level}</h3>
+                  <div>
+                    <div className="text-2xl font-black text-orange-500">{userData.streak} Days</div>
+                    <div className="text-[10px] text-muted-foreground uppercase tracking-widest">Consistency Streak</div>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <div className="text-xs text-muted-foreground">Next level in</div>
-                  <div className="text-sm font-bold text-[#2bbcff]">{1000 - userData.xp} XP</div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="glass-card rounded-xl border border-white/5 bg-card/30 backdrop-blur-sm p-3">
+                    <div className="flex items-center gap-1.5 mb-0.5">
+                      <TrendingUp className="w-3 h-3 text-green-500" aria-hidden="true" />
+                      <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-tight">Score Gain</span>
+                    </div>
+                    <div className="text-lg font-bold text-green-500">+{userData.scoreChange}</div>
+                  </div>
+                  <div className="glass-card rounded-xl border border-white/5 bg-card/30 backdrop-blur-sm p-3">
+                    <div className="flex items-center gap-1.5 mb-0.5">
+                      <Calendar className="w-3 h-3 text-[#2bbcff]" aria-hidden="true" />
+                      <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-tight">Active Days</span>
+                    </div>
+                    <div className="text-lg font-bold text-foreground">{userData.weeklyConsistency}/7</div>
+                  </div>
+                  <div className="glass-card rounded-xl border border-white/5 bg-card/30 backdrop-blur-sm p-3">
+                    <div className="flex items-center gap-1.5 mb-0.5">
+                      <Trophy className="w-3 h-3 text-[#a855f7]" aria-hidden="true" />
+                      <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-tight">Movement</span>
+                    </div>
+                    <div className="text-lg font-bold text-[#a855f7]">↑ {userData.leaderboardMovement}</div>
+                  </div>
+                  <div className="glass-card rounded-xl border border-white/5 bg-card/30 backdrop-blur-sm p-3">
+                    <div className="flex items-center gap-1.5 mb-0.5">
+                      <Target className="w-3 h-3 text-[#2bbcff]" aria-hidden="true" />
+                      <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-tight">Percentile</span>
+                    </div>
+                    <div className="text-lg font-bold text-foreground">Top {userData.percentile}%</div>
+                  </div>
                 </div>
               </div>
-              <div className="space-y-2">
-                <div className="h-2 bg-white/5 rounded-full overflow-hidden border border-white/5">
-                  <div
-                    className="h-full bg-gradient-to-r from-[#2bbcff] to-[#a855f7] rounded-full transition-all duration-1000"
-                    style={{ width: `${userData.levelProgress}%` }}
-                  />
-                </div>
-                <div className="flex justify-between text-[10px] text-muted-foreground font-medium">
-                  <span>Progress: {userData.levelProgress}%</span>
-                  <span>{userData.xp} / 1000 XP</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="glass-card rounded-xl border border-orange-500/20 bg-orange-500/5 backdrop-blur-sm p-6 flex flex-col items-center justify-center text-center">
-              <Flame className="w-8 h-8 text-orange-500 mb-2 animate-pulse" />
-              <div className="text-2xl font-black text-orange-500">{userData.streak} Days</div>
-              <div className="text-[10px] text-muted-foreground uppercase tracking-widest mt-1">Consistency Streak</div>
             </div>
           </div>
 
-          {/* Performance Signals Grid */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
-            <div className="glass-card rounded-xl border border-white/5 bg-card/30 backdrop-blur-sm p-4">
-              <div className="flex items-center gap-2 mb-1">
-                <TrendingUp className="w-3 h-3 text-green-500" />
-                <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-tight">Score Gain</span>
-              </div>
-              <div className="text-xl font-bold text-green-500">+{userData.scoreChange}</div>
-            </div>
+          {/* Today's Tasks */}
+          <TodaysTasks tasks={todaysTasks} />
 
-            <div className="glass-card rounded-xl border border-white/5 bg-card/30 backdrop-blur-sm p-4">
-              <div className="flex items-center gap-2 mb-1">
-                <Calendar className="w-3 h-3 text-[#2bbcff]" />
-                <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-tight">
-                  Active Days
-                </span>
+          {/* Week at a glance */}
+          <div className="glass-card rounded-2xl border border-[#2bbcff]/20 bg-card/40 backdrop-blur-md p-4 mb-8 flex flex-wrap items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-[#2bbcff]/10 flex items-center justify-center flex-shrink-0" aria-hidden="true">
+                <Zap className="w-5 h-5 text-[#2bbcff]" />
               </div>
-              <div className="text-xl font-bold text-foreground">{userData.weeklyConsistency}/7</div>
-            </div>
-
-            <div className="glass-card rounded-xl border border-white/5 bg-card/30 backdrop-blur-sm p-4">
-              <div className="flex items-center gap-2 mb-1">
-                <Trophy className="w-3 h-3 text-[#a855f7]" />
-                <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-tight">Movement</span>
+              <div>
+                <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Week at a glance</div>
+                <div className="text-sm font-bold text-foreground">
+                  <span className="text-[#2bbcff]">{activeChallenges.length}</span> active challenges
+                  <span className="mx-1.5 text-muted-foreground">•</span>
+                  <span className="text-[#a855f7]">{todaysTasks.length}</span> tasks today
+                </div>
               </div>
-              <div className="text-xl font-bold text-[#a855f7]">↑ {userData.leaderboardMovement}</div>
             </div>
-
-            <div className="glass-card rounded-xl border border-white/5 bg-card/30 backdrop-blur-sm p-4">
-              <div className="flex items-center gap-2 mb-1">
-                <Target className="w-3 h-3 text-[#2bbcff]" />
-                <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-tight">Percentile</span>
-              </div>
-              <div className="text-xl font-bold text-foreground">Top {userData.percentile}%</div>
-            </div>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="text-[10px] h-8 font-bold uppercase tracking-wider text-[#2bbcff] hover:text-[#2bbcff] hover:bg-[#2bbcff]/10 px-3"
+              asChild
+            >
+              <Link href="/challenges">
+                View challenges
+                <ChevronRight className="ml-0.5 h-3 w-3" aria-hidden="true" />
+              </Link>
+            </Button>
           </div>
 
-          {/* Active Challenges - Daily XP Track */}
-          <div className="mb-8">
-            <div className="flex items-center justify-between mb-3 md:mb-4">
-              <h2 className="text-lg md:text-xl font-bold">Active Challenges</h2>
+          {/* Active Challenges */}
+          <div className="glass-card rounded-2xl border border-[#2bbcff]/20 bg-gradient-to-br from-card/80 to-background backdrop-blur-md p-6 md:p-8 mb-8 shadow-xl relative overflow-hidden">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-[#2bbcff]/10 flex items-center justify-center flex-shrink-0" aria-hidden="true">
+                  <Target className="w-5 h-5 text-[#2bbcff]" />
+                </div>
+                <div>
+                  <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Active Challenges • Your commitments</div>
+                  <div className="text-base font-bold text-foreground">{activeChallenges.length} in progress</div>
+                </div>
+              </div>
               <Button
                 size="sm"
-                variant="outline"
-                className="text-[10px] md:text-xs h-7 md:h-8 bg-transparent border-border/50 hover:bg-muted/50 px-2 md:px-3"
+                variant="ghost"
+                className="text-[10px] h-8 font-bold uppercase tracking-wider text-[#2bbcff] hover:bg-[#2bbcff]/10 px-3"
                 asChild
               >
                 <Link href="/challenges">
-                  <span className="hidden sm:inline">View All</span>
-                  <span className="sm:hidden">All</span>
-                  <ChevronRight className="ml-1 h-3 w-3" />
+                  View All
+                  <ChevronRight className="ml-0.5 h-3 w-3" aria-hidden="true" />
                 </Link>
               </Button>
             </div>
@@ -179,113 +207,98 @@ export default function DashboardPage() {
               {activeChallenges.map((challenge) => (
                 <div
                   key={challenge.id}
-                  className="glass-card rounded-xl border border-[#2bbcff]/30 bg-card/50 backdrop-blur-sm p-5 hover:border-[#2bbcff]/50 transition-all"
+                  className="glass-card rounded-xl border border-white/5 bg-card/30 backdrop-blur-sm p-4 hover:border-[#2bbcff]/30 transition-all"
                 >
                   <div className="flex items-start justify-between mb-3">
-                    <div className="space-y-1 flex-1">
-                      <div className="flex items-center gap-2">
-                        <h3 className="text-base font-bold">{challenge.name}</h3>
-                        <Badge
-                          variant="secondary"
-                          className="text-xs bg-[#2bbcff]/10 text-[#2bbcff] border-[#2bbcff]/30"
-                        >
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <h3 className="text-sm font-bold text-foreground truncate">{challenge.name}</h3>
+                        <Badge variant="secondary" className="text-[10px] font-bold uppercase tracking-wider bg-[#2bbcff]/10 text-[#2bbcff] border-[#2bbcff]/30 flex-shrink-0">
                           Active
                         </Badge>
                       </div>
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <Target className="w-3 h-3" />
-                        <span>{challenge.difficulty}</span>
+                      <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground uppercase tracking-wider">
+                        <Target className="w-2.5 h-2.5" aria-hidden="true" />
+                        {challenge.difficulty}
                       </div>
                     </div>
-                    <Trophy className="w-5 h-5 text-[#a855f7]" />
+                    <Trophy className="w-5 h-5 text-[#a855f7] flex-shrink-0" aria-hidden="true" />
                   </div>
 
                   <div className="space-y-3 mb-4">
-                    <div>
-                      <div className="flex items-center justify-between text-xs mb-1.5">
-                        <span className="text-muted-foreground">Progress</span>
-                        <span className="font-medium">{challenge.progress}%</span>
+                    <div className="glass-card rounded-lg border border-white/5 bg-white/5 p-2.5">
+                      <div className="flex items-center justify-between gap-1.5 mb-1">
+                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Progress</span>
+                        <span className="text-xs font-bold text-foreground">{challenge.progress}%</span>
                       </div>
-                      <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                      <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
                         <div
                           className="h-full bg-gradient-to-r from-[#2bbcff] to-[#a855f7] rounded-full transition-all duration-500"
                           style={{ width: `${challenge.progress}%` }}
                         />
                       </div>
                     </div>
-                    <div className="flex items-center gap-2 text-xs">
-                      <Clock className="w-3 h-3 text-[#2bbcff]" />
-                      <span className="text-muted-foreground">{challenge.daysRemaining} days remaining</span>
+                    <div className="flex items-center gap-2 text-[10px] text-muted-foreground uppercase tracking-wider">
+                      <Clock className="w-3 h-3 text-[#2bbcff]" aria-hidden="true" />
+                      {challenge.daysRemaining} days remaining
                     </div>
                   </div>
 
-                  <div className="bg-white/5 rounded-lg p-3 mb-4 border border-white/5">
-                    <p className="text-[10px] font-bold mb-1 text-[#2bbcff] uppercase tracking-wider">
-                      Today's XP Quest:
-                    </p>
+                  <div className="glass-card rounded-lg border border-[#2bbcff]/10 bg-[#2bbcff]/5 p-3 mb-4">
+                    <div className="text-[10px] font-bold text-[#2bbcff] uppercase tracking-wider mb-1">Today&apos;s task</div>
                     <p className="text-xs text-muted-foreground leading-relaxed">{challenge.todayTask}</p>
-                    <div className="mt-2 flex items-center gap-1 text-[#2bbcff] text-[10px] font-bold">
-                      <Flame className="w-3 h-3" />
-                      +50 XP ON COMPLETION
-                    </div>
                   </div>
 
-                  <div className="flex gap-2">
-                    <Button
-                      size="sm"
-                      asChild
-                      className="flex-1 bg-gradient-to-r from-[#2bbcff] to-[#a855f7] hover:opacity-90 text-white border-0 text-xs h-9 font-bold tracking-tight"
-                    >
-                      <Link href="/challenges">Open Daily Quest</Link>
-                    </Button>
-                  </div>
+                  <Button size="sm" asChild className="w-full bg-gradient-to-r from-[#2bbcff] to-[#a855f7] hover:opacity-90 text-white border-0 text-[10px] h-8 font-bold uppercase tracking-wider">
+                    <Link href={`/challenges/${challenge.id}`}>View Challenge</Link>
+                  </Button>
                 </div>
               ))}
             </div>
           </div>
 
           {/* Leaderboard Preview */}
-          <div className="mb-8 md:mb-10">
-            <div className="flex items-center justify-between mb-3 md:mb-4">
-              <h2 className="text-lg md:text-xl font-bold">Leaderboard Preview</h2>
-              <Button
-                size="sm"
-                variant="outline"
-                className="text-[10px] md:text-xs h-7 md:h-8 bg-transparent border-border/50 hover:bg-muted/50 px-2 md:px-3"
-                asChild
-              >
+          <div className="glass-card rounded-2xl border border-[#2bbcff]/20 bg-gradient-to-br from-card/80 to-background backdrop-blur-md p-6 md:p-8 mb-8 shadow-xl relative overflow-hidden">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-[#a855f7]/10 flex items-center justify-center flex-shrink-0" aria-hidden="true">
+                  <Award className="w-5 h-5 text-[#a855f7]" />
+                </div>
+                <div>
+                  <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Leaderboard • Preview</div>
+                  <div className="text-base font-bold text-foreground">Your rank and nearby peers</div>
+                </div>
+              </div>
+              <Button size="sm" variant="ghost" className="text-[10px] h-8 font-bold uppercase tracking-wider text-[#a855f7] hover:bg-[#a855f7]/10 px-3" asChild>
                 <Link href="/leaderboard">
-                  <span className="hidden sm:inline">View Full Leaderboard</span>
-                  <span className="sm:hidden">Full</span>
-                  <ChevronRight className="ml-1 h-3 w-3" />
+                  View Full
+                  <ChevronRight className="ml-0.5 h-3 w-3" aria-hidden="true" />
                 </Link>
               </Button>
             </div>
 
-            <div className="glass-card rounded-xl border border-[#2bbcff]/20 bg-card/50 backdrop-blur-sm overflow-hidden">
+            <div className="rounded-xl border border-white/5 bg-card/30 backdrop-blur-sm overflow-hidden">
               {leaderboardPreview.map((user) => (
                 <div
                   key={user.rank}
-                  className={`p-4 hover:bg-muted/30 transition-colors ${
+                  className={`p-4 flex items-center gap-4 transition-colors ${
                     user.isCurrentUser
-                      ? "bg-gradient-to-r from-[#2bbcff]/10 to-[#a855f7]/10 border-y border-[#2bbcff]/30"
-                      : "border-b border-border/50"
+                      ? "bg-gradient-to-r from-[#2bbcff]/10 to-[#a855f7]/10 border-y border-[#2bbcff]/20"
+                      : "border-b border-white/5 last:border-b-0"
                   }`}
                 >
-                  <div className="flex items-center gap-4">
-                    <div className="text-lg font-bold text-muted-foreground w-8">#{user.rank}</div>
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#2bbcff]/20 to-[#a855f7]/20 flex items-center justify-center">
-                      <span className="text-sm font-bold">{user.name.charAt(0)}</span>
-                    </div>
-                    <div className="flex-1">
-                      <div className="text-sm font-medium">{user.name}</div>
-                      {user.isCurrentUser && (
-                        <div className="text-xs text-muted-foreground">Keep pushing to the top!</div>
-                      )}
-                    </div>
-                    <div className="text-right">
-                      <div className="text-lg font-bold">{user.score}</div>
-                    </div>
+                  <div className="text-lg font-bold text-muted-foreground w-8 tabular-nums">#{user.rank}</div>
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#2bbcff]/20 to-[#a855f7]/20 flex items-center justify-center flex-shrink-0" aria-hidden="true">
+                    <span className="text-sm font-bold">{user.name.charAt(0)}</span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-bold text-foreground">{user.name}</div>
+                    {user.isCurrentUser && (
+                      <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Keep pushing to the top!</div>
+                    )}
+                  </div>
+                  <div className="text-right">
+                    <div className="text-lg font-bold text-foreground tabular-nums">{user.score}</div>
                   </div>
                 </div>
               ))}
@@ -293,53 +306,58 @@ export default function DashboardPage() {
           </div>
 
           {/* Improvement Insight */}
-          <div className="glass-card rounded-xl border border-[#a855f7]/20 bg-gradient-to-r from-[#a855f7]/5 to-[#2bbcff]/5 backdrop-blur-sm p-5 mb-6">
-            <div className="flex items-start gap-3">
-              <div className="w-8 h-8 rounded-lg bg-[#a855f7]/10 flex items-center justify-center flex-shrink-0">
-                <FileText className="w-4 h-4 text-[#a855f7]" />
+          <div className="glass-card rounded-2xl border border-[#a855f7]/20 bg-gradient-to-r from-[#a855f7]/5 to-[#2bbcff]/5 backdrop-blur-md p-5 mb-8 shadow-xl">
+            <div className="flex items-start gap-4">
+              <div className="w-10 h-10 rounded-xl bg-[#a855f7]/10 flex items-center justify-center flex-shrink-0" aria-hidden="true">
+                <Sparkles className="w-5 h-5 text-[#a855f7]" />
               </div>
               <div>
-                <h3 className="text-sm font-bold mb-1">Today's Insight</h3>
-                <p className="text-xs text-muted-foreground leading-relaxed">
-                  You're on track to reach the top 10% this week. Complete 2 more challenges to boost your score by 150+
-                  points.
+                <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] mb-0.5">Today&apos;s Insight</div>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  You&apos;re on track to reach the top 10% this week. Complete 2 more challenges to boost your score by 150+ points.
                 </p>
               </div>
             </div>
           </div>
 
           {/* Recommended Challenges */}
-          <div>
-            <div className="flex items-center justify-between mb-3 md:mb-4">
-              <h2 className="text-lg md:text-xl font-bold">Recommended Challenges</h2>
-              <Button
-                size="sm"
-                variant="outline"
-                className="text-[10px] md:text-xs h-7 md:h-8 bg-transparent border-border/50 hover:bg-muted/50 px-2 md:px-3"
-                asChild
-              >
+          <div className="glass-card rounded-2xl border border-[#a855f7]/20 bg-gradient-to-br from-card/80 to-background backdrop-blur-md p-6 md:p-8 shadow-xl relative overflow-hidden">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-[#a855f7]/10 flex items-center justify-center flex-shrink-0" aria-hidden="true">
+                  <BookOpen className="w-5 h-5 text-[#a855f7]" />
+                </div>
+                <div>
+                  <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Recommended Challenges • For you</div>
+                  <div className="text-base font-bold text-foreground">Pick your next commitment</div>
+                </div>
+              </div>
+              <Button size="sm" variant="ghost" className="text-[10px] h-8 font-bold uppercase tracking-wider text-[#a855f7] hover:bg-[#a855f7]/10 px-3" asChild>
                 <Link href="/challenges">
-                  <span className="hidden sm:inline">Browse All</span>
-                  <span className="sm:hidden">All</span>
-                  <ChevronRight className="ml-1 h-3 w-3" />
+                  Browse All
+                  <ChevronRight className="ml-0.5 h-3 w-3" aria-hidden="true" />
                 </Link>
               </Button>
             </div>
 
-            <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
+            <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-3">
               {recommendedChallenges.map((challenge) => (
-                <div
-                  key={challenge.id}
-                  className="glass-card rounded-xl border border-[#a855f7]/20 bg-card/50 backdrop-blur-sm p-4 hover:border-[#a855f7]/40 transition-all cursor-pointer group"
-                >
-                  <h3 className="text-sm md:text-base font-bold mb-3 group-hover:text-[#a855f7] transition-colors">
-                    {challenge.name}
-                  </h3>
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-muted-foreground">{challenge.difficulty}</span>
-                    <span className="text-[#a855f7]">{challenge.participants}</span>
+                <Link key={challenge.id} href="/challenges" className="glass-card rounded-xl border border-white/5 bg-card/30 backdrop-blur-sm p-4 hover:border-[#a855f7]/30 transition-all group block">
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-[#a855f7]/10 flex items-center justify-center flex-shrink-0 group-hover:bg-[#a855f7]/20 transition-colors" aria-hidden="true">
+                      <Target className="w-4 h-4 text-[#a855f7]" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-sm font-bold text-foreground mb-1.5 group-hover:text-[#a855f7] transition-colors truncate">
+                        {challenge.name}
+                      </h3>
+                      <div className="flex items-center justify-between gap-2 text-[10px]">
+                        <span className="text-muted-foreground uppercase tracking-wider">{challenge.difficulty}</span>
+                        <span className="font-bold text-[#a855f7] flex-shrink-0">{challenge.participants}</span>
+                      </div>
+                    </div>
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
           </div>
