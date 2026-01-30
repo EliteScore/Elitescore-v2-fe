@@ -4,9 +4,21 @@ import { useState } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { 
-  ArrowLeft, Clock, Trophy, Target, Check, Circle, Lock, Upload, 
-  Calendar, ChevronRight, Star, AlertCircle 
+import {
+  ArrowLeft,
+  Clock,
+  Trophy,
+  Target,
+  Check,
+  Circle,
+  Lock,
+  Upload,
+  Calendar,
+  Star,
+  AlertCircle,
+  ListTodo,
+  Map,
+  FileCheck,
 } from "lucide-react"
 import Link from "next/link"
 
@@ -182,37 +194,41 @@ export default function ChallengeDetailPage() {
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      {/* Header */}
-      <section className="border-b border-border/50 backdrop-blur-xl bg-background/80 sticky top-0 z-40">
-        <div className="container mx-auto px-4 py-3">
-          <div className="flex items-center gap-2 mb-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => router.back()}
-              className="h-7 w-7 p-0"
-            >
-              <ArrowLeft className="w-3.5 h-3.5" />
-            </Button>
-            <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
-              <Link href="/challenges" className="hover:text-foreground transition-colors">
-                Challenges
-              </Link>
-              <span>/</span>
-              <span className="text-foreground truncate">{challenge.name}</span>
-            </div>
-          </div>
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex-1 min-w-0">
-              <h1 className="text-lg font-black mb-1 truncate">{challenge.name}</h1>
-              <div className="flex items-center gap-2 flex-wrap">
-                <Badge variant="secondary" className="bg-[#2bbcff]/10 text-[#2bbcff] border-[#2bbcff]/30 text-[10px] px-1.5 py-0">
-                  Day {challenge.currentDay}/{challenge.duration}
-                </Badge>
-                <Badge variant="secondary" className="bg-[#a855f7]/10 text-[#a855f7] border-[#a855f7]/30 text-[10px] px-1.5 py-0">
-                  <Trophy className="w-2.5 h-2.5 mr-0.5" />
-                  {challenge.difficulty}/5
-                </Badge>
+      {/* Hero header - same style as home page */}
+      <section className="container mx-auto px-4 pt-6 md:pt-8 pb-4">
+        <div className="max-w-4xl mx-auto">
+          <div className="glass-card rounded-2xl border border-[#2bbcff]/20 bg-gradient-to-br from-card/80 to-background backdrop-blur-md p-6 shadow-xl relative overflow-hidden">
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-64 bg-gradient-to-r from-[#2bbcff]/20 to-[#a855f7]/20 blur-[100px] rounded-full -z-10" aria-hidden="true" />
+            <div className="flex items-start gap-3 mb-4">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => router.back()}
+                className="h-8 w-8 p-0 rounded-lg shrink-0"
+                aria-label="Back to challenges"
+              >
+                <ArrowLeft className="w-4 h-4" />
+              </Button>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 text-[10px] text-muted-foreground uppercase tracking-[0.2em] mb-1">
+                  <Link href="/challenges" className="hover:text-foreground transition-colors">
+                    Challenges
+                  </Link>
+                  <span>/</span>
+                  <span className="text-foreground truncate">{challenge.name}</span>
+                </div>
+                <h1 className="text-xl md:text-2xl font-black bg-gradient-to-r from-[#2bbcff] via-[#a855f7] to-[#2bbcff] bg-clip-text text-transparent truncate">
+                  {challenge.name}
+                </h1>
+                <div className="flex items-center gap-2 flex-wrap mt-2">
+                  <Badge variant="secondary" className="bg-[#2bbcff]/10 text-[#2bbcff] border-[#2bbcff]/30 text-[10px] font-bold uppercase tracking-wider">
+                    Day {challenge.currentDay}/{challenge.duration}
+                  </Badge>
+                  <Badge variant="secondary" className="bg-[#a855f7]/10 text-[#a855f7] border-[#a855f7]/30 text-[10px] font-bold uppercase tracking-wider">
+                    <Trophy className="w-2.5 h-2.5 mr-0.5" aria-hidden="true" />
+                    Difficulty {challenge.difficulty}/5
+                  </Badge>
+                </div>
               </div>
             </div>
           </div>
@@ -220,167 +236,195 @@ export default function ChallengeDetailPage() {
       </section>
 
       {/* Main Content */}
-      <section className="container mx-auto px-4 py-4">
-        <div className="max-w-4xl mx-auto space-y-3">
-          {/* Today's Task */}
-          <div className="glass-card rounded-xl border border-[#2bbcff]/30 bg-gradient-to-br from-[#2bbcff]/10 to-card/50 backdrop-blur-sm p-4">
-            <div className="flex items-start justify-between mb-2">
-              <div className="flex-1">
-                <div className="flex items-center gap-1.5 mb-1">
-                  <div className="w-5 h-5 rounded bg-[#2bbcff]/20 flex items-center justify-center">
-                    <Star className="w-3 h-3 text-[#2bbcff]" />
-                  </div>
-                  <h2 className="text-xs font-bold text-[#2bbcff]">TODAY'S TASK • DAY {challenge.todayTask.day}</h2>
-                </div>
-                <h3 className="text-base font-bold mb-1">{challenge.todayTask.title}</h3>
-                <p className="text-xs text-muted-foreground mb-2">{challenge.todayTask.description}</p>
+      <section className="container mx-auto px-4 py-6 md:py-8">
+        <div className="max-w-4xl mx-auto space-y-8">
+          {/* Today's Task - home UI style, no XP */}
+          <div className="glass-card rounded-2xl border border-[#2bbcff]/20 bg-gradient-to-br from-card/80 to-background backdrop-blur-md p-6 shadow-xl relative overflow-hidden">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-xl bg-[#2bbcff]/10 flex items-center justify-center flex-shrink-0" aria-hidden="true">
+                <Star className="w-5 h-5 text-[#2bbcff]" />
               </div>
-              <div className="flex flex-col items-end gap-1">
-                <span className="text-lg font-black text-[#2bbcff]">+{challenge.todayTask.xp}</span>
-                <span className="text-[8px] text-muted-foreground">XP</span>
+              <div>
+                <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">
+                  Today&apos;s task • Day {challenge.todayTask.day}
+                </div>
+                <h2 className="text-base font-bold text-foreground leading-tight">{challenge.todayTask.title}</h2>
               </div>
             </div>
-            
-            <div className="space-y-1 mb-3">
-              {challenge.todayTask.requirements.map((req, i) => (
-                <div key={i} className="flex items-start gap-1.5">
-                  <Circle className="w-2.5 h-2.5 text-[#2bbcff] mt-0.5 flex-shrink-0" />
-                  <span className="text-[10px] text-muted-foreground">{req}</span>
-                </div>
-              ))}
+            <p className="text-sm text-muted-foreground leading-relaxed mb-4">
+              {challenge.todayTask.description}
+            </p>
+            <div className="glass-card rounded-xl border border-white/5 bg-card/30 backdrop-blur-sm p-4 mb-4">
+              <div className="text-[10px] font-bold text-[#2bbcff] uppercase tracking-wider mb-2">Requirements</div>
+              <ul className="space-y-2">
+                {challenge.todayTask.requirements.map((req, i) => (
+                  <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground leading-relaxed">
+                    <Circle className="w-3 h-3 text-[#2bbcff] mt-0.5 flex-shrink-0" aria-hidden="true" />
+                    <span>{req}</span>
+                  </li>
+                ))}
+              </ul>
             </div>
-
             <Button
               size="sm"
               onClick={() => setShowUploadProof(true)}
-              className="w-full bg-gradient-to-r from-[#2bbcff] to-[#a855f7] hover:opacity-90 text-white border-0 text-xs h-8"
+              className="w-full bg-gradient-to-r from-[#2bbcff] to-[#a855f7] hover:opacity-90 text-white border-0 text-[10px] h-9 font-bold uppercase tracking-wider"
             >
-              <Upload className="w-3 h-3 mr-1.5" />
-              Submit Proof for Today
+              <Upload className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" />
+              Submit proof for today
             </Button>
           </div>
 
-          {/* Progress Overview */}
-          <div className="glass-card rounded-xl border border-white/10 bg-card/50 backdrop-blur-sm p-3">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-xs font-bold">Progress</h3>
-              <span className="text-xs font-bold text-[#2bbcff]">{challenge.progress}%</span>
-            </div>
-            <div className="h-1.5 bg-muted/30 rounded-full overflow-hidden mb-2">
-              <div
-                className="h-full bg-gradient-to-r from-[#2bbcff] to-[#a855f7] rounded-full transition-all"
-                style={{ width: `${challenge.progress}%` }}
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-2 text-[10px]">
-              <div>
-                <span className="text-muted-foreground">Days Left:</span>{" "}
-                <span className="font-bold">{challenge.daysRemaining}</span>
+          {/* Progress Overview - home UI style */}
+          <div className="glass-card rounded-2xl border border-[#2bbcff]/20 bg-gradient-to-br from-card/80 to-background backdrop-blur-md p-6 shadow-xl">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-xl bg-[#2bbcff]/10 flex items-center justify-center flex-shrink-0" aria-hidden="true">
+                <Target className="w-5 h-5 text-[#2bbcff]" />
               </div>
               <div>
-                <span className="text-muted-foreground">Reward:</span>{" "}
-                <span className="font-bold text-[#a855f7]">+{challenge.reward} ES</span>
+                <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Progress • Overview</div>
+                <div className="text-base font-bold text-foreground">{challenge.progress}% complete</div>
               </div>
             </div>
-          </div>
-
-          {/* Roadmap */}
-          <div className="space-y-2">
-            <h3 className="text-sm font-bold px-1">Challenge Roadmap</h3>
-            {challenge.roadmap.map((week, index) => (
-              <div key={week.id} className="glass-card rounded-xl border border-white/10 bg-card/50 backdrop-blur-sm overflow-hidden">
+            <div className="glass-card rounded-xl border border-white/5 bg-card/30 p-3 mb-4">
+              <div className="flex items-center justify-between gap-2 mb-1.5">
+                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Progress</span>
+                <span className="text-sm font-bold text-[#2bbcff]">{challenge.progress}%</span>
+              </div>
+              <div className="h-2 bg-white/10 rounded-full overflow-hidden">
                 <div
-                  className={`p-3 ${
-                    week.status === "in_progress"
-                      ? "bg-[#2bbcff]/5 border-b border-[#2bbcff]/20"
-                      : week.status === "completed"
-                        ? "bg-green-500/5 border-b border-green-500/20"
-                        : "border-b border-white/5"
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div
-                        className={`w-6 h-6 rounded-lg flex items-center justify-center text-xs font-bold ${
-                          week.status === "in_progress"
-                            ? "bg-[#2bbcff]/20 text-[#2bbcff]"
-                            : week.status === "completed"
-                              ? "bg-green-500/20 text-green-500"
-                              : "bg-white/5 text-muted-foreground"
-                        }`}
-                      >
-                        {week.status === "completed" ? <Check className="w-3.5 h-3.5" /> : index + 1}
-                      </div>
-                      <div>
-                        <h4 className="text-xs font-bold">{week.title}</h4>
-                        <p className="text-[10px] text-muted-foreground">
-                          {week.tasks.filter((t) => t.completed).length}/{week.tasks.length} completed
-                        </p>
-                      </div>
-                    </div>
-                    {week.status === "locked" && <Lock className="w-3.5 h-3.5 text-muted-foreground" />}
-                  </div>
-                </div>
-
-                {week.status !== "locked" && (
-                  <div className="p-2 space-y-1">
-                    {week.tasks.map((task) => (
-                      <div
-                        key={task.id}
-                        className={`flex items-center gap-2 p-1.5 rounded-lg ${
-                          task.completed ? "bg-green-500/5" : "bg-white/5"
-                        }`}
-                      >
-                        <div
-                          className={`w-3.5 h-3.5 rounded flex items-center justify-center flex-shrink-0 ${
-                            task.completed
-                              ? "bg-green-500/20 border border-green-500/30"
-                              : "bg-white/5 border border-white/10"
-                          }`}
-                        >
-                          {task.completed && <Check className="w-2 h-2 text-green-500" />}
-                        </div>
-                        <span
-                          className={`text-[10px] flex-1 ${
-                            task.completed ? "line-through text-muted-foreground" : "text-foreground"
-                          }`}
-                        >
-                          Day {task.day}: {task.title}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                  className="h-full bg-gradient-to-r from-[#2bbcff] to-[#a855f7] rounded-full transition-all duration-500"
+                  style={{ width: `${challenge.progress}%` }}
+                />
               </div>
-            ))}
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="glass-card rounded-xl border border-white/5 bg-card/30 p-3">
+                <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-0.5">Days left</div>
+                <div className="text-lg font-bold text-foreground">{challenge.daysRemaining}</div>
+              </div>
+              <div className="glass-card rounded-xl border border-[#a855f7]/20 bg-[#a855f7]/5 p-3">
+                <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-0.5">Reward</div>
+                <div className="text-lg font-bold text-[#a855f7]">+{challenge.reward} EliteScore</div>
+              </div>
+            </div>
           </div>
 
-          {/* Requirements */}
-          <div className="glass-card rounded-xl border border-white/10 bg-card/50 backdrop-blur-sm p-3">
-            <h3 className="text-xs font-bold mb-2">Challenge Requirements</h3>
-            <div className="space-y-1.5">
-              {challenge.requirements.map((req, i) => (
-                <div key={i} className="flex items-start gap-1.5">
-                  <AlertCircle className="w-3 h-3 text-[#2bbcff] mt-0.5 flex-shrink-0" />
-                  <span className="text-[10px] text-muted-foreground">{req}</span>
+          {/* Roadmap - home UI style */}
+          <div className="glass-card rounded-2xl border border-[#2bbcff]/20 bg-gradient-to-br from-card/80 to-background backdrop-blur-md p-6 shadow-xl relative overflow-hidden">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 rounded-xl bg-[#2bbcff]/10 flex items-center justify-center flex-shrink-0" aria-hidden="true">
+                <Map className="w-5 h-5 text-[#2bbcff]" />
+              </div>
+              <div>
+                <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Challenge roadmap</div>
+                <div className="text-base font-bold text-foreground">Week-by-week plan</div>
+              </div>
+            </div>
+            <div className="space-y-3">
+              {challenge.roadmap.map((week, index) => (
+                <div key={week.id} className="glass-card rounded-xl border border-white/5 bg-card/30 backdrop-blur-sm overflow-hidden">
+                  <div
+                    className={`p-4 ${
+                      week.status === "in_progress"
+                        ? "bg-[#2bbcff]/5 border-b border-[#2bbcff]/20"
+                        : week.status === "completed"
+                          ? "bg-green-500/5 border-b border-green-500/20"
+                          : "border-b border-white/5"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div
+                          className={`w-8 h-8 rounded-xl flex items-center justify-center text-sm font-bold ${
+                            week.status === "in_progress"
+                              ? "bg-[#2bbcff]/20 text-[#2bbcff]"
+                              : week.status === "completed"
+                                ? "bg-green-500/20 text-green-500"
+                                : "bg-white/5 text-muted-foreground"
+                          }`}
+                          aria-hidden="true"
+                        >
+                          {week.status === "completed" ? <Check className="w-4 h-4" /> : index + 1}
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-bold text-foreground">{week.title}</h4>
+                          <p className="text-[10px] text-muted-foreground uppercase tracking-wider">
+                            {week.tasks.filter((t) => t.completed).length}/{week.tasks.length} tasks completed
+                          </p>
+                        </div>
+                      </div>
+                      {week.status === "locked" && <Lock className="w-4 h-4 text-muted-foreground" aria-hidden="true" />}
+                    </div>
+                  </div>
+                  {week.status !== "locked" && (
+                    <div className="p-3 space-y-2">
+                      {week.tasks.map((task) => (
+                        <div
+                          key={task.id}
+                          className={`flex items-center gap-3 p-2.5 rounded-lg ${
+                            task.completed ? "bg-green-500/5 border border-green-500/10" : "bg-white/5 border border-white/5"
+                          }`}
+                        >
+                          <div
+                            className={`w-5 h-5 rounded flex items-center justify-center flex-shrink-0 ${
+                              task.completed ? "bg-green-500/20 border border-green-500/30" : "bg-white/5 border border-white/10"
+                            }`}
+                            aria-hidden="true"
+                          >
+                            {task.completed && <Check className="w-3 h-3 text-green-500" />}
+                          </div>
+                          <span
+                            className={`text-sm flex-1 leading-snug ${
+                              task.completed ? "line-through text-muted-foreground" : "text-foreground font-medium"
+                            }`}
+                          >
+                            Day {task.day}: {task.title}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
+          </div>
+
+          {/* Requirements - home UI style */}
+          <div className="glass-card rounded-2xl border border-[#2bbcff]/20 bg-gradient-to-br from-card/80 to-background backdrop-blur-md p-6 shadow-xl">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-xl bg-[#2bbcff]/10 flex items-center justify-center flex-shrink-0" aria-hidden="true">
+                <FileCheck className="w-5 h-5 text-[#2bbcff]" />
+              </div>
+              <div>
+                <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Challenge requirements</div>
+                <div className="text-base font-bold text-foreground">What you need to follow</div>
+              </div>
+            </div>
+            <ul className="space-y-3">
+              {challenge.requirements.map((req, i) => (
+                <li key={i} className="flex items-start gap-3 p-3 rounded-xl bg-white/5 border border-white/5">
+                  <AlertCircle className="w-4 h-4 text-[#2bbcff] mt-0.5 flex-shrink-0" aria-hidden="true" />
+                  <span className="text-sm text-muted-foreground leading-relaxed">{req}</span>
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
       </section>
 
-      {/* Upload Proof Modal */}
+      {/* Upload Proof Modal - home UI style */}
       {showUploadProof && (
         <div
           className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
           onClick={() => setShowUploadProof(false)}
         >
           <div
-            className="glass-card rounded-t-2xl sm:rounded-2xl border-0 sm:border border-[#2bbcff]/30 bg-card/95 backdrop-blur-xl p-4 max-w-md w-full"
+            className="glass-card rounded-t-2xl sm:rounded-2xl border-0 sm:border border-[#2bbcff]/20 bg-card/95 backdrop-blur-xl p-6 max-w-md w-full shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 className="text-base font-bold mb-3">Submit Proof</h3>
+            <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] mb-0.5">Submit proof</div>
+            <h3 className="text-lg font-bold text-foreground mb-4">Upload your completion proof</h3>
             <div className="space-y-3">
               <div>
                 <label className="text-[10px] text-muted-foreground mb-1 block">Upload Screenshot/Photo</label>
@@ -397,17 +441,15 @@ export default function ChallengeDetailPage() {
                   rows={3}
                 />
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-3 pt-2">
                 <Button
                   onClick={() => setShowUploadProof(false)}
                   variant="outline"
-                  className="flex-1 text-xs h-8"
+                  className="flex-1 text-[10px] h-9 font-bold uppercase tracking-wider bg-transparent border-white/10"
                 >
                   Cancel
                 </Button>
-                <Button
-                  className="flex-1 bg-gradient-to-r from-[#2bbcff] to-[#a855f7] text-white text-xs h-8"
-                >
+                <Button className="flex-1 bg-gradient-to-r from-[#2bbcff] to-[#a855f7] hover:opacity-90 text-white text-[10px] h-9 font-bold uppercase tracking-wider border-0">
                   Submit
                 </Button>
               </div>

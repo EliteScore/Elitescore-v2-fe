@@ -1,6 +1,6 @@
 "use client"
 
-import { Check, Lock, ChevronRight } from "lucide-react"
+import { Check, Lock, ChevronRight, MapPin } from "lucide-react"
 
 interface TimelinePhase {
   id: number
@@ -14,19 +14,38 @@ interface PathTimelineProps {
 }
 
 export function PathTimeline({ phases }: PathTimelineProps) {
+  const handlePhaseKeyDown = (e: React.KeyboardEvent, _phase: TimelinePhase) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault()
+      // Phase click could navigate or expand in future
+    }
+  }
+
   return (
-    <div className="glass-card rounded-2xl border border-[#2bbcff]/20 bg-card/50 backdrop-blur-sm p-6">
-      <h3 className="text-lg font-bold mb-6">Path Timeline</h3>
+    <div className="glass-card rounded-2xl border border-[#2bbcff]/20 bg-gradient-to-br from-card/80 to-background backdrop-blur-md p-6 shadow-xl relative overflow-hidden">
+      <div className="flex items-center gap-3 mb-6">
+        <div className="w-10 h-10 rounded-xl bg-[#2bbcff]/10 flex items-center justify-center flex-shrink-0" aria-hidden="true">
+          <MapPin className="w-5 h-5 text-[#2bbcff]" />
+        </div>
+        <div>
+          <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Path timeline</div>
+          <div className="text-base font-bold text-foreground">Phases overview</div>
+        </div>
+      </div>
       <div className="space-y-4">
         {phases.map((phase, index) => (
           <div key={phase.id}>
             <div
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => handlePhaseKeyDown(e, phase)}
+              aria-label={`Phase ${phase.id}: ${phase.name}, ${phase.milestones} milestone(s), ${phase.status}`}
               className={`flex items-center gap-4 p-4 rounded-xl border transition-all cursor-pointer hover:bg-white/5 ${
                 phase.status === "active"
                   ? "border-[#2bbcff]/30 bg-[#2bbcff]/5"
                   : phase.status === "completed"
                     ? "border-green-500/20 bg-green-500/5"
-                    : "border-white/5 bg-card/20 opacity-60"
+                    : "border-white/5 bg-card/30 opacity-60"
               }`}
             >
               {/* Phase number/icon */}

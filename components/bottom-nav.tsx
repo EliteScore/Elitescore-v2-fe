@@ -30,12 +30,14 @@ export function BottomNav() {
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  "flex flex-col items-center justify-center flex-1 gap-1 transition-all duration-200",
-                  isActive ? "text-[#2bbcff]" : "text-muted-foreground hover:text-foreground",
+                  "flex flex-col items-center justify-center flex-1 gap-1 transition-all duration-200 py-2",
+                  isActive ? "text-[#2bbcff]" : "text-foreground/70 hover:text-foreground",
                 )}
+                aria-label={item.name}
               >
                 <item.icon
                   className={cn("w-5 h-5 transition-transform duration-200", isActive ? "scale-110" : "scale-100")}
+                  aria-hidden="true"
                 />
                 <span className="text-[10px] font-bold uppercase tracking-widest">{item.name}</span>
                 {isActive && (

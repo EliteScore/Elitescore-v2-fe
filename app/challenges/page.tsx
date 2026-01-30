@@ -24,6 +24,9 @@ import {
   Check,
   Send,
   UserPlus,
+  ListTodo,
+  BookOpen,
+  Award,
 } from "lucide-react"
 import { BottomNav } from "@/components/bottom-nav"
 import Link from "next/link"
@@ -35,7 +38,31 @@ interface Supporter {
   status: "pending" | "accepted" | "declined"
 }
 
-const activeChallenges = [
+type ActiveChallenge = {
+  id: number
+  name: string
+  difficulty: number
+  currentDay: number
+  totalDays: number
+  daysRemaining: number
+  todayTask: string
+  progress: number
+  reward: number
+  track: string
+}
+
+type HistoryChallenge = {
+  id: number
+  name: string
+  difficulty: number
+  duration: number
+  status: "completed" | "failed"
+  completedDate: string
+  eliteScoreImpact: string
+  streakBonus: string
+}
+
+const INITIAL_ACTIVE_CHALLENGES: ActiveChallenge[] = [
   {
     id: 1,
     name: "30-Day Python Mastery",
@@ -125,7 +152,7 @@ const challengeLibrary = [
   },
 ]
 
-const completedChallenges = [
+const INITIAL_HISTORY_CHALLENGES: HistoryChallenge[] = [
   {
     id: 101,
     name: "14-Day JavaScript Sprint",
@@ -149,11 +176,15 @@ const completedChallenges = [
 ]
 
 export default function ChallengesPage() {
+  const [activeTab, setActiveTab] = useState<string>("active")
   const [selectedChallenge, setSelectedChallenge] = useState<number | null>(null)
   const [showLockInModal, setShowLockInModal] = useState(false)
   const [showProofModal, setShowProofModal] = useState(false)
   const [showQuitConfirm, setShowQuitConfirm] = useState<number | null>(null)
-  
+
+  const [activeChallenges, setActiveChallenges] = useState<ActiveChallenge[]>(INITIAL_ACTIVE_CHALLENGES)
+  const [historyChallenges, setHistoryChallenges] = useState<HistoryChallenge[]>(INITIAL_HISTORY_CHALLENGES)
+
   // Supporter lock-in flow state
   const [lockInStep, setLockInStep] = useState<"invite" | "confirm" | "success">("invite")
   const [supporters, setSupporters] = useState<Supporter[]>([])
@@ -166,6 +197,17 @@ export default function ChallengesPage() {
   const canJoinChallenge = activeCount < MAX_ACTIVE_CHALLENGES
 
   const selectedChallengeData = challengeLibrary.find((c) => c.id === selectedChallenge)
+  const isAlreadyEnrolled =
+    selectedChallenge !== null && activeChallenges.some((c) => c.id === selectedChallenge)
+
+  // Daily tasks / upcoming assignments from active challenges (for "Today" section)
+  const dailyTasksFromChallenges = activeChallenges.map((c) => ({
+    id: c.id,
+    challengeName: c.name,
+    todayTask: c.todayTask,
+    daysRemaining: c.daysRemaining,
+    progress: c.progress,
+  }))
 
   const validateEmail = (email: string) => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
@@ -218,8 +260,24 @@ export default function ChallengesPage() {
   }
 
   const confirmQuitChallenge = () => {
-    // In a real app, this would remove the challenge from active challenges
-    console.log("Quitting challenge:", showQuitConfirm)
+    if (showQuitConfirm === null) return
+    const quitChallenge = activeChallenges.find((c) => c.id === showQuitConfirm)
+    if (quitChallenge) {
+      setActiveChallenges((prev) => prev.filter((c) => c.id !== showQuitConfirm))
+      setHistoryChallenges((prev) => [
+        {
+          id: Date.now(),
+          name: quitChallenge.name,
+          difficulty: quitChallenge.difficulty,
+          duration: quitChallenge.totalDays,
+          status: "failed",
+          completedDate: new Date().toISOString().slice(0, 10),
+          eliteScoreImpact: "-35",
+          streakBonus: "0",
+        },
+        ...prev,
+      ])
+    }
     setShowQuitConfirm(null)
   }
 
@@ -233,8 +291,24 @@ export default function ChallengesPage() {
   }
 
   const handleConfirmLockIn = () => {
+    if (!selectedChallengeData) return
+    const alreadyEnrolled = activeChallenges.some((c) => c.id === selectedChallengeData.id)
+    if (!alreadyEnrolled) {
+      const newActive: ActiveChallenge = {
+        id: selectedChallengeData.id,
+        name: selectedChallengeData.name,
+        difficulty: selectedChallengeData.difficulty,
+        currentDay: 1,
+        totalDays: selectedChallengeData.duration,
+        daysRemaining: selectedChallengeData.duration - 1,
+        todayTask: `Start your first day — ${selectedChallengeData.description.slice(0, 60)}...`,
+        progress: 0,
+        reward: selectedChallengeData.reward,
+        track: selectedChallengeData.track,
+      }
+      setActiveChallenges((prev) => [...prev, newActive])
+    }
     setLockInStep("success")
-    // Auto close after showing success
     setTimeout(() => {
       setShowLockInModal(false)
       setSelectedChallenge(null)
@@ -253,141 +327,182 @@ export default function ChallengesPage() {
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      {/* Hero Section */}
-      <section className="relative overflow-hidden pt-8 md:pt-12 pb-6 md:pb-8">
-        <div className="absolute inset-0 bg-gradient-to-br from-[#2bbcff]/5 via-background to-[#a855f7]/5" />
-        <div className="relative z-10 container mx-auto px-4">
-          <div className="max-w-3xl mx-auto text-center space-y-2 md:space-y-3">
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-balance">
-              Your{" "}
-              <span className="bg-gradient-to-r from-[#2bbcff] to-[#a855f7] bg-clip-text text-transparent">
-                Challenge Arena
-              </span>
-            </h1>
-            <p className="text-xs md:text-sm text-muted-foreground px-4">
-              Lock in. Submit proof. Dominate leaderboards. Every challenge brings you closer to the top.
-            </p>
+      {/* Hero - same style as home page */}
+      <section className="container mx-auto px-4 pt-6 md:pt-8 pb-4">
+        <div className="max-w-6xl mx-auto">
+          <div className="glass-card rounded-2xl border border-[#2bbcff]/20 bg-gradient-to-br from-card/80 to-background backdrop-blur-md p-6 md:p-8 shadow-2xl relative overflow-hidden">
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-64 bg-gradient-to-r from-[#2bbcff]/20 to-[#a855f7]/20 blur-[100px] rounded-full -z-10" aria-hidden="true" />
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-xl bg-[#2bbcff]/10 flex items-center justify-center flex-shrink-0" aria-hidden="true">
+                  <Target className="w-6 h-6 text-[#2bbcff]" />
+                </div>
+                <div>
+                  <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Challenges • Arena</div>
+                  <h1 className="text-xl md:text-2xl font-black bg-gradient-to-r from-[#2bbcff] via-[#a855f7] to-[#2bbcff] bg-clip-text text-transparent">
+                    Your commitments
+                  </h1>
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground max-w-md sm:text-right">
+                Lock in. Submit proof. Every challenge brings you closer to the top.
+              </p>
+            </div>
           </div>
         </div>
       </section>
 
       {/* Main Content */}
       <section className="container mx-auto px-4 pb-12 md:pb-16">
-        <Tabs defaultValue="active" className="max-w-6xl mx-auto">
-          <TabsList className="grid w-full max-w-sm md:max-w-md mx-auto grid-cols-3 mb-6 md:mb-8 bg-muted/50 h-9 md:h-10">
-            <TabsTrigger value="active" className="text-[10px] md:text-xs">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="max-w-6xl mx-auto">
+          <TabsList className="grid w-full max-w-sm md:max-w-md mx-auto grid-cols-3 mb-6 md:mb-8 glass-card rounded-xl border border-white/10 bg-card/40 backdrop-blur-sm h-10 md:h-11 p-1">
+            <TabsTrigger value="active" className="text-[10px] md:text-xs font-bold uppercase tracking-wider data-[state=active]:bg-[#2bbcff]/20 data-[state=active]:text-[#2bbcff] rounded-lg">
               Active
             </TabsTrigger>
-            <TabsTrigger value="library" className="text-[10px] md:text-xs">
+            <TabsTrigger value="library" className="text-[10px] md:text-xs font-bold uppercase tracking-wider data-[state=active]:bg-[#a855f7]/20 data-[state=active]:text-[#a855f7] rounded-lg">
               Library
             </TabsTrigger>
-            <TabsTrigger value="history" className="text-[10px] md:text-xs">
+            <TabsTrigger value="history" className="text-[10px] md:text-xs font-bold uppercase tracking-wider data-[state=active]:bg-white/10 data-[state=active]:text-foreground rounded-lg">
               History
             </TabsTrigger>
           </TabsList>
 
-          {/* Active Challenges Tab */}
-          <TabsContent value="active" className="space-y-4 md:space-y-6">
-            {activeChallenges.length > 0 ? (
-              <>
-                {/* Active Challenge Counter */}
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <h2 className="text-lg font-bold">Your Active Challenges</h2>
-                    <p className="text-xs text-muted-foreground">
-                      {activeCount}/{MAX_ACTIVE_CHALLENGES} slots used
-                    </p>
-                  </div>
-                  <Badge
-                    variant="secondary"
-                    className={`${
-                      activeCount >= MAX_ACTIVE_CHALLENGES
-                        ? "bg-orange-500/10 text-orange-500 border-orange-500/30"
-                        : "bg-[#2bbcff]/10 text-[#2bbcff] border-[#2bbcff]/30"
-                    }`}
-                  >
-                    {activeCount}/{MAX_ACTIVE_CHALLENGES} Active
-                  </Badge>
+          {/* Active Tab: Today's tasks first, then Enrolled challenges */}
+          <TabsContent value="active" className="space-y-8">
+            {/* 1. Today's tasks / Daily assignments */}
+            <div className="glass-card rounded-2xl border border-[#2bbcff]/20 bg-gradient-to-br from-card/80 to-background backdrop-blur-md p-6 md:p-8 shadow-xl relative overflow-hidden">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 rounded-xl bg-[#2bbcff]/10 flex items-center justify-center flex-shrink-0" aria-hidden="true">
+                  <ListTodo className="w-5 h-5 text-[#2bbcff]" />
                 </div>
+                <div>
+                  <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Today • Daily tasks</div>
+                  <div className="text-base font-bold text-foreground">
+                    {dailyTasksFromChallenges.length > 0
+                      ? `${dailyTasksFromChallenges.length} task${dailyTasksFromChallenges.length > 1 ? "s" : ""} from your challenges`
+                      : "No tasks today"}
+                  </div>
+                </div>
+              </div>
 
-                {/* Warning when at limit */}
-                {activeCount >= MAX_ACTIVE_CHALLENGES && (
-                  <div className="glass-card rounded-xl border border-orange-500/30 bg-orange-500/5 backdrop-blur-sm p-4">
-                    <div className="flex items-start gap-3">
-                      <AlertTriangle className="w-5 h-5 text-orange-500 flex-shrink-0 mt-0.5" />
-                      <div className="flex-1">
-                        <h3 className="text-sm font-bold text-orange-500 mb-1">Maximum Active Challenges</h3>
-                        <p className="text-xs text-muted-foreground">
-                          You've reached the maximum of {MAX_ACTIVE_CHALLENGES} active challenges. Complete or quit one to join another.
-                        </p>
+              {dailyTasksFromChallenges.length > 0 ? (
+                <div className="grid grid-cols-1 gap-3">
+                  {dailyTasksFromChallenges.map((task) => (
+                    <Link
+                      key={task.id}
+                      href={`/challenges/${task.id}`}
+                      className="glass-card rounded-xl border border-white/5 bg-card/30 backdrop-blur-sm p-4 hover:border-[#2bbcff]/30 transition-all flex items-start gap-3 group block"
+                    >
+                      <div className="w-8 h-8 rounded-lg bg-[#2bbcff]/10 flex items-center justify-center flex-shrink-0 group-hover:bg-[#2bbcff]/20 transition-colors" aria-hidden="true">
+                        <Check className="w-4 h-4 text-[#2bbcff]" />
                       </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-bold text-foreground mb-0.5 group-hover:text-[#2bbcff] transition-colors">{task.todayTask}</p>
+                        <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{task.challengeName}</p>
+                      </div>
+                      <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" aria-hidden="true" />
+                    </Link>
+                  ))}
+                </div>
+              ) : (
+                <div className="rounded-xl border border-dashed border-white/10 bg-white/5 p-6 text-center">
+                  <p className="text-sm text-muted-foreground">Enroll in a challenge to see daily tasks here.</p>
+                  <Button size="sm" variant="ghost" className="mt-3 text-[#2bbcff] hover:bg-[#2bbcff]/10" onClick={() => setActiveTab("library")}>
+                    Browse Library
+                    <ChevronRight className="ml-0.5 h-3 w-3" aria-hidden="true" />
+                  </Button>
+                </div>
+              )}
+            </div>
+
+            {/* 2. Enrolled challenges */}
+            <div className="glass-card rounded-2xl border border-[#2bbcff]/20 bg-gradient-to-br from-card/80 to-background backdrop-blur-md p-6 md:p-8 shadow-xl relative overflow-hidden">
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-[#2bbcff]/10 flex items-center justify-center flex-shrink-0" aria-hidden="true">
+                    <Trophy className="w-5 h-5 text-[#2bbcff]" />
+                  </div>
+                  <div>
+                    <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Enrolled • Your commitments</div>
+                    <div className="text-base font-bold text-foreground">{activeCount}/{MAX_ACTIVE_CHALLENGES} slots used</div>
+                  </div>
+                </div>
+                <Badge
+                  variant="secondary"
+                  className={activeCount >= MAX_ACTIVE_CHALLENGES ? "bg-orange-500/10 text-orange-500 border-orange-500/30" : "bg-[#2bbcff]/10 text-[#2bbcff] border-[#2bbcff]/30"}
+                  aria-label={`${activeCount} of ${MAX_ACTIVE_CHALLENGES} active challenges`}
+                >
+                  {activeCount}/{MAX_ACTIVE_CHALLENGES} Active
+                </Badge>
+              </div>
+
+              {activeCount >= MAX_ACTIVE_CHALLENGES && (
+                <div className="glass-card rounded-xl border border-orange-500/20 bg-orange-500/5 backdrop-blur-sm p-4 mb-6">
+                  <div className="flex items-start gap-3">
+                    <AlertTriangle className="w-5 h-5 text-orange-500 flex-shrink-0 mt-0.5" aria-hidden="true" />
+                    <div>
+                      <div className="text-[10px] font-bold text-orange-500 uppercase tracking-wider mb-0.5">Maximum active challenges</div>
+                      <p className="text-xs text-muted-foreground">
+                        Complete or quit one to join another.
+                      </p>
                     </div>
                   </div>
-                )}
+                </div>
+              )}
 
+              {activeChallenges.length > 0 ? (
                 <div className="grid md:grid-cols-2 gap-4">
                   {activeChallenges.map((challenge) => (
                     <div
                       key={challenge.id}
-                      className="glass-card rounded-xl border border-[#2bbcff]/30 bg-card/50 backdrop-blur-sm p-5 hover:border-[#2bbcff]/50 transition-all"
+                      className="glass-card rounded-xl border border-white/5 bg-card/30 backdrop-blur-sm p-4 hover:border-[#2bbcff]/30 transition-all"
                     >
                       <div className="flex items-start justify-between mb-3">
-                        <div className="space-y-1 flex-1">
-                          <div className="flex items-center gap-2">
-                            <h3 className="text-base font-bold">{challenge.name}</h3>
-                            <Badge
-                              variant="secondary"
-                              className="text-xs bg-[#2bbcff]/10 text-[#2bbcff] border-[#2bbcff]/30"
-                            >
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-0.5">
+                            <h3 className="text-sm font-bold text-foreground truncate">{challenge.name}</h3>
+                            <Badge variant="secondary" className="text-[10px] font-bold uppercase tracking-wider bg-[#2bbcff]/10 text-[#2bbcff] border-[#2bbcff]/30 flex-shrink-0">
                               Active
                             </Badge>
                           </div>
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                            <Target className="w-3 h-3" />
-                            <span>Difficulty: {challenge.difficulty}/5</span>
-                            <span>•</span>
-                            <Calendar className="w-3 h-3" />
-                            <span>
-                              Day {challenge.currentDay}/{challenge.totalDays}
-                            </span>
+                          <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground uppercase tracking-wider">
+                            <Target className="w-2.5 h-2.5" aria-hidden="true" />
+                            Difficulty {challenge.difficulty}/5
+                            <span className="mx-1">•</span>
+                            <Calendar className="w-2.5 h-2.5" aria-hidden="true" />
+                            Day {challenge.currentDay}/{challenge.totalDays}
                           </div>
                         </div>
-                        <Trophy className="w-5 h-5 text-[#a855f7]" />
+                        <Trophy className="w-5 h-5 text-[#a855f7] flex-shrink-0" aria-hidden="true" />
                       </div>
 
                       <div className="space-y-3 mb-4">
-                        <div>
-                          <div className="flex items-center justify-between text-xs mb-1.5">
-                            <span className="text-muted-foreground">Progress</span>
-                            <span className="font-medium">{challenge.progress}%</span>
+                        <div className="glass-card rounded-lg border border-white/5 bg-white/5 p-2.5">
+                          <div className="flex items-center justify-between gap-1.5 mb-1">
+                            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Progress</span>
+                            <span className="text-xs font-bold text-foreground">{challenge.progress}%</span>
                           </div>
-                          <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                          <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
                             <div
                               className="h-full bg-gradient-to-r from-[#2bbcff] to-[#a855f7] rounded-full transition-all duration-500"
                               style={{ width: `${challenge.progress}%` }}
                             />
                           </div>
                         </div>
-                        <div className="flex items-center gap-2 text-xs">
-                          <Clock className="w-3 h-3 text-[#2bbcff]" />
-                          <span className="text-muted-foreground">{challenge.daysRemaining} days remaining</span>
+                        <div className="flex items-center gap-2 text-[10px] text-muted-foreground uppercase tracking-wider">
+                          <Clock className="w-3 h-3 text-[#2bbcff]" aria-hidden="true" />
+                          {challenge.daysRemaining} days remaining
                         </div>
                       </div>
 
-                      <div className="bg-[#2bbcff]/5 rounded-lg p-3 mb-4 border border-[#2bbcff]/10">
-                        <p className="text-xs font-medium mb-1 text-[#2bbcff]">Today's Task:</p>
+                      <div className="glass-card rounded-lg border border-[#2bbcff]/10 bg-[#2bbcff]/5 p-3 mb-4">
+                        <div className="text-[10px] font-bold text-[#2bbcff] uppercase tracking-wider mb-1">Today&apos;s task</div>
                         <p className="text-xs text-muted-foreground leading-relaxed">{challenge.todayTask}</p>
                       </div>
 
                       <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          asChild
-                          className="flex-1 bg-gradient-to-r from-[#2bbcff] to-[#a855f7] hover:opacity-90 text-white border-0 text-xs h-8"
-                        >
-                          <Link href={`/challenges/${challenge.id}`}>
-                            View Details
-                          </Link>
+                        <Button size="sm" asChild className="flex-1 bg-gradient-to-r from-[#2bbcff] to-[#a855f7] hover:opacity-90 text-white border-0 text-[10px] h-8 font-bold uppercase tracking-wider">
+                          <Link href={`/challenges/${challenge.id}`}>View Details</Link>
                         </Button>
                         <Button
                           size="sm"
@@ -396,7 +511,7 @@ export default function ChallengesPage() {
                             e.stopPropagation()
                             handleQuitChallenge(challenge.id)
                           }}
-                          className="border-red-500/50 hover:bg-red-500/10 text-red-500 text-xs h-8 bg-transparent"
+                          className="border-red-500/50 hover:bg-red-500/10 text-red-500 text-[10px] h-8 font-bold uppercase tracking-wider bg-transparent"
                         >
                           Quit
                         </Button>
@@ -404,137 +519,145 @@ export default function ChallengesPage() {
                     </div>
                   ))}
                 </div>
-              </>
-            ) : (
-              <div className="glass-card rounded-xl border border-orange-500/30 bg-orange-500/5 backdrop-blur-sm p-8 text-center">
-                <AlertTriangle className="w-12 h-12 text-orange-500 mx-auto mb-3" />
-                <h3 className="text-lg font-bold mb-2">No Active Challenges</h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Your EliteScore will decay without active challenges. Lock in a challenge now.
-                </p>
-                <Button
-                  size="sm"
-                  className="bg-gradient-to-r from-[#2bbcff] to-[#a855f7] hover:opacity-90 text-white border-0 text-xs h-9"
-                >
-                  Browse Challenges
-                  <ArrowRight className="ml-2 h-3 w-3" />
-                </Button>
-              </div>
-            )}
+              ) : (
+                <div className="glass-card rounded-xl border border-orange-500/20 bg-orange-500/5 backdrop-blur-sm p-8 text-center">
+                  <AlertTriangle className="w-12 h-12 text-orange-500 mx-auto mb-3" aria-hidden="true" />
+                  <div className="text-[10px] font-bold text-orange-500 uppercase tracking-wider mb-1">No active challenges</div>
+                  <h3 className="text-lg font-bold mb-2">Lock in a challenge</h3>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Your credibility grows with finished work. Browse the library and commit.
+                  </p>
+                  <Button size="sm" className="bg-gradient-to-r from-[#2bbcff] to-[#a855f7] hover:opacity-90 text-white border-0 text-[10px] h-9 font-bold uppercase tracking-wider" onClick={() => setActiveTab("library")}>
+                    Browse Library
+                    <ArrowRight className="ml-2 h-3 w-3" aria-hidden="true" />
+                  </Button>
+                </div>
+              )}
+            </div>
           </TabsContent>
 
           {/* Challenge Library Tab */}
-          <TabsContent value="library" className="space-y-4 md:space-y-6">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 md:gap-0 mb-4">
-              <div>
-                <h2 className="text-lg md:text-xl font-bold">Challenge Library</h2>
-                <p className="text-[10px] md:text-xs text-muted-foreground">Browse and lock in your next challenge</p>
+          <TabsContent value="library" className="space-y-8">
+            <div className="glass-card rounded-2xl border border-[#a855f7]/20 bg-gradient-to-br from-card/80 to-background backdrop-blur-md p-6 md:p-8 shadow-xl relative overflow-hidden">
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-[#a855f7]/10 flex items-center justify-center flex-shrink-0" aria-hidden="true">
+                    <BookOpen className="w-5 h-5 text-[#a855f7]" />
+                  </div>
+                  <div>
+                    <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Challenge Library • Browse</div>
+                    <div className="text-base font-bold text-foreground">Lock in your next commitment</div>
+                  </div>
+                </div>
+                <Button size="sm" variant="ghost" className="text-[10px] h-8 font-bold uppercase tracking-wider text-[#a855f7] hover:bg-[#a855f7]/10 px-3">
+                  Filter
+                </Button>
               </div>
-              <Button size="sm" variant="outline" className="text-xs h-8 bg-transparent w-full sm:w-auto">
-                Filter
-              </Button>
-            </div>
 
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {challengeLibrary.map((challenge) => (
-                <div
-                  key={challenge.id}
-                  className="glass-card rounded-xl border border-[#a855f7]/20 bg-card/50 backdrop-blur-sm p-5 hover:border-[#a855f7]/40 transition-all cursor-pointer group"
-                  onClick={() => setSelectedChallenge(challenge.id)}
-                >
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="space-y-1 flex-1">
-                      <div className="flex items-center gap-2">
-                        <h3 className="text-sm font-bold group-hover:text-[#a855f7] transition-colors">
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {challengeLibrary.map((challenge) => (
+                  <div
+                    key={challenge.id}
+                    className="glass-card rounded-xl border border-white/5 bg-card/30 backdrop-blur-sm p-4 hover:border-[#a855f7]/30 transition-all cursor-pointer group"
+                    onClick={() => setSelectedChallenge(challenge.id)}
+                  >
+                    <div className="flex items-start gap-3 mb-3">
+                      <div className="w-10 h-10 rounded-xl bg-[#a855f7]/10 flex items-center justify-center flex-shrink-0 group-hover:bg-[#a855f7]/20 transition-colors" aria-hidden="true">
+                        <Lock className="w-5 h-5 text-[#a855f7]" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-sm font-bold text-foreground mb-0.5 group-hover:text-[#a855f7] transition-colors truncate">
                           {challenge.name}
                         </h3>
+                        <Badge variant="outline" className="text-[10px] font-bold uppercase tracking-wider border-[#a855f7]/30 text-[#a855f7]">
+                          {challenge.track}
+                        </Badge>
                       </div>
-                      <Badge variant="outline" className="text-xs border-[#a855f7]/30 text-[#a855f7]">
-                        {challenge.track}
-                      </Badge>
                     </div>
-                    <Lock className="w-4 h-4 text-muted-foreground" />
-                  </div>
 
-                  <div className="space-y-2 mb-3">
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <Target className="w-3 h-3" />
-                      <span>Difficulty: {challenge.difficulty}/5</span>
-                      <span>•</span>
-                      <Calendar className="w-3 h-3" />
-                      <span>{challenge.duration} days</span>
+                    <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground uppercase tracking-wider mb-2">
+                      <Target className="w-2.5 h-2.5" aria-hidden="true" />
+                      Difficulty {challenge.difficulty}/5
+                      <span className="mx-1">•</span>
+                      <Calendar className="w-2.5 h-2.5" aria-hidden="true" />
+                      {challenge.duration} days
                     </div>
-                  </div>
 
-                  <p className="text-xs text-muted-foreground mb-4 leading-relaxed line-clamp-2">
-                    {challenge.description}
-                  </p>
-
-                  <div className="space-y-2 mb-4 pt-3 border-t border-border/50">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-muted-foreground">Base Reward:</span>
-                      <span className="font-bold text-[#a855f7]">+{challenge.reward} EliteScore</span>
-                    </div>
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-muted-foreground">Completion Rate:</span>
-                      <span className="font-medium">{challenge.completionRate}%</span>
-                    </div>
-                  </div>
-
-                  <Button
-                    size="sm"
-                    className="w-full bg-gradient-to-r from-[#a855f7] to-[#2bbcff] hover:opacity-90 text-white border-0 text-xs h-8 disabled:opacity-50 disabled:cursor-not-allowed"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      setSelectedChallenge(challenge.id)
-                    }}
-                    disabled={!canJoinChallenge}
-                    title={!canJoinChallenge ? `Maximum ${MAX_ACTIVE_CHALLENGES} active challenges reached` : ""}
-                  >
-                    View Details
-                    <ChevronRight className="ml-1 h-3 w-3" />
-                  </Button>
-                  {!canJoinChallenge && (
-                    <p className="text-[10px] text-center text-orange-500 mt-2">
-                      Max challenges reached
+                    <p className="text-xs text-muted-foreground mb-4 leading-relaxed line-clamp-2">
+                      {challenge.description}
                     </p>
-                  )}
-                </div>
-              ))}
+
+                    <div className="glass-card rounded-lg border border-white/5 bg-white/5 p-2.5 mb-4">
+                      <div className="flex items-center justify-between text-[10px]">
+                        <span className="text-muted-foreground uppercase tracking-wider">Reward</span>
+                        <span className="font-bold text-[#a855f7]">+{challenge.reward} EliteScore</span>
+                      </div>
+                      <div className="flex items-center justify-between text-[10px] mt-1">
+                        <span className="text-muted-foreground uppercase tracking-wider">Completion rate</span>
+                        <span className="font-bold text-foreground">{challenge.completionRate}%</span>
+                      </div>
+                    </div>
+
+                    <Button
+                      size="sm"
+                      className="w-full bg-gradient-to-r from-[#a855f7] to-[#2bbcff] hover:opacity-90 text-white border-0 text-[10px] h-8 font-bold uppercase tracking-wider disabled:opacity-50 disabled:cursor-not-allowed"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setSelectedChallenge(challenge.id)
+                      }}
+                      disabled={!canJoinChallenge}
+                      title={!canJoinChallenge ? `Maximum ${MAX_ACTIVE_CHALLENGES} active challenges reached` : ""}
+                    >
+                      View Details
+                      <ChevronRight className="ml-0.5 h-3 w-3" aria-hidden="true" />
+                    </Button>
+                    {!canJoinChallenge && (
+                      <p className="text-[10px] text-center text-orange-500 mt-2 uppercase tracking-wider">
+                        Max challenges reached
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
           </TabsContent>
 
           {/* Challenge History Tab */}
-          <TabsContent value="history" className="space-y-4 md:space-y-6">
-            <div className="mb-4">
-              <h2 className="text-xl font-bold">Challenge History</h2>
-              <p className="text-xs text-muted-foreground">Your completed and failed challenges</p>
-            </div>
+          <TabsContent value="history" className="space-y-8">
+            <div className="glass-card rounded-2xl border border-[#2bbcff]/20 bg-gradient-to-br from-card/80 to-background backdrop-blur-md p-6 md:p-8 shadow-xl relative overflow-hidden">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 rounded-xl bg-[#2bbcff]/10 flex items-center justify-center flex-shrink-0" aria-hidden="true">
+                  <History className="w-5 h-5 text-[#2bbcff]" />
+                </div>
+                <div>
+                  <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Challenge History • Completed & Failed</div>
+                  <div className="text-base font-bold text-foreground">Your past commitments</div>
+                </div>
+              </div>
 
-            <div className="space-y-3">
-              {completedChallenges.map((challenge) => (
-                <div
-                  key={challenge.id}
-                  className="glass-card rounded-xl border border-border/50 bg-card/50 backdrop-blur-sm p-4 hover:border-border transition-all"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3 flex-1">
+              <div className="space-y-3">
+                {historyChallenges.map((challenge) => (
+                  <div
+                    key={challenge.id}
+                    className="glass-card rounded-xl border border-white/5 bg-card/30 backdrop-blur-sm p-4 hover:border-white/10 transition-all"
+                  >
+                    <div className="flex items-center gap-4">
                       {challenge.status === "completed" ? (
-                        <div className="w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center">
+                        <div className="w-10 h-10 rounded-xl bg-green-500/10 flex items-center justify-center flex-shrink-0" aria-hidden="true">
                           <CheckCircle2 className="w-5 h-5 text-green-500" />
                         </div>
                       ) : (
-                        <div className="w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center">
+                        <div className="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center flex-shrink-0" aria-hidden="true">
                           <XCircle className="w-5 h-5 text-red-500" />
                         </div>
                       )}
 
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h3 className="text-sm font-bold">{challenge.name}</h3>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-0.5">
+                          <h3 className="text-sm font-bold text-foreground">{challenge.name}</h3>
                           <Badge
                             variant="outline"
-                            className={`text-xs ${
+                            className={`text-[10px] font-bold uppercase tracking-wider ${
                               challenge.status === "completed"
                                 ? "border-green-500/30 text-green-500"
                                 : "border-red-500/30 text-red-500"
@@ -543,37 +666,37 @@ export default function ChallengesPage() {
                             {challenge.status === "completed" ? "Completed" : "Failed"}
                           </Badge>
                         </div>
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                          <Target className="w-3 h-3" />
-                          <span>Difficulty: {challenge.difficulty}/5</span>
-                          <span>•</span>
-                          <Calendar className="w-3 h-3" />
-                          <span>{challenge.duration} days</span>
-                          <span>•</span>
-                          <History className="w-3 h-3" />
-                          <span>{challenge.completedDate}</span>
+                        <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground uppercase tracking-wider">
+                          <Target className="w-2.5 h-2.5" aria-hidden="true" />
+                          Difficulty {challenge.difficulty}/5
+                          <span className="mx-1">•</span>
+                          <Calendar className="w-2.5 h-2.5" aria-hidden="true" />
+                          {challenge.duration} days
+                          <span className="mx-1">•</span>
+                          <History className="w-2.5 h-2.5" aria-hidden="true" />
+                          {challenge.completedDate}
                         </div>
                       </div>
-                    </div>
 
-                    <div className="text-right space-y-1">
-                      <div
-                        className={`text-sm font-bold ${
-                          challenge.status === "completed" ? "text-green-500" : "text-red-500"
-                        }`}
-                      >
-                        {challenge.eliteScoreImpact} EliteScore
-                      </div>
-                      {challenge.streakBonus !== "0" && (
-                        <div className="flex items-center gap-1 text-xs text-[#2bbcff]">
-                          <Flame className="w-3 h-3" />
-                          <span>{challenge.streakBonus} streak bonus</span>
+                      <div className="text-right flex-shrink-0">
+                        <div
+                          className={`text-sm font-bold ${
+                            challenge.status === "completed" ? "text-green-500" : "text-red-500"
+                          }`}
+                        >
+                          {challenge.eliteScoreImpact} EliteScore
                         </div>
-                      )}
+                        {challenge.streakBonus !== "0" && (
+                          <div className="flex items-center justify-end gap-0.5 text-[10px] text-[#2bbcff] uppercase tracking-wider mt-0.5">
+                            <Flame className="w-2.5 h-2.5" aria-hidden="true" />
+                            {challenge.streakBonus} streak bonus
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </TabsContent>
         </Tabs>
@@ -666,13 +789,15 @@ export default function ChallengesPage() {
                 size="lg"
                 className="w-full bg-gradient-to-r from-[#a855f7] to-[#2bbcff] hover:opacity-90 text-white border-0 text-sm h-11 disabled:opacity-50 disabled:cursor-not-allowed"
                 onClick={handleLockInStart}
-                disabled={!canJoinChallenge}
+                disabled={!canJoinChallenge || isAlreadyEnrolled}
               >
-                {canJoinChallenge 
-                  ? "Lock In Challenge" 
-                  : `Maximum ${MAX_ACTIVE_CHALLENGES} Active Challenges Reached`}
+                {isAlreadyEnrolled
+                  ? "Already enrolled"
+                  : canJoinChallenge
+                    ? "Lock In Challenge"
+                    : `Maximum ${MAX_ACTIVE_CHALLENGES} Active Challenges Reached`}
               </Button>
-              {!canJoinChallenge && (
+              {!canJoinChallenge && !isAlreadyEnrolled && (
                 <p className="text-xs text-center text-orange-500 mt-3">
                   Complete or quit an active challenge to join a new one
                 </p>
@@ -721,11 +846,13 @@ export default function ChallengesPage() {
                         <h2 className="text-xl font-bold">Who's got your back?</h2>
                         <p className="text-sm text-muted-foreground">Add people who'll keep you accountable</p>
                       </div>
-                      <button 
-                        onClick={handleCloseLockIn} 
-                        className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors"
+                      <button
+                        type="button"
+                        onClick={handleCloseLockIn}
+                        className="w-10 h-10 rounded-xl bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors border border-white/10 text-foreground"
+                        aria-label="Close"
                       >
-                        <X className="w-4 h-4" />
+                        <X className="w-5 h-5" />
                       </button>
                     </div>
 
@@ -843,12 +970,13 @@ export default function ChallengesPage() {
                     )}
 
                     {/* Action Buttons */}
-                    <div className="flex gap-3 pt-2">
+                    <div className="flex gap-3 pt-4 border-t border-white/10">
                       <Button
                         size="lg"
                         variant="outline"
                         onClick={handleCloseLockIn}
-                        className="flex-1 h-12 bg-transparent border-white/10 hover:bg-white/5 rounded-xl"
+                        className="flex-1 h-12 min-h-[48px] bg-white/5 border-white/25 text-foreground hover:bg-white/15 rounded-xl font-semibold text-sm"
+                        aria-label="Cancel and close"
                       >
                         Cancel
                       </Button>
@@ -856,9 +984,10 @@ export default function ChallengesPage() {
                         size="lg"
                         onClick={handleSendInvites}
                         disabled={supporters.length === 0}
-                        className="flex-1 h-12 bg-gradient-to-r from-[#a855f7] to-[#2bbcff] hover:opacity-90 text-white border-0 rounded-xl disabled:opacity-50"
+                        className="flex-1 h-12 min-h-[48px] bg-gradient-to-r from-[#2bbcff] to-[#a855f7] hover:opacity-95 text-white border-0 rounded-xl font-bold text-sm shadow-lg shadow-[#2bbcff]/25 disabled:opacity-50 disabled:shadow-none"
+                        aria-label="Continue to confirmation"
                       >
-                        <Send className="w-4 h-4 mr-2" />
+                        <Send className="w-4 h-4 mr-2" aria-hidden="true" />
                         Continue
                       </Button>
                     </div>
@@ -880,11 +1009,13 @@ export default function ChallengesPage() {
                         <h2 className="text-xl font-bold">Final confirmation</h2>
                         <p className="text-sm text-muted-foreground">This is a serious commitment</p>
                       </div>
-                      <button 
-                        onClick={handleCloseLockIn} 
-                        className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors"
+                      <button
+                        type="button"
+                        onClick={handleCloseLockIn}
+                        className="w-10 h-10 rounded-xl bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors border border-white/10 text-foreground"
+                        aria-label="Close"
                       >
-                        <X className="w-4 h-4" />
+                        <X className="w-5 h-5" />
                       </button>
                     </div>
 
@@ -949,22 +1080,24 @@ export default function ChallengesPage() {
                       </div>
                     </div>
 
-                    {/* Action Buttons */}
-                    <div className="flex gap-3 pt-2">
+                    {/* Action Buttons - high contrast so they're always visible */}
+                    <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-white/10">
                       <Button
                         size="lg"
                         variant="outline"
                         onClick={() => setLockInStep("invite")}
-                        className="flex-1 h-12 bg-transparent border-white/10 hover:bg-white/5 rounded-xl"
+                        className="flex-1 h-12 min-h-[48px] bg-white/5 border-white/25 text-foreground hover:bg-white/15 hover:border-white/35 rounded-xl font-semibold text-sm"
+                        aria-label="Go back to invite step"
                       >
                         Back
                       </Button>
                       <Button
                         size="lg"
                         onClick={handleConfirmLockIn}
-                        className="flex-1 h-12 bg-gradient-to-r from-orange-500 to-red-500 hover:opacity-90 text-white border-0 rounded-xl font-bold"
+                        className="flex-1 h-12 min-h-[48px] bg-gradient-to-r from-[#2bbcff] to-[#a855f7] hover:opacity-95 text-white border-0 rounded-xl font-bold text-sm shadow-lg shadow-[#2bbcff]/25"
+                        aria-label="Lock in challenge now"
                       >
-                        Lock In Now
+                        I&apos;m committed — Lock In
                       </Button>
                     </div>
                   </div>
