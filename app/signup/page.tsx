@@ -135,11 +135,7 @@ export default function SignupPage() {
   return (
     <div className="min-h-[100dvh] sm:min-h-screen flex flex-col items-center justify-center bg-background p-4 pt-[max(1.5rem,env(safe-area-inset-top))] pb-[max(1.5rem,env(safe-area-inset-bottom))] pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] overflow-x-hidden">
       {/* App name at the top */}
-      <div className="w-full flex justify-center pt-4 sm:pt-8 pb-4">
-        <span className="text-xl sm:text-2xl font-extrabold tracking-widest uppercase bg-gradient-to-r from-[#2bbcff] to-[#a855f7] bg-clip-text text-transparent">
-          ELITESCORE
-        </span>
-      </div>
+      <div className="w-full flex justify-center pt-4 sm:pt-8 pb-4">\n        <img src="/logo.jpeg" alt="EliteScore" className="h-12 w-12 rounded-2xl object-cover" />\n      </div>
 
       {/* Background elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
@@ -154,16 +150,16 @@ export default function SignupPage() {
         animate="visible"
       >
         <motion.div className="text-center" variants={itemVariants}>
-          <h1 className="text-xl sm:text-2xl font-extrabold tracking-widest uppercase bg-gradient-to-r from-[#2bbcff] to-[#a855f7] bg-clip-text text-transparent">
+          <h1 className="text-xl sm:text-2xl font-extrabold tracking-widest uppercase bg-gradient-to-r from-[#2563eb] to-[#7c3aed] text-foreground">
             Sign Up
           </h1>
           <p className="mt-2 text-muted-foreground text-sm">Create your account to start your journey</p>
         </motion.div>
 
         <motion.div variants={itemVariants} className="w-full">
-          <Card className="shadow-2xl rounded-2xl border border-[#2bbcff]/20 bg-card/90 backdrop-blur-lg overflow-hidden">
+          <Card className="shadow-2xl rounded-2xl border border-[#2563eb]/20 bg-card/90 backdrop-blur-lg overflow-hidden">
             <CardHeader className="p-4 sm:p-6 pb-2 sm:pb-2">
-              <CardTitle className="text-base sm:text-lg font-extrabold tracking-widest uppercase bg-gradient-to-r from-[#2bbcff] to-[#a855f7] bg-clip-text text-transparent">
+              <CardTitle className="text-base sm:text-lg font-extrabold tracking-widest uppercase bg-gradient-to-r from-[#2563eb] to-[#7c3aed] text-foreground">
                 Create an account
               </CardTitle>
               <CardDescription className="text-muted-foreground text-sm">
@@ -176,7 +172,7 @@ export default function SignupPage() {
               </div>
               <div className="h-1 bg-white/10 rounded-full overflow-hidden mt-2">
                 <motion.div
-                  className="h-full bg-gradient-to-r from-[#2bbcff] to-[#a855f7]"
+                  className="h-full bg-gradient-to-r from-[#2563eb] to-[#7c3aed]"
                   initial={{ width: "50%" }}
                   animate={{ width: step === 1 ? "50%" : "100%" }}
                   transition={{ duration: 0.3 }}
@@ -202,7 +198,7 @@ export default function SignupPage() {
                         <FormItem>
                           <FormLabel className="text-foreground text-sm">Username</FormLabel>
                           <Input
-                            className="min-h-[48px] py-3 text-base rounded-xl border border-white/10 bg-white/5 text-foreground focus:ring-2 focus:ring-[#2bbcff] focus:border-[#2bbcff] transition-all touch-manipulation"
+                            className="min-h-[48px] py-3 text-base rounded-xl border border-white/10 bg-white/5 text-foreground focus:ring-2 focus:ring-[#2563eb] focus:border-[#2563eb] transition-all touch-manipulation"
                             placeholder="johndoe123"
                             autoComplete="username"
                             {...field}
@@ -219,7 +215,7 @@ export default function SignupPage() {
                         <FormItem>
                           <FormLabel className="text-foreground text-sm">Email</FormLabel>
                           <Input
-                            className="min-h-[48px] py-3 text-base rounded-xl border border-white/10 bg-white/5 text-foreground focus:ring-2 focus:ring-[#2bbcff] focus:border-[#2bbcff] transition-all lowercase touch-manipulation"
+                            className="min-h-[48px] py-3 text-base rounded-xl border border-white/10 bg-white/5 text-foreground focus:ring-2 focus:ring-[#2563eb] focus:border-[#2563eb] transition-all lowercase touch-manipulation"
                             placeholder="john@example.com"
                             type="email"
                             autoComplete="email"
@@ -237,7 +233,7 @@ export default function SignupPage() {
                   <CardFooter className="flex flex-col space-y-4 p-4 sm:p-6 pt-2 sm:pt-2">
                     <Button
                       type="submit"
-                      className="w-full min-h-[48px] sm:h-11 py-3 rounded-2xl font-bold bg-gradient-to-r from-[#2bbcff] to-[#a855f7] text-white shadow-lg hover:opacity-90 transition-opacity touch-manipulation"
+                      className="w-full min-h-[48px] sm:h-11 py-3 rounded-2xl font-bold bg-gradient-to-r from-[#2563eb] to-[#7c3aed] text-white shadow-lg hover:opacity-90 transition-opacity touch-manipulation"
                       disabled={isLoading}
                       aria-label="Continue to step 2"
                     >
@@ -282,7 +278,7 @@ export default function SignupPage() {
 
                     <div className="text-center text-xs text-muted-foreground">
                       Already have an account?{" "}
-                      <Link href="/login" className="text-[#2bbcff] hover:underline transition-colors min-h-[44px] inline-flex items-center touch-manipulation" aria-label="Go to log in">
+                      <Link href="/login" className="text-[#2563eb] hover:underline transition-colors min-h-[44px] inline-flex items-center touch-manipulation" aria-label="Go to log in">
                         Log in
                       </Link>
                     </div>
@@ -310,7 +306,7 @@ export default function SignupPage() {
                           <FormLabel className="text-foreground text-sm">Password</FormLabel>
                           <div className="relative">
                             <Input
-                              className="min-h-[48px] py-3 text-base rounded-xl border border-white/10 bg-white/5 text-foreground focus:ring-2 focus:ring-[#2bbcff] focus:border-[#2bbcff] transition-all pr-12 touch-manipulation"
+                              className="min-h-[48px] py-3 text-base rounded-xl border border-white/10 bg-white/5 text-foreground focus:ring-2 focus:ring-[#2563eb] focus:border-[#2563eb] transition-all pr-12 touch-manipulation"
                               placeholder="Create a password"
                               type={showPassword ? "text" : "password"}
                               autoComplete="new-password"
@@ -320,7 +316,7 @@ export default function SignupPage() {
                               type="button"
                               variant="ghost"
                               size="icon"
-                              className="absolute right-0 top-0 h-full min-w-[48px] min-h-[48px] px-3 text-muted-foreground hover:text-[#2bbcff] transition-colors touch-manipulation"
+                              className="absolute right-0 top-0 h-full min-w-[48px] min-h-[48px] px-3 text-muted-foreground hover:text-[#2563eb] transition-colors touch-manipulation"
                               onClick={() => setShowPassword(!showPassword)}
                               aria-label={showPassword ? "Hide password" : "Show password"}
                             >
@@ -340,12 +336,12 @@ export default function SignupPage() {
                           <div key={index} className="flex items-center gap-2">
                             <div className={`w-4 h-4 rounded-full flex items-center justify-center shrink-0 ${req.met ? "bg-green-500/20" : "bg-white/10"}`} aria-hidden="true">
                               {req.met ? (
-                                <Check className="w-2.5 h-2.5 text-green-500" />
+                                <Check className="w-2.5 h-2.5 text-foreground" />
                               ) : (
                                 <X className="w-2.5 h-2.5 text-muted-foreground" />
                               )}
                             </div>
-                            <span className={`text-xs ${req.met ? "text-green-500" : "text-muted-foreground"}`}>
+                            <span className={`text-xs ${req.met ? "text-foreground" : "text-muted-foreground"}`}>
                               {req.label}
                             </span>
                           </div>
@@ -361,7 +357,7 @@ export default function SignupPage() {
                           <FormLabel className="text-foreground text-sm">Confirm Password</FormLabel>
                           <div className="relative">
                             <Input
-                              className="min-h-[48px] py-3 text-base rounded-xl border border-white/10 bg-white/5 text-foreground focus:ring-2 focus:ring-[#2bbcff] focus:border-[#2bbcff] transition-all pr-12 touch-manipulation"
+                              className="min-h-[48px] py-3 text-base rounded-xl border border-white/10 bg-white/5 text-foreground focus:ring-2 focus:ring-[#2563eb] focus:border-[#2563eb] transition-all pr-12 touch-manipulation"
                               placeholder="Confirm your password"
                               type={showConfirmPassword ? "text" : "password"}
                               autoComplete="new-password"
@@ -371,7 +367,7 @@ export default function SignupPage() {
                               type="button"
                               variant="ghost"
                               size="icon"
-                              className="absolute right-0 top-0 h-full min-w-[48px] min-h-[48px] px-3 text-muted-foreground hover:text-[#2bbcff] transition-colors touch-manipulation"
+                              className="absolute right-0 top-0 h-full min-w-[48px] min-h-[48px] px-3 text-muted-foreground hover:text-[#2563eb] transition-colors touch-manipulation"
                               onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                               aria-label={showConfirmPassword ? "Hide password" : "Show password"}
                             >
@@ -391,16 +387,16 @@ export default function SignupPage() {
                           <Checkbox
                             checked={field.value}
                             onCheckedChange={field.onChange}
-                            className="rounded-md border-white/20 focus:ring-[#2bbcff] mt-0.5"
+                            className="rounded-md border-white/20 focus:ring-[#2563eb] mt-0.5"
                           />
                           <div className="leading-none">
                             <FormLabel className="text-foreground text-xs cursor-pointer">
                               I agree to the{" "}
-                              <Link href="/terms" className="text-[#2bbcff] hover:underline">
+                              <Link href="/terms" className="text-[#2563eb] hover:underline">
                                 Terms of Service
                               </Link>{" "}
                               and{" "}
-                              <Link href="/privacy" className="text-[#2bbcff] hover:underline">
+                              <Link href="/privacy" className="text-[#2563eb] hover:underline">
                                 Privacy Policy
                               </Link>
                             </FormLabel>
@@ -423,7 +419,7 @@ export default function SignupPage() {
                       </Button>
                       <Button
                         type="submit"
-                        className="flex-1 min-h-[48px] sm:h-11 py-3 rounded-2xl font-bold bg-gradient-to-r from-[#2bbcff] to-[#a855f7] text-white shadow-lg hover:opacity-90 transition-opacity touch-manipulation"
+                        className="flex-1 min-h-[48px] sm:h-11 py-3 rounded-2xl font-bold bg-gradient-to-r from-[#2563eb] to-[#7c3aed] text-white shadow-lg hover:opacity-90 transition-opacity touch-manipulation"
                         disabled={isLoading}
                         aria-label={isLoading ? "Creating account" : "Create account"}
                       >
@@ -442,7 +438,7 @@ export default function SignupPage() {
 
                     <div className="text-center text-xs text-muted-foreground">
                       Already have an account?{" "}
-                      <Link href="/login" className="text-[#2bbcff] hover:underline transition-colors min-h-[44px] inline-flex items-center touch-manipulation" aria-label="Go to log in">
+                      <Link href="/login" className="text-[#2563eb] hover:underline transition-colors min-h-[44px] inline-flex items-center touch-manipulation" aria-label="Go to log in">
                         Log in
                       </Link>
                     </div>
@@ -468,3 +464,4 @@ export default function SignupPage() {
     </div>
   )
 }
+

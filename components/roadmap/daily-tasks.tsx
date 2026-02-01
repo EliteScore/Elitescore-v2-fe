@@ -1,4 +1,4 @@
-"use client"
+ï»¿"use client"
 
 import { Clock, Check, ListTodo } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -35,14 +35,14 @@ export function DailyTasks({ tasks }: DailyTasksProps) {
   const completedCount = tasks.filter((task) => completedTasks.has(task.id)).length
 
   return (
-    <div className="glass-card rounded-2xl border border-[#2bbcff]/20 bg-gradient-to-br from-card/80 to-background backdrop-blur-md p-6 shadow-xl relative overflow-hidden">
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-48 bg-gradient-to-r from-[#2bbcff]/15 to-[#a855f7]/15 blur-[80px] rounded-full -z-10" aria-hidden="true" />
+    <div className="glass-card rounded-2xl border border-[#2563eb]/20 bg-gradient-to-br from-card/80 to-background backdrop-blur-md p-6 shadow-xl relative overflow-hidden">
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-48 bg-gradient-to-r from-[#2563eb]/15 to-[#7c3aed]/15 blur-[80px] rounded-full -z-10" aria-hidden="true" />
       <div className="flex items-center gap-3 mb-6">
-        <div className="w-10 h-10 rounded-xl bg-[#2bbcff]/10 flex items-center justify-center flex-shrink-0" aria-hidden="true">
-          <ListTodo className="w-5 h-5 text-[#2bbcff]" />
+        <div className="w-10 h-10 rounded-xl bg-[#2563eb]/10 flex items-center justify-center flex-shrink-0" aria-hidden="true">
+          <ListTodo className="w-5 h-5 text-[#2563eb]" />
         </div>
         <div>
-          <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Today • Tasks</div>
+          <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Today â¢ Tasks</div>
           <div className="text-base font-bold text-foreground">{completedCount} / {tasks.length} completed</div>
         </div>
       </div>
@@ -61,7 +61,7 @@ export function DailyTasks({ tasks }: DailyTasksProps) {
               className={`glass-card rounded-xl border p-3 transition-all cursor-pointer ${
                 isCompleted
                   ? "border-green-500/20 bg-green-500/5"
-                  : "border-white/5 bg-card/30 backdrop-blur-sm hover:border-[#2bbcff]/30"
+                  : "border-white/5 bg-card/30 backdrop-blur-sm hover:border-[#2563eb]/30"
               }`}
             >
               <div className="flex items-start gap-3">
@@ -71,7 +71,7 @@ export function DailyTasks({ tasks }: DailyTasksProps) {
                   }`}
                   aria-hidden="true"
                 >
-                  {isCompleted && <Check className="w-3.5 h-3.5 text-green-500" />}
+                  {isCompleted && <Check className="w-3.5 h-3.5 text-foreground" />}
                 </div>
                 <div className="flex-1 min-w-0">
                   <h4 className={`text-sm font-bold mb-0.5 leading-tight ${isCompleted ? "line-through text-muted-foreground" : "text-foreground"}`}>
@@ -91,9 +91,10 @@ export function DailyTasks({ tasks }: DailyTasksProps) {
         })}
       </div>
 
-      <Button className="w-full bg-gradient-to-r from-[#2bbcff] to-[#a855f7] hover:opacity-90 text-white border-0 text-[10px] h-9 font-bold uppercase tracking-wider">
+      <Button className="w-full bg-gradient-to-r from-[#2563eb] to-[#7c3aed] hover:opacity-90 text-white border-0 text-[10px] h-9 font-bold uppercase tracking-wider">
         Start challenge
       </Button>
     </div>
   )
 }
+

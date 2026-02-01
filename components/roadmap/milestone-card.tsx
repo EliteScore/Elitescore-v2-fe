@@ -1,4 +1,4 @@
-"use client"
+ï»¿"use client"
 
 import { Check, Circle, Lock } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
@@ -21,7 +21,7 @@ export function MilestoneCard({ title, description, tasks, status, progress }: M
     <div
       className={`glass-card rounded-xl border backdrop-blur-sm p-5 transition-all ${
         status === "active"
-          ? "border-[#2bbcff]/30 bg-gradient-to-br from-[#2bbcff]/5 to-card/50"
+          ? "border-[#2563eb]/30 bg-gradient-to-br from-[#2563eb]/5 to-card/50"
           : status === "completed"
             ? "border-green-500/20 bg-card/30"
             : "border-white/5 bg-card/30 opacity-60"
@@ -32,12 +32,12 @@ export function MilestoneCard({ title, description, tasks, status, progress }: M
           <div className="flex items-center gap-2 mb-2 flex-wrap">
             <h3 className="text-base font-bold text-foreground leading-tight">{title}</h3>
             {status === "active" && (
-              <Badge variant="secondary" className="bg-[#2bbcff]/10 text-[#2bbcff] border-[#2bbcff]/30 text-[10px] font-bold uppercase tracking-wider">
+              <Badge variant="secondary" className="bg-[#2563eb]/10 text-[#2563eb] border-[#2563eb]/30 text-[10px] font-bold uppercase tracking-wider">
                 Active
               </Badge>
             )}
             {status === "completed" && (
-              <Badge variant="secondary" className="bg-green-500/10 text-green-500 border-green-500/30 text-[10px] font-bold uppercase tracking-wider">
+              <Badge variant="secondary" className="bg-green-500/10 text-foreground border-green-500/30 text-[10px] font-bold uppercase tracking-wider">
                 Completed
               </Badge>
             )}
@@ -47,15 +47,15 @@ export function MilestoneCard({ title, description, tasks, status, progress }: M
         <div className="ml-4">
           {status === "completed" ? (
             <div className="w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center">
-              <Check className="w-5 h-5 text-green-500" />
+              <Check className="w-5 h-5 text-foreground" />
             </div>
           ) : status === "locked" ? (
             <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center">
               <Lock className="w-5 h-5 text-muted-foreground" />
             </div>
           ) : (
-            <div className="w-10 h-10 rounded-full bg-[#2bbcff]/10 flex items-center justify-center">
-              <Circle className="w-5 h-5 text-[#2bbcff]" />
+            <div className="w-10 h-10 rounded-full bg-[#2563eb]/10 flex items-center justify-center">
+              <Circle className="w-5 h-5 text-[#2563eb]" />
             </div>
           )}
         </div>
@@ -71,7 +71,7 @@ export function MilestoneCard({ title, description, tasks, status, progress }: M
           <div className="h-2 bg-white/10 rounded-full overflow-hidden">
             <div
               className={`h-full rounded-full transition-all duration-500 ${
-                status === "completed" ? "bg-green-500" : "bg-gradient-to-r from-[#2bbcff] to-[#a855f7]"
+                status === "completed" ? "bg-green-500" : "bg-gradient-to-r from-[#2563eb] to-[#7c3aed]"
               }`}
               style={{ width: `${progress}%` }}
             />
@@ -90,7 +90,7 @@ export function MilestoneCard({ title, description, tasks, status, progress }: M
                 }`}
                 aria-hidden="true"
               >
-                {task.completed && <Check className="w-3 h-3 text-green-500" />}
+                {task.completed && <Check className="w-3 h-3 text-foreground" />}
               </div>
               <span className={`text-sm leading-snug ${task.completed ? "text-muted-foreground line-through" : "text-foreground font-medium"}`}>
                 {task.title}
@@ -108,3 +108,4 @@ export function MilestoneCard({ title, description, tasks, status, progress }: M
     </div>
   )
 }
+

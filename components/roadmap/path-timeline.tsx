@@ -1,4 +1,4 @@
-"use client"
+ï»¿"use client"
 
 import { Check, Lock, ChevronRight, MapPin } from "lucide-react"
 
@@ -22,10 +22,10 @@ export function PathTimeline({ phases }: PathTimelineProps) {
   }
 
   return (
-    <div className="glass-card rounded-2xl border border-[#2bbcff]/20 bg-gradient-to-br from-card/80 to-background backdrop-blur-md p-6 shadow-xl relative overflow-hidden">
+    <div className="glass-card rounded-2xl border border-[#2563eb]/20 bg-gradient-to-br from-card/80 to-background backdrop-blur-md p-6 shadow-xl relative overflow-hidden">
       <div className="flex items-center gap-3 mb-6">
-        <div className="w-10 h-10 rounded-xl bg-[#2bbcff]/10 flex items-center justify-center flex-shrink-0" aria-hidden="true">
-          <MapPin className="w-5 h-5 text-[#2bbcff]" />
+        <div className="w-10 h-10 rounded-xl bg-[#2563eb]/10 flex items-center justify-center flex-shrink-0" aria-hidden="true">
+          <MapPin className="w-5 h-5 text-[#2563eb]" />
         </div>
         <div>
           <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Path timeline</div>
@@ -42,7 +42,7 @@ export function PathTimeline({ phases }: PathTimelineProps) {
               aria-label={`Phase ${phase.id}: ${phase.name}, ${phase.milestones} milestone(s), ${phase.status}`}
               className={`flex items-center gap-4 p-4 rounded-xl border transition-all cursor-pointer hover:bg-white/5 ${
                 phase.status === "active"
-                  ? "border-[#2bbcff]/30 bg-[#2bbcff]/5"
+                  ? "border-[#2563eb]/30 bg-[#2563eb]/5"
                   : phase.status === "completed"
                     ? "border-green-500/20 bg-green-500/5"
                     : "border-white/5 bg-card/30 opacity-60"
@@ -52,15 +52,15 @@ export function PathTimeline({ phases }: PathTimelineProps) {
               <div className="flex-shrink-0">
                 {phase.status === "completed" ? (
                   <div className="w-12 h-12 rounded-full bg-green-500/20 border-2 border-green-500 flex items-center justify-center">
-                    <Check className="w-6 h-6 text-green-500" />
+                    <Check className="w-6 h-6 text-foreground" />
                   </div>
                 ) : phase.status === "locked" ? (
                   <div className="w-12 h-12 rounded-full bg-white/5 border-2 border-white/10 flex items-center justify-center">
                     <Lock className="w-5 h-5 text-muted-foreground" />
                   </div>
                 ) : (
-                  <div className="w-12 h-12 rounded-full bg-[#2bbcff]/10 border-2 border-[#2bbcff] flex items-center justify-center">
-                    <span className="text-lg font-bold text-[#2bbcff]">{phase.id}</span>
+                  <div className="w-12 h-12 rounded-full bg-[#2563eb]/10 border-2 border-[#2563eb] flex items-center justify-center">
+                    <span className="text-lg font-bold text-[#2563eb]">{phase.id}</span>
                   </div>
                 )}
               </div>
@@ -77,11 +77,11 @@ export function PathTimeline({ phases }: PathTimelineProps) {
               <div className="flex-shrink-0">
                 {phase.status === "completed" ? (
                   <div className="px-3 py-1 rounded-full bg-green-500/10 border border-green-500/30">
-                    <span className="text-xs font-bold text-green-500">Completed</span>
+                    <span className="text-xs font-bold text-foreground">Completed</span>
                   </div>
                 ) : phase.status === "active" ? (
-                  <div className="px-3 py-1 rounded-full bg-[#2bbcff]/10 border border-[#2bbcff]/30">
-                    <span className="text-xs font-bold text-[#2bbcff]">In Progress</span>
+                  <div className="px-3 py-1 rounded-full bg-[#2563eb]/10 border border-[#2563eb]/30">
+                    <span className="text-xs font-bold text-[#2563eb]">In Progress</span>
                   </div>
                 ) : (
                   <div className="px-3 py-1 rounded-full bg-white/5 border border-white/10">
@@ -109,3 +109,4 @@ export function PathTimeline({ phases }: PathTimelineProps) {
     </div>
   )
 }
+

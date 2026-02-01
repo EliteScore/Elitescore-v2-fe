@@ -18,7 +18,6 @@ import {
   LinkIcon,
   ExternalLink,
 } from "lucide-react"
-import { BottomNav } from "@/components/bottom-nav"
 import { cn } from "@/lib/utils"
 
 const getInitials = (name: string): string => {
@@ -113,16 +112,14 @@ function ProfilePicture({
   return (
     <div
       className={cn(
-        "relative shrink-0 w-20 h-20 md:w-24 md:h-24 rounded-full bg-gradient-to-br from-[#2bbcff] to-[#a855f7] p-1",
+        "relative shrink-0 w-20 h-20 md:w-24 md:h-24 rounded-2xl bg-gradient-to-br from-brand/30 to-brand-2/30 p-1",
         className
       )}
       aria-hidden="true"
     >
-      <Avatar className="w-full h-full rounded-full border-2 border-background">
-        {avatarUrl && (
-          <AvatarImage src={avatarUrl} alt="" className="object-cover" />
-        )}
-        <AvatarFallback className="rounded-full bg-background text-2xl md:text-3xl font-bold bg-gradient-to-br from-[#2bbcff] to-[#a855f7] bg-clip-text text-transparent">
+      <Avatar className="w-full h-full rounded-2xl border-2 border-background">
+        {avatarUrl && <AvatarImage src={avatarUrl} alt="" className="object-cover" />}
+        <AvatarFallback className="rounded-2xl bg-background text-2xl md:text-3xl font-semibold text-foreground">
           {getInitials(name)}
         </AvatarFallback>
       </Avatar>
@@ -146,10 +143,10 @@ export default function PublicProfilePage() {
   if (!profile) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center px-4 pb-20">
-        <div className="glass-card rounded-2xl border border-[#2bbcff]/20 bg-gradient-to-br from-card/80 to-background backdrop-blur-md p-8 text-center max-w-md">
-          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] mb-2">Not found</p>
-          <h1 className="text-xl font-bold text-foreground mb-3">Profile not found</h1>
-          <Button asChild className="bg-gradient-to-r from-[#2bbcff] to-[#a855f7] hover:opacity-90 text-white border-0 text-[10px] h-9 font-bold uppercase tracking-wider">
+        <div className="glass-card rounded-2xl border border-border/60 bg-card/70 p-8 text-center max-w-md">
+          <p className="text-xs text-muted-foreground mb-2">Not found</p>
+          <h1 className="text-xl font-semibold text-foreground mb-3">Profile not found</h1>
+          <Button asChild>
             <Link href="/leaderboard" aria-label="Back to leaderboard">Back to Leaderboard</Link>
           </Button>
         </div>
@@ -159,144 +156,107 @@ export default function PublicProfilePage() {
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      <div className="container mx-auto px-4 py-6 md:py-8 max-w-5xl">
-        {/* Profile Header - same layout as app/profile */}
-        <div className="glass-card rounded-xl border border-[#2bbcff]/30 bg-card/50 backdrop-blur-sm p-5 md:p-8 mb-4 md:mb-6">
-          <div className="flex flex-col sm:flex-row items-start justify-between gap-4 md:gap-0 mb-4 md:mb-6">
-            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 md:gap-5 w-full sm:w-auto">
+      <div className="container mx-auto px-4 py-6 md:py-8 max-w-5xl space-y-6">
+        <div className="glass-card rounded-2xl border border-border/60 bg-card/70 p-6 md:p-8 shadow-lg">
+          <div className="flex flex-col lg:flex-row items-start justify-between gap-6">
+            <div className="flex items-center gap-4">
               <ProfilePicture name={profile.name} avatarUrl={profile.avatarUrl} />
-              <div className="space-y-2 text-center sm:text-left">
-                <h1 className="text-2xl md:text-3xl font-bold text-foreground">{profile.name}</h1>
-                <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 md:gap-4 text-xs md:text-sm">
+              <div className="space-y-2">
+                <h1 className="text-2xl md:text-3xl font-semibold text-foreground">{profile.name}</h1>
+                <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
                   <span className="flex items-center gap-1.5">
-                    <Trophy className="w-3 h-3 md:w-4 md:h-4 text-[#2bbcff]" aria-hidden="true" />
-                    <span className="font-bold text-[#2bbcff]">{profile.score.toLocaleString()}</span>
-                    <span className="text-muted-foreground hidden sm:inline">EliteScore</span>
+                    <Trophy className="w-3.5 h-3.5 text-foreground" aria-hidden="true" />
+                    <span className="font-semibold text-foreground">{profile.score.toLocaleString()}</span>
+                    EliteScore
                   </span>
-                  <span className="text-muted-foreground hidden sm:inline">·</span>
-                  <span className="text-[10px] md:text-xs font-medium text-muted-foreground">
+                  <span className="flex items-center gap-1.5">
+                    <TrendingUp className="w-3.5 h-3.5 text-foreground" aria-hidden="true" />
                     Rank #{profile.rank}
                   </span>
-                  <span className="text-muted-foreground hidden sm:inline">·</span>
                   <span className="flex items-center gap-1.5">
-                    <Flame className="w-3 h-3 md:w-4 md:h-4 text-orange-500" aria-hidden="true" />
-                    <span className="font-bold text-orange-500">{profile.streak}</span>
-                    <span className="text-muted-foreground text-[10px] md:text-xs">day streak</span>
+                    <Flame className="w-3.5 h-3.5 text-foreground" aria-hidden="true" />
+                    <span className="font-semibold text-foreground">{profile.streak}</span> day streak
                   </span>
                 </div>
               </div>
             </div>
-            <div className="flex items-center gap-2 w-full sm:w-auto justify-center">
-              <Button
-                size="sm"
-                variant="outline"
-                className="border-[#2bbcff]/50 hover:bg-[#2bbcff]/10 text-[10px] md:text-xs h-7 md:h-8 bg-transparent flex-1 sm:flex-initial"
-              >
-                <Share2 className="w-3 h-3 mr-1.5" aria-hidden="true" />
-                <span className="hidden sm:inline">Share</span>
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <Button size="sm" variant="outline" className="border-border/60 bg-transparent">
+                <Share2 className="w-3.5 h-3.5 mr-2" aria-hidden="true" />
+                Share
               </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                className="border-[#2bbcff]/50 hover:bg-[#2bbcff]/10 text-[10px] md:text-xs h-7 md:h-8 bg-transparent flex-1 sm:flex-initial"
-              >
-                <LinkIcon className="w-3 h-3 mr-1.5" aria-hidden="true" />
-                <span className="hidden sm:inline">Copy Link</span>
+              <Button size="sm" variant="outline" className="border-border/60 bg-transparent">
+                <LinkIcon className="w-3.5 h-3.5 mr-2" aria-hidden="true" />
+                Copy Link
               </Button>
             </div>
           </div>
         </div>
 
-        {/* Credibility Stats - same 4 cards as app/profile */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-4 md:mb-6">
-          <div className="glass-card rounded-xl border border-[#2bbcff]/20 bg-card/50 backdrop-blur-sm p-4">
-            <div className="flex items-center gap-2 mb-1">
-              <Check className="w-4 h-4 text-[#2bbcff]" aria-hidden="true" />
-              <span className="text-xs text-muted-foreground">Completed</span>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {[
+            { label: "Completed", value: profile.stats.totalCompleted, icon: Check, tone: "text-foreground" },
+            { label: "Max Difficulty", value: `${profile.stats.highestDifficulty}/5`, icon: Target, tone: "text-foreground" },
+            { label: "Longest Streak", value: profile.stats.longestStreak, icon: Flame, tone: "text-foreground" },
+            { label: "Consistency", value: `${profile.stats.consistencyRate}%`, icon: TrendingUp, tone: "text-foreground" },
+          ].map((stat) => (
+            <div key={stat.label} className="glass-card rounded-xl border border-border/60 bg-card/70 p-4">
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <stat.icon className={`w-4 h-4 ${stat.tone}`} aria-hidden="true" />
+                {stat.label}
+              </div>
+              <div className="text-xl font-semibold text-foreground mt-2">{stat.value}</div>
             </div>
-            <p className="text-2xl font-bold text-foreground">{profile.stats.totalCompleted}</p>
-          </div>
-          <div className="glass-card rounded-xl border border-[#a855f7]/20 bg-card/50 backdrop-blur-sm p-4">
-            <div className="flex items-center gap-2 mb-1">
-              <Target className="w-4 h-4 text-[#a855f7]" aria-hidden="true" />
-              <span className="text-xs text-muted-foreground">Max Difficulty</span>
-            </div>
-            <p className="text-2xl font-bold text-foreground">{profile.stats.highestDifficulty}/5</p>
-          </div>
-          <div className="glass-card rounded-xl border border-orange-500/20 bg-card/50 backdrop-blur-sm p-4">
-            <div className="flex items-center gap-2 mb-1">
-              <Flame className="w-4 h-4 text-orange-500" aria-hidden="true" />
-              <span className="text-xs text-muted-foreground">Longest Streak</span>
-            </div>
-            <p className="text-2xl font-bold text-foreground">{profile.stats.longestStreak}</p>
-          </div>
-          <div className="glass-card rounded-xl border border-green-500/20 bg-card/50 backdrop-blur-sm p-4">
-            <div className="flex items-center gap-2 mb-1">
-              <TrendingUp className="w-4 h-4 text-green-500" aria-hidden="true" />
-              <span className="text-xs text-muted-foreground">Consistency</span>
-            </div>
-            <p className="text-2xl font-bold text-foreground">{profile.stats.consistencyRate}%</p>
-          </div>
+          ))}
         </div>
 
-        {/* Challenge History - same structure as app/profile */}
-        <div className="glass-card rounded-xl border border-[#2bbcff]/30 bg-card/50 backdrop-blur-sm p-5 md:p-6 mb-4 md:mb-6">
-          <h2 className="text-base md:text-lg font-bold mb-3 md:mb-4">Challenge History</h2>
-          <p className="text-[10px] md:text-xs text-muted-foreground mb-3 md:mb-4">
-            Public & immutable — failures are visible
-          </p>
+        <div className="glass-card rounded-2xl border border-border/60 bg-card/70 p-5 md:p-6">
+          <h2 className="text-lg font-semibold mb-4">Challenge History</h2>
           <div className="space-y-3">
             {profile.challengeHistory.length === 0 ? (
-              <p className="text-sm text-muted-foreground py-4">No challenge history yet.</p>
+              <p className="text-sm text-muted-foreground">No challenge history yet.</p>
             ) : (
               profile.challengeHistory.map((challenge) => (
                 <div
                   key={challenge.id}
                   className={cn(
-                    "flex items-center justify-between p-4 rounded-lg border transition-all",
+                    "flex items-start gap-4 p-4 rounded-xl border",
                     challenge.status === "completed"
-                      ? "bg-[#2bbcff]/5 border-[#2bbcff]/20 hover:border-[#2bbcff]/40"
-                      : "bg-red-500/5 border-red-500/20 hover:border-red-500/40"
+                      ? "border-brand/30 bg-brand/5"
+                      : "border-red-500/30 bg-red-500/5"
                   )}
                 >
-                  <div className="flex items-center gap-4 flex-1">
-                    <div
-                      className={cn(
-                        "w-10 h-10 rounded-full flex items-center justify-center shrink-0",
-                        challenge.status === "completed" ? "bg-[#2bbcff]/20" : "bg-red-500/20"
-                      )}
-                      aria-hidden="true"
-                    >
-                      {challenge.status === "completed" ? (
-                        <Check className="w-5 h-5 text-[#2bbcff]" aria-hidden="true" />
-                      ) : (
-                        <X className="w-5 h-5 text-red-500" aria-hidden="true" />
-                      )}
+                  <div
+                    className={cn(
+                      "w-10 h-10 rounded-xl flex items-center justify-center",
+                      challenge.status === "completed" ? "bg-brand/15" : "bg-red-500/15"
+                    )}
+                  >
+                    {challenge.status === "completed" ? (
+                      <Check className="w-5 h-5 text-foreground" aria-hidden="true" />
+                    ) : (
+                      <X className="w-5 h-5 text-foreground" aria-hidden="true" />
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="text-sm font-semibold text-foreground">{challenge.name}</h3>
+                      <Badge
+                        variant="secondary"
+                        className={
+                          challenge.status === "completed"
+                            ? "bg-brand/15 text-foreground border-border/60"
+                            : "bg-red-500/10 text-foreground border-red-500/30"
+                        }
+                      >
+                        {challenge.status === "completed" ? "Completed" : "Failed"}
+                      </Badge>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1 flex-wrap">
-                        <h3 className="text-sm font-semibold text-foreground">{challenge.name}</h3>
-                        <Badge
-                          variant="secondary"
-                          className={cn(
-                            "text-xs px-2 py-0.5",
-                            challenge.status === "completed"
-                              ? "bg-[#2bbcff]/10 text-[#2bbcff] border-[#2bbcff]/30"
-                              : "bg-red-500/10 text-red-500 border-red-500/30"
-                          )}
-                        >
-                          {challenge.status === "completed" ? "Completed" : "Failed"}
-                        </Badge>
-                      </div>
-                      <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
-                        <span>Difficulty: {challenge.difficulty}/5</span>
-                        <span>·</span>
-                        <span>{challenge.duration} days</span>
-                        <span>·</span>
-                        <span>{challenge.proofCount} proofs</span>
-                        <span>·</span>
-                        <span>{challenge.status === "completed" ? challenge.completionDate : challenge.failureDate}</span>
-                      </div>
+                    <div className="mt-2 flex flex-wrap gap-3 text-xs text-muted-foreground">
+                      <span>Difficulty: {challenge.difficulty}/5</span>
+                      <span>{challenge.duration} days</span>
+                      <span>{challenge.proofCount} proofs</span>
+                      <span>{challenge.status === "completed" ? challenge.completionDate : challenge.failureDate}</span>
                     </div>
                   </div>
                 </div>
@@ -305,29 +265,27 @@ export default function PublicProfilePage() {
           </div>
         </div>
 
-        {/* External Links - same as app/profile when present */}
         {profile.links && (profile.links.linkedin || profile.links.github || profile.links.portfolio) && (
-          <div className="glass-card rounded-xl border border-[#2bbcff]/30 bg-card/50 backdrop-blur-sm p-5 md:p-6 mb-4 md:mb-6">
-            <h2 className="text-lg font-bold mb-4">External Links</h2>
+          <div className="glass-card rounded-2xl border border-border/60 bg-card/70 p-5 md:p-6">
+            <h2 className="text-lg font-semibold mb-4">External Links</h2>
             <div className="space-y-3">
               {profile.links.linkedin && (
                 <a
                   href={`https://${profile.links.linkedin}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center justify-between p-3 rounded-lg border border-[#2bbcff]/20 bg-[#2bbcff]/5 hover:border-[#2bbcff]/40 transition-all group"
-                  aria-label="Open LinkedIn profile"
+                  className="flex items-center justify-between p-3 rounded-xl border border-border/60 bg-brand/5 hover:border-brand/40 transition-all"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-[#2bbcff]/20 flex items-center justify-center shrink-0">
-                      <LinkIcon className="w-4 h-4 text-[#2bbcff]" aria-hidden="true" />
+                    <div className="w-9 h-9 rounded-xl bg-brand/15 flex items-center justify-center">
+                      <LinkIcon className="w-4 h-4 text-foreground" aria-hidden="true" />
                     </div>
                     <div>
-                      <p className="text-sm font-medium">LinkedIn</p>
+                      <p className="text-sm font-medium text-foreground">LinkedIn</p>
                       <p className="text-xs text-muted-foreground">{profile.links.linkedin}</p>
                     </div>
                   </div>
-                  <ExternalLink className="w-4 h-4 text-muted-foreground group-hover:text-[#2bbcff] transition-colors shrink-0" aria-hidden="true" />
+                  <ExternalLink className="w-4 h-4 text-muted-foreground" aria-hidden="true" />
                 </a>
               )}
               {profile.links.github && (
@@ -335,19 +293,18 @@ export default function PublicProfilePage() {
                   href={`https://${profile.links.github}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center justify-between p-3 rounded-lg border border-[#a855f7]/20 bg-[#a855f7]/5 hover:border-[#a855f7]/40 transition-all group"
-                  aria-label="Open GitHub profile"
+                  className="flex items-center justify-between p-3 rounded-xl border border-border/60 bg-brand-2/5 hover:border-brand-2/40 transition-all"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-[#a855f7]/20 flex items-center justify-center shrink-0">
-                      <LinkIcon className="w-4 h-4 text-[#a855f7]" aria-hidden="true" />
+                    <div className="w-9 h-9 rounded-xl bg-brand-2/15 flex items-center justify-center">
+                      <LinkIcon className="w-4 h-4 text-foreground" aria-hidden="true" />
                     </div>
                     <div>
-                      <p className="text-sm font-medium">GitHub</p>
+                      <p className="text-sm font-medium text-foreground">GitHub</p>
                       <p className="text-xs text-muted-foreground">{profile.links.github}</p>
                     </div>
                   </div>
-                  <ExternalLink className="w-4 h-4 text-muted-foreground group-hover:text-[#a855f7] transition-colors shrink-0" aria-hidden="true" />
+                  <ExternalLink className="w-4 h-4 text-muted-foreground" aria-hidden="true" />
                 </a>
               )}
               {profile.links.portfolio && (
@@ -355,19 +312,18 @@ export default function PublicProfilePage() {
                   href={`https://${profile.links.portfolio}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center justify-between p-3 rounded-lg border border-border/20 bg-muted/30 hover:border-border/40 transition-all group"
-                  aria-label="Open portfolio"
+                  className="flex items-center justify-between p-3 rounded-xl border border-border/60 bg-muted/40 hover:border-border/80 transition-all"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center shrink-0">
+                    <div className="w-9 h-9 rounded-xl bg-muted flex items-center justify-center">
                       <LinkIcon className="w-4 h-4 text-muted-foreground" aria-hidden="true" />
                     </div>
                     <div>
-                      <p className="text-sm font-medium">Portfolio</p>
+                      <p className="text-sm font-medium text-foreground">Portfolio</p>
                       <p className="text-xs text-muted-foreground">{profile.links.portfolio}</p>
                     </div>
                   </div>
-                  <ExternalLink className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors shrink-0" aria-hidden="true" />
+                  <ExternalLink className="w-4 h-4 text-muted-foreground" aria-hidden="true" />
                 </a>
               )}
             </div>
@@ -377,7 +333,7 @@ export default function PublicProfilePage() {
         <Button
           variant="outline"
           onClick={() => router.back()}
-          className="w-full border-[#2bbcff]/50 hover:bg-[#2bbcff]/10 text-[10px] h-10 font-bold uppercase tracking-wider"
+          className="w-full border-border/60 bg-transparent"
           aria-label="Back to leaderboard"
         >
           <ArrowLeft className="w-4 h-4 mr-2" aria-hidden="true" />
@@ -385,7 +341,6 @@ export default function PublicProfilePage() {
         </Button>
       </div>
 
-      <BottomNav />
     </div>
   )
 }

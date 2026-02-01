@@ -48,7 +48,7 @@ const getInviteStateContent = (
           className="w-14 h-14 rounded-xl bg-red-500/10 flex items-center justify-center mx-auto mb-4"
           aria-hidden="true"
         >
-          <AlertCircle className="w-7 h-7 text-red-500" />
+          <AlertCircle className="w-7 h-7 text-foreground" />
         </div>
         <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] mb-2">
           {type === "expired" ? "Expired" : "Invalid"}
@@ -63,7 +63,7 @@ const getInviteStateContent = (
         </p>
         <Button
           onClick={() => router.push("/")}
-          className="w-full min-h-[48px] sm:h-10 bg-gradient-to-r from-[#2bbcff] to-[#a855f7] hover:opacity-90 text-white border-0 text-xs sm:text-[10px] font-bold uppercase tracking-wider touch-manipulation"
+          className="w-full min-h-[48px] sm:h-10 bg-gradient-to-r from-[#2563eb] to-[#7c3aed] hover:opacity-90 text-white border-0 text-xs sm:text-[10px] font-bold uppercase tracking-wider touch-manipulation"
           aria-label="Go to EliteScore home"
         >
           Go to EliteScore
@@ -80,7 +80,7 @@ const getInviteStateContent = (
           className="w-14 h-14 rounded-xl bg-green-500/10 flex items-center justify-center mx-auto mb-4"
           aria-hidden="true"
         >
-          <CheckCircle2 className="w-7 h-7 text-green-500" />
+          <CheckCircle2 className="w-7 h-7 text-foreground" />
         </div>
         <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] mb-2">
           {type === "alreadyAccepted" ? "Already linked" : "You're in"}
@@ -95,7 +95,7 @@ const getInviteStateContent = (
         </p>
         <Button
           onClick={() => router.push("/supporter/view/mock-id")}
-          className="w-full min-h-[48px] sm:h-10 bg-gradient-to-r from-[#2bbcff] to-[#a855f7] hover:opacity-90 text-white border-0 text-xs sm:text-[10px] font-bold uppercase tracking-wider touch-manipulation"
+          className="w-full min-h-[48px] sm:h-10 bg-gradient-to-r from-[#2563eb] to-[#7c3aed] hover:opacity-90 text-white border-0 text-xs sm:text-[10px] font-bold uppercase tracking-wider touch-manipulation"
           aria-label={type === "alreadyAccepted" ? "View progress" : "View their progress"}
         >
           {type === "alreadyAccepted" ? "View Progress" : "View Their Progress"}
@@ -205,37 +205,37 @@ export default function SupporterInvitePage() {
           />
         </div>
 
-        <div className="glass-card rounded-2xl border border-[#2bbcff]/20 bg-gradient-to-br from-card/80 to-background backdrop-blur-md p-5 sm:p-6 md:p-8 shadow-xl relative overflow-hidden">
+        <div className="glass-card rounded-2xl border border-[#2563eb]/20 bg-gradient-to-br from-card/80 to-background backdrop-blur-md p-5 sm:p-6 md:p-8 shadow-xl relative overflow-hidden">
           <div
-            className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-64 bg-gradient-to-r from-[#2bbcff]/20 to-[#a855f7]/20 blur-[100px] rounded-full -z-10"
+            className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-64 bg-gradient-to-r from-[#2563eb]/20 to-[#7c3aed]/20 blur-[100px] rounded-full -z-10"
             aria-hidden="true"
           />
           <div className="text-center mb-5 sm:mb-6">
             <div
-              className="w-12 h-12 rounded-xl bg-[#2bbcff]/10 flex items-center justify-center mx-auto mb-4"
+              className="w-12 h-12 rounded-xl bg-[#2563eb]/10 flex items-center justify-center mx-auto mb-4"
               aria-hidden="true"
             >
-              <Users className="w-6 h-6 text-[#2bbcff]" />
+              <Users className="w-6 h-6 text-[#2563eb]" />
             </div>
             <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] mb-2">
               Supporter invite
             </p>
             <h1 className="text-lg sm:text-xl font-bold mb-2 leading-tight">
-              <span className="text-[#2bbcff]">{inviterName}</span> invited you to be a Supporter
+              <span className="text-[#2563eb]">{inviterName}</span> invited you to be a Supporter
             </h1>
             <p className="text-sm sm:text-xs text-muted-foreground leading-relaxed">
               Help hold them accountable on their self-improvement journey
             </p>
           </div>
 
-          <div className="glass-card rounded-xl border border-[#2bbcff]/20 bg-[#2bbcff]/5 p-4 mb-6">
+          <div className="glass-card rounded-xl border border-[#2563eb]/20 bg-[#2563eb]/5 p-4 mb-6">
             <div className="flex items-center justify-between mb-2">
               <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
                 Challenge
               </span>
               <Badge
                 variant="outline"
-                className="text-[10px] border-[#a855f7]/30 text-[#a855f7] font-bold uppercase tracking-wider"
+                className="text-[10px] border-[#7c3aed]/30 text-[#7c3aed] font-bold uppercase tracking-wider"
               >
                 {challengeDuration} days
               </Badge>
@@ -249,7 +249,7 @@ export default function SupporterInvitePage() {
             </p>
             <div className="space-y-3">
               <div className="glass-card rounded-xl border border-white/5 bg-card/30 p-3 flex items-start gap-3">
-                <Bell className="w-4 h-4 text-[#2bbcff] mt-0.5 shrink-0" aria-hidden="true" />
+                <Bell className="w-4 h-4 text-[#2563eb] mt-0.5 shrink-0" aria-hidden="true" />
                 <div>
                   <p className="text-xs font-bold text-foreground">Progress Updates</p>
                   <p className="text-[10px] text-muted-foreground leading-relaxed">
@@ -258,7 +258,7 @@ export default function SupporterInvitePage() {
                 </div>
               </div>
               <div className="glass-card rounded-xl border border-white/5 bg-card/30 p-3 flex items-start gap-3">
-                <Eye className="w-4 h-4 text-[#a855f7] mt-0.5 shrink-0" aria-hidden="true" />
+                <Eye className="w-4 h-4 text-[#7c3aed] mt-0.5 shrink-0" aria-hidden="true" />
                 <div>
                   <p className="text-xs font-bold text-foreground">Status Access</p>
                   <p className="text-[10px] text-muted-foreground leading-relaxed">
@@ -267,7 +267,7 @@ export default function SupporterInvitePage() {
                 </div>
               </div>
               <div className="glass-card rounded-xl border border-white/5 bg-card/30 p-3 flex items-start gap-3">
-                <Shield className="w-4 h-4 text-green-500 mt-0.5 shrink-0" aria-hidden="true" />
+                <Shield className="w-4 h-4 text-foreground mt-0.5 shrink-0" aria-hidden="true" />
                 <div>
                   <p className="text-xs font-bold text-foreground">No Sign-Up Required</p>
                   <p className="text-[10px] text-muted-foreground leading-relaxed">
@@ -300,7 +300,7 @@ export default function SupporterInvitePage() {
             <Button
               onClick={handleAccept}
               disabled={!consent || isSubmitting}
-              className="w-full min-h-[48px] sm:h-10 text-xs sm:text-[10px] font-bold uppercase tracking-wider bg-gradient-to-r from-[#2bbcff] to-[#a855f7] hover:opacity-90 text-white border-0 touch-manipulation"
+              className="w-full min-h-[48px] sm:h-10 text-xs sm:text-[10px] font-bold uppercase tracking-wider bg-gradient-to-r from-[#2563eb] to-[#7c3aed] hover:opacity-90 text-white border-0 touch-manipulation"
               aria-label={isSubmitting ? "Processing" : "Accept invite"}
             >
               {isSubmitting ? "Processing..." : "Accept Invite"}

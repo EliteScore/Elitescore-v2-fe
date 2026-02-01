@@ -91,11 +91,7 @@ export default function LoginPage() {
   return (
     <div className="min-h-[100dvh] sm:min-h-screen flex flex-col items-center justify-center bg-background p-4 pt-[max(1.5rem,env(safe-area-inset-top))] pb-[max(1.5rem,env(safe-area-inset-bottom))] pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] overflow-x-hidden">
       {/* App name at the top */}
-      <div className="w-full flex justify-center pt-4 sm:pt-8 pb-4">
-        <span className="text-xl sm:text-2xl font-extrabold tracking-widest uppercase bg-gradient-to-r from-[#2bbcff] to-[#a855f7] bg-clip-text text-transparent">
-          ELITESCORE
-        </span>
-      </div>
+      <div className="w-full flex justify-center pt-4 sm:pt-8 pb-4">\n        <img src="/logo.jpeg" alt="EliteScore" className="h-12 w-12 rounded-2xl object-cover" />\n      </div>
 
       {/* Background elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
@@ -110,16 +106,16 @@ export default function LoginPage() {
         animate="visible"
       >
         <motion.div className="text-center" variants={itemVariants}>
-          <h1 className="text-xl sm:text-2xl font-extrabold tracking-widest uppercase bg-gradient-to-r from-[#2bbcff] to-[#a855f7] bg-clip-text text-transparent">
+          <h1 className="text-xl sm:text-2xl font-extrabold tracking-widest uppercase bg-gradient-to-r from-[#2563eb] to-[#7c3aed] text-foreground">
             Sign In
           </h1>
           <p className="mt-2 text-muted-foreground text-sm">Sign in to continue your journey</p>
         </motion.div>
 
         <motion.div variants={itemVariants} className="w-full">
-          <Card className="shadow-2xl rounded-2xl border border-[#2bbcff]/20 bg-card/90 backdrop-blur-lg overflow-hidden">
+          <Card className="shadow-2xl rounded-2xl border border-[#2563eb]/20 bg-card/90 backdrop-blur-lg overflow-hidden">
             <CardHeader className="p-4 sm:p-6 pb-2 sm:pb-2">
-              <CardTitle className="text-base sm:text-lg font-extrabold tracking-widest uppercase bg-gradient-to-r from-[#2bbcff] to-[#a855f7] bg-clip-text text-transparent">
+              <CardTitle className="text-base sm:text-lg font-extrabold tracking-widest uppercase bg-gradient-to-r from-[#2563eb] to-[#7c3aed] text-foreground">
                 Welcome back
               </CardTitle>
               <CardDescription className="text-muted-foreground text-sm">
@@ -143,7 +139,7 @@ export default function LoginPage() {
                       <FormItem>
                         <FormLabel className="text-foreground text-sm">Email</FormLabel>
                         <Input
-                          className="min-h-[48px] py-3 text-base rounded-xl border border-white/10 bg-white/5 text-foreground focus:ring-2 focus:ring-[#2bbcff] focus:border-[#2bbcff] transition-all lowercase touch-manipulation"
+                          className="min-h-[48px] py-3 text-base rounded-xl border border-white/10 bg-white/5 text-foreground focus:ring-2 focus:ring-[#2563eb] focus:border-[#2563eb] transition-all lowercase touch-manipulation"
                           placeholder="john@example.com"
                           type="email"
                           autoComplete="email"
@@ -166,7 +162,7 @@ export default function LoginPage() {
                           <FormLabel className="text-foreground text-sm">Password</FormLabel>
                           <Link
                             href="/forgot-password"
-                            className="text-xs text-muted-foreground hover:text-[#2bbcff] transition-colors min-h-[44px] flex items-center touch-manipulation"
+                            className="text-xs text-muted-foreground hover:text-[#2563eb] transition-colors min-h-[44px] flex items-center touch-manipulation"
                             aria-label="Forgot password?"
                           >
                             Forgot password?
@@ -174,7 +170,7 @@ export default function LoginPage() {
                         </div>
                         <div className="relative">
                           <Input
-                            className="min-h-[48px] py-3 text-base rounded-xl border border-white/10 bg-white/5 text-foreground focus:ring-2 focus:ring-[#2bbcff] focus:border-[#2bbcff] transition-all pr-12 touch-manipulation"
+                            className="min-h-[48px] py-3 text-base rounded-xl border border-white/10 bg-white/5 text-foreground focus:ring-2 focus:ring-[#2563eb] focus:border-[#2563eb] transition-all pr-12 touch-manipulation"
                             placeholder="Enter your password"
                             type={showPassword ? "text" : "password"}
                             autoComplete="current-password"
@@ -184,7 +180,7 @@ export default function LoginPage() {
                             type="button"
                             variant="ghost"
                             size="icon"
-                            className="absolute right-0 top-0 h-full min-w-[48px] min-h-[48px] px-3 text-muted-foreground hover:text-[#2bbcff] transition-colors touch-manipulation"
+                            className="absolute right-0 top-0 h-full min-w-[48px] min-h-[48px] px-3 text-muted-foreground hover:text-[#2563eb] transition-colors touch-manipulation"
                             onClick={() => setShowPassword(!showPassword)}
                             aria-label={showPassword ? "Hide password" : "Show password"}
                           >
@@ -204,7 +200,7 @@ export default function LoginPage() {
                         <Checkbox
                           checked={field.value}
                           onCheckedChange={field.onChange}
-                          className="rounded-md border-white/20 focus:ring-[#2bbcff]"
+                          className="rounded-md border-white/20 focus:ring-[#2563eb]"
                         />
                         <div className="leading-none">
                           <FormLabel className="text-foreground text-xs cursor-pointer">Remember me for 30 days</FormLabel>
@@ -217,7 +213,7 @@ export default function LoginPage() {
                 <CardFooter className="flex flex-col space-y-4 p-4 sm:p-6 pt-2 sm:pt-2">
                   <Button
                     type="submit"
-                    className="w-full min-h-[48px] sm:h-11 py-3 rounded-2xl font-bold bg-gradient-to-r from-[#2bbcff] to-[#a855f7] text-white shadow-lg hover:opacity-90 transition-opacity touch-manipulation"
+                    className="w-full min-h-[48px] sm:h-11 py-3 rounded-2xl font-bold bg-gradient-to-r from-[#2563eb] to-[#7c3aed] text-white shadow-lg hover:opacity-90 transition-opacity touch-manipulation"
                     disabled={isLoading}
                     aria-label={isLoading ? "Signing in" : "Sign in"}
                   >
@@ -271,7 +267,7 @@ export default function LoginPage() {
 
                   <div className="text-center text-xs text-muted-foreground">
                     Don't have an account?{" "}
-                    <Link href="/signup" className="text-[#2bbcff] hover:underline transition-colors min-h-[44px] inline-flex items-center touch-manipulation" aria-label="Go to sign up">
+                    <Link href="/signup" className="text-[#2563eb] hover:underline transition-colors min-h-[44px] inline-flex items-center touch-manipulation" aria-label="Go to sign up">
                       Sign up
                     </Link>
                   </div>
@@ -296,3 +292,4 @@ export default function LoginPage() {
     </div>
   )
 }
+

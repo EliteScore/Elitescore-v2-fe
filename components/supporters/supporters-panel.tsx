@@ -1,4 +1,4 @@
-"use client"
+ï»¿"use client"
 
 import React from "react"
 
@@ -106,11 +106,11 @@ export function SupportersPanel({
   ]
 
   return (
-    <div className="glass-card rounded-xl border border-[#a855f7]/20 bg-card/50 backdrop-blur-sm p-5">
+    <div className="glass-card rounded-xl border border-[#7c3aed]/20 bg-card/50 backdrop-blur-sm p-5">
       <div className="flex items-center gap-2 mb-4">
-        <Users className="w-4 h-4 text-[#a855f7]" />
+        <Users className="w-4 h-4 text-[#7c3aed]" />
         <h3 className="text-sm font-bold">Supporters</h3>
-        <Badge variant="outline" className="text-[10px] border-[#a855f7]/30 text-[#a855f7]">
+        <Badge variant="outline" className="text-[10px] border-[#7c3aed]/30 text-[#7c3aed]">
           {supporters.length}/3
         </Badge>
       </div>
@@ -130,7 +130,7 @@ export function SupportersPanel({
               className="flex items-center justify-between p-3 rounded-lg bg-muted/20 border border-border/30"
             >
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#2bbcff]/20 to-[#a855f7]/20 flex items-center justify-center">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#2563eb]/20 to-[#7c3aed]/20 flex items-center justify-center">
                   <span className="text-xs font-bold">
                     {supporter.name?.charAt(0) || supporter.email.charAt(0).toUpperCase()}
                   </span>
@@ -141,10 +141,10 @@ export function SupportersPanel({
                     variant="outline"
                     className={`text-[10px] mt-0.5 ${
                       supporter.status === "accepted"
-                        ? "border-green-500/30 text-green-500"
+                        ? "border-green-500/30 text-foreground"
                         : supporter.status === "declined"
-                        ? "border-red-500/30 text-red-500"
-                        : "border-orange-500/30 text-orange-500"
+                        ? "border-red-500/30 text-foreground"
+                        : "border-orange-500/30 text-foreground"
                     }`}
                   >
                     {supporter.status === "accepted" ? "Accepted" : supporter.status === "declined" ? "Declined" : "Pending"}
@@ -157,9 +157,9 @@ export function SupportersPanel({
                     size="sm"
                     variant="ghost"
                     onClick={() => onResendInvite(supporter.id)}
-                    className="h-7 w-7 p-0 hover:bg-[#2bbcff]/10"
+                    className="h-7 w-7 p-0 hover:bg-[#2563eb]/10"
                   >
-                    <RefreshCw className="w-3 h-3 text-[#2bbcff]" />
+                    <RefreshCw className="w-3 h-3 text-[#2563eb]" />
                   </Button>
                 )}
                 <Button
@@ -168,7 +168,7 @@ export function SupportersPanel({
                   onClick={() => setShowRemoveConfirm(supporter.id)}
                   className="h-7 w-7 p-0 hover:bg-red-500/10"
                 >
-                  <X className="w-3 h-3 text-red-500" />
+                  <X className="w-3 h-3 text-foreground" />
                 </Button>
               </div>
             </div>
@@ -195,12 +195,12 @@ export function SupportersPanel({
               type="button"
               size="sm"
               onClick={handleAddSupporter}
-              className="h-8 px-3 bg-[#a855f7] hover:bg-[#a855f7]/90 text-white text-xs"
+              className="h-8 px-3 bg-[#7c3aed] hover:bg-[#7c3aed]/90 text-white text-xs"
             >
               Invite
             </Button>
           </div>
-          {error && <p className="text-[10px] text-red-500">{error}</p>}
+          {error && <p className="text-[10px] text-foreground">{error}</p>}
         </div>
       )}
 
@@ -208,7 +208,7 @@ export function SupportersPanel({
       <div className="space-y-4 pt-4 border-t border-border/30">
         <div>
           <div className="flex items-center gap-2 mb-2">
-            <Bell className="w-3.5 h-3.5 text-[#2bbcff]" />
+            <Bell className="w-3.5 h-3.5 text-[#2563eb]" />
             <span className="text-xs font-medium">Notification Intensity</span>
           </div>
           <div className="grid grid-cols-3 gap-2">
@@ -219,7 +219,7 @@ export function SupportersPanel({
                 onClick={() => setLocalIntensity(option.value)}
                 className={`p-2 rounded-lg border text-center transition-all ${
                   localIntensity === option.value
-                    ? "border-[#2bbcff]/50 bg-[#2bbcff]/10"
+                    ? "border-[#2563eb]/50 bg-[#2563eb]/10"
                     : "border-border/30 hover:border-border/50"
                 }`}
               >
@@ -232,7 +232,7 @@ export function SupportersPanel({
 
         <div>
           <div className="flex items-center gap-2 mb-2">
-            <Shield className="w-3.5 h-3.5 text-[#a855f7]" />
+            <Shield className="w-3.5 h-3.5 text-[#7c3aed]" />
             <span className="text-xs font-medium">Privacy Level</span>
           </div>
           <div className="space-y-2">
@@ -243,13 +243,13 @@ export function SupportersPanel({
                 onClick={() => setLocalPrivacy(option.value)}
                 className={`w-full p-2.5 rounded-lg border flex items-center gap-2 transition-all ${
                   localPrivacy === option.value
-                    ? "border-[#a855f7]/50 bg-[#a855f7]/10"
+                    ? "border-[#7c3aed]/50 bg-[#7c3aed]/10"
                     : "border-border/30 hover:border-border/50"
                 }`}
               >
                 {option.icon}
                 <span className="text-xs">{option.label}</span>
-                {localPrivacy === option.value && <Check className="w-3 h-3 text-[#a855f7] ml-auto" />}
+                {localPrivacy === option.value && <Check className="w-3 h-3 text-[#7c3aed] ml-auto" />}
               </button>
             ))}
           </div>
@@ -258,7 +258,7 @@ export function SupportersPanel({
         <Button
           type="button"
           onClick={handleSaveSettings}
-          className="w-full h-8 text-xs bg-gradient-to-r from-[#2bbcff] to-[#a855f7] hover:opacity-90 text-white border-0"
+          className="w-full h-8 text-xs bg-gradient-to-r from-[#2563eb] to-[#7c3aed] hover:opacity-90 text-white border-0"
         >
           {showSaved ? (
             <>
@@ -276,7 +276,7 @@ export function SupportersPanel({
         <DialogContent className="sm:max-w-sm bg-card/95 backdrop-blur-xl border-red-500/30">
           <DialogHeader>
             <DialogTitle className="text-base font-bold flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 text-red-500" />
+              <AlertCircle className="w-4 h-4 text-foreground" />
               Remove Supporter
             </DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground">
@@ -310,3 +310,4 @@ export function SupportersPanel({
     </div>
   )
 }
+

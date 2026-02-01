@@ -1,178 +1,106 @@
-# EliteScore
+# EliteScore Frontend
 
-A gamified self-improvement platform for Gen Z students. Turn skills, habits, and learning into quantifiable achievements through challenges, leaderboards, and competitive progress tracking.
+EliteScore is a gamified self-improvement platform for students. It turns real-world habits, learning, and skill development into quantifiable progress with challenges, proof-based tracking, streaks, and competitive leaderboards.
 
-## Features
+## What This Repo Contains
 
-- **Daily Challenges**: Lock into structured challenges across technical skills, career development, and personal growth
-- **Live Leaderboards**: Track your rank in real-time against your cohort and see exactly where you stand
-- **EliteScore System**: Quantify your progress with a single metric that matters
-- **Proof-Based Progress**: Submit evidence for every achievement - no gaming the system
-- **Streak Tracking**: Build consistency with streak multipliers that boost your score
-- **Cohort Competition**: Compete with students from your university
+- Marketing landing page at `/`
+- Auth flows at `/login` and `/signup`
+- Product experience under `/app` with core navigation
+- Challenges, leaderboard, and profile flows
+
+## Highlights
+
+- Challenge-based growth with daily tasks
+- Proof submission for accountability
+- Streak tracking and rank movement
+- Cohort and global leaderboards
+- Light/dark mode
+- Sidebar navigation with collapse/expand
+- Guided walkthrough (first visit to `/app`)\n\n## New Features (1-3)\n\n1. Streak insurance  spend points to save a missed day.\n2. Proof quality ratings  peer upvotes can boost proof quality.\n3. Weekly boss challenge  high-difficulty, high-reward weekly quest.\n
 
 ## Tech Stack
 
-- **Framework**: Next.js 16 (App Router)
-- **Language**: TypeScript
-- **Styling**: Tailwind CSS v4
-- **UI Components**: shadcn/ui
-- **Icons**: Lucide React
+- Next.js (App Router)
+- TypeScript
+- Tailwind CSS v4
+- shadcn/ui
+- Lucide React
 
 ## Getting Started
 
 ### Prerequisites
 
-- Node.js 18+ installed on your machine
-- npm or yarn package manager
+- Node.js 18+
+- npm (or yarn/pnpm)
 
-### Installation
+### Install
 
-1. **Download the ZIP file** from v0 and extract it to your desired location
-
-2. **Navigate to the project directory**
-   ```bash
-   cd elitescore-homepage-design
-   ```
-
-3. **Install dependencies**
-   ```bash
-   npm install
-   # or
-   yarn install
-   ```
-
-4. **Run the development server**
-   ```bash
-   npm run dev
-   # or
-   yarn dev
-   ```
-
-5. **Open your browser**
-   Navigate to [http://localhost:3000](http://localhost:3000) to see the application
-
-### Project Structure
-
-```
-elitescore-homepage-design/
-├── app/
-│   ├── page.tsx              # Homepage
-│   ├── dashboard/
-│   │   └── page.tsx         # User dashboard
-│   ├── challenges/
-│   │   └── page.tsx         # Challenges page
-│   ├── leaderboard/
-│   │   └── page.tsx         # Leaderboard page
-│   ├── layout.tsx           # Root layout
-│   └── globals.css          # Global styles
-├── components/
-│   └── ui/                  # shadcn/ui components
-├── public/
-│   └── images/
-│       └── logo.png         # EliteScore logo
-├── package.json
-└── README.md
+```bash
+npm install
 ```
 
-## Available Scripts
+### Run Dev Server
 
-- `npm run dev` - Start development server
-- `npm run build` - Build for production
-- `npm run start` - Start production server
-- `npm run lint` - Run ESLint
-
-## Design System
-
-The application uses a consistent blue-to-purple gradient color scheme matching the EliteScore brand:
-
-- **Primary Blue**: `#2bbcff`
-- **Primary Purple**: `#a855f7`
-- **Typography**: Small, compact fonts for a modern Gen Z aesthetic
-- **UI Style**: Glass morphism effects with backdrop blur
-- **Spacing**: Generous padding and margins for clean, breathable layouts
-
-## Key Pages
-
-### Homepage (`/`)
-- Hero section with value proposition
-- Feature showcase
-- How it works section
-- Social proof testimonials
-- CTA section
-
-### Dashboard (`/dashboard`)
-- Status snapshot with EliteScore and streak
-- Primary action for daily submissions
-- Active challenges with progress tracking
-- Performance signals grid
-- Leaderboard preview
-- Improvement insights
-- Recommended challenges
-
-### Challenges (`/challenges`)
-- Active challenges tab
-- Challenge library with browsing
-- Challenge history
-- Lock-in and proof submission modals
-
-### Leaderboard (`/leaderboard`)
-- Cohort leaderboard
-- Challenge-specific leaderboards
-- Top 10 users display
-- Current user position
-- 5 users above and below
-- Rank movement indicators
-- Profile viewing
-
-## Customization
-
-### Changing Colors
-
-Edit `app/globals.css` to modify the color scheme:
-
-```css
-@theme inline {
-  /* Update these CSS variables */
-  --color-primary-blue: #2bbcff;
-  --color-primary-purple: #a855f7;
-}
+```bash
+npm run dev
 ```
 
-### Adding New Pages
+Open `http://localhost:3000` for the landing page. The app lives at `http://localhost:3000/app`.
 
-1. Create a new folder in `app/` directory
-2. Add a `page.tsx` file
-3. Follow the existing component patterns for consistency
+## Project Structure
 
-### Modifying Components
+```text
+app/
+  layout.tsx
+  globals.css
+  page.tsx                # Landing page
+  app/                    # Main app entry
+  challenges/
+  leaderboard/
+  login/
+  profile/
+  signup/
+  supporter/
+components/
+  sidebar-nav.tsx
+  top-bar.tsx
+  ai-helper.tsx
+  app-tour.tsx
+  ui/
+lib/
+public/
+styles/
+```
 
-UI components are located in `components/ui/`. These are shadcn/ui components that can be customized as needed.
+## Theming
+
+Theme tokens live in `app/globals.css` under `:root` and `.dark`.
+
+- `ThemeProvider` uses `next-themes` for system + manual toggle
+- `ThemeToggle` is in the top bar and landing header
+
+## Notes
+
+- First-time walkthrough runs only on `/app` and is stored in `localStorage` under `elitescore_tour_seen`.
+- Ask Elite lives in the bottom-right and uses the `MorphPanel` component.
+
+## Scripts
+
+- `npm run dev`  start development server
+- `npm run build`  production build
+- `npm run start`  run production server
+- `npm run lint`  lint
 
 ## Deployment
 
-### Deploy to Vercel
-
-The easiest way to deploy is using Vercel:
-
-1. Push your code to GitHub
-2. Import your repository on [Vercel](https://vercel.com)
-3. Vercel will auto-detect Next.js and deploy
-
-### Build for Production
+Vercel is the simplest path: import the repo and deploy. For manual builds:
 
 ```bash
 npm run build
 npm run start
 ```
 
-## Support
-
-For issues or questions:
-- Check the [Next.js Documentation](https://nextjs.org/docs)
-- Visit [shadcn/ui Documentation](https://ui.shadcn.com)
-- Review [Tailwind CSS Documentation](https://tailwindcss.com/docs)
-
 ## License
 
-© 2025 EliteScore. All rights reserved.
+ 2026 EliteScore. All rights reserved.

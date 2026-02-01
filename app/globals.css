@@ -4,7 +4,7 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* Updated to EliteScore brand colors with blue-to-purple gradient theme */
+  /* Foundation palette */
   --background: oklch(0.98 0.002 264);
   --foreground: oklch(0.15 0.01 264);
   --card: oklch(1 0 0);
@@ -38,10 +38,13 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+  --brand: #2563eb;
+  --brand-2: #7c3aed;
+  --brand-soft: color-mix(in oklab, #2563eb 12%, transparent);
 }
 
 .dark {
-  /* Dark theme optimized for EliteScore brand */
+  /* Dark theme */
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
   --card: oklch(0.145 0 0);
@@ -74,10 +77,14 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(0.269 0 0);
   --sidebar-ring: oklch(0.439 0 0);
+  --brand: #60a5fa;
+  --brand-2: #a78bfa;
+  --brand-soft: color-mix(in oklab, #60a5fa 18%, transparent);
 }
 
 @theme inline {
-  /* optional: --font-sans, --font-serif, --font-mono if they are applied in the layout.tsx */
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -114,6 +121,9 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+  --color-brand: var(--brand);
+  --color-brand-2: var(--brand-2);
+  --color-brand-soft: var(--brand-soft);
 }
 
 @layer base {
@@ -127,11 +137,15 @@
 
 /* Added glass morphism effect for EliteScore cards */
 .glass-card {
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  background: color-mix(in oklab, var(--card) 88%, transparent);
+  border-color: color-mix(in oklab, var(--border) 70%, transparent);
+  box-shadow: 0 20px 40px -30px rgba(15, 23, 42, 0.35);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
 }
 
 .dark .glass-card {
-  background: rgba(0, 0, 0, 0.2);
+  background: color-mix(in oklab, var(--card) 75%, transparent);
+  border-color: color-mix(in oklab, var(--border) 60%, transparent);
+  box-shadow: 0 24px 50px -32px rgba(0, 0, 0, 0.65);
 }

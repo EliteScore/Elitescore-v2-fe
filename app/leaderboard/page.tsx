@@ -21,8 +21,8 @@ import {
   Trophy,
   Target,
   Check,
+  User,
 } from "lucide-react"
-import { BottomNav } from "@/components/bottom-nav"
 
 type LeaderboardUser = {
   id: string
@@ -52,6 +52,12 @@ const currentUser: LeaderboardUser = {
   isActive: true,
   movement: 3,
   isCurrentUser: true,
+}
+
+const leaderboardStats = {
+  totalPlayers: 15234,
+  activeToday: 8120,
+  avgStreak: 9,
 }
 
 const globalLeaderboardRaw: Omit<LeaderboardUser, "rank">[] = [
@@ -110,7 +116,7 @@ function ProfilePicture({
   return (
     <div
       className={cn(
-        "relative shrink-0 rounded-full bg-gradient-to-br from-[#2bbcff] to-[#a855f7]",
+        "relative shrink-0 rounded-full bg-card border border-border/60",
         ringClasses[size],
         className
       )}
@@ -120,8 +126,8 @@ function ProfilePicture({
         {avatarUrl && (
           <AvatarImage src={avatarUrl} alt="" className="object-cover" />
         )}
-        <AvatarFallback className="rounded-full bg-background font-bold bg-gradient-to-br from-[#2bbcff] to-[#a855f7] bg-clip-text text-transparent">
-          {getInitials(name)}
+        <AvatarFallback className="rounded-full bg-background text-muted-foreground flex items-center justify-center">
+          <User className="w-4 h-4" aria-hidden="true" />
         </AvatarFallback>
       </Avatar>
     </div>
@@ -185,26 +191,26 @@ export default function LeaderboardPage() {
       {/* Hero - advanced: gradient mesh, strong typography */}
       <section className="container mx-auto px-4 pt-4 sm:pt-6 md:pt-8 pb-4">
         <div className="max-w-6xl mx-auto">
-          <div className="glass-card rounded-2xl border border-[#2bbcff]/20 bg-gradient-to-br from-card/80 to-background backdrop-blur-md p-5 sm:p-6 md:p-10 shadow-2xl relative overflow-hidden">
+          <div className="glass-card rounded-2xl border border-border/60 bg-card/70 p-5 sm:p-6 md:p-10 shadow-2xl relative overflow-hidden">
             <div
-              className="absolute top-0 left-1/2 -translate-x-1/2 w-80 h-80 bg-gradient-to-r from-[#2bbcff]/25 to-[#a855f7]/25 blur-[120px] rounded-full -z-10"
+              className="absolute top-0 left-1/2 -translate-x-1/2 w-80 h-80 bg-muted/40 blur-[80px] rounded-full -z-10"
               aria-hidden="true"
             />
             <div
-              className="absolute bottom-0 right-0 w-40 h-40 bg-[#a855f7]/10 blur-[60px] rounded-full -z-10"
+              className="absolute bottom-0 right-0 w-40 h-40 bg-muted blur-[60px] rounded-full -z-10"
               aria-hidden="true"
             />
             <div className="flex flex-col items-center text-center">
               <div
-                className="w-14 h-14 rounded-2xl bg-[#2bbcff]/10 flex items-center justify-center mb-5"
+                className="w-14 h-14 rounded-2xl bg-brand/15 flex items-center justify-center mb-5"
                 aria-hidden="true"
               >
-                <Trophy className="w-7 h-7 text-[#2bbcff]" />
+                <Trophy className="w-7 h-7 text-foreground" />
               </div>
               <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.25em] mb-2">
                 Global leaderboard
               </p>
-              <h1 className="text-3xl md:text-4xl font-black bg-gradient-to-r from-[#2bbcff] via-[#a855f7] to-[#2bbcff] bg-clip-text text-transparent leading-tight mb-3">
+              <h1 className="text-3xl md:text-4xl font-black text-foreground leading-tight mb-3">
                 Where do you stand?
               </h1>
               <p className="text-sm text-muted-foreground max-w-md leading-relaxed">
@@ -218,30 +224,53 @@ export default function LeaderboardPage() {
       {/* Your standing - single card, 3 metrics */}
       <section className="container mx-auto px-4 py-4 md:py-6">
         <div className="max-w-6xl mx-auto">
-          <div className="glass-card rounded-2xl border border-[#2bbcff]/20 bg-gradient-to-br from-card/80 to-background backdrop-blur-md p-4 sm:p-5 md:p-6 shadow-xl">
+          <div className="glass-card rounded-2xl border border-border/60 bg-card/70 p-4 sm:p-5 md:p-6 shadow-xl">
             <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] mb-3 sm:mb-4">
               Your standing
             </p>
             <div className="grid grid-cols-3 gap-3 sm:gap-4 md:gap-6">
-              <div className="flex flex-col items-center md:items-start gap-1 rounded-xl border border-white/5 bg-white/5 p-3 sm:p-4 transition-transform hover:scale-[1.02] touch-manipulation">
-                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Rank</span>
+              <div className="flex flex-col items-center md:items-start gap-1 rounded-xl border border-border/60 bg-muted/40 p-3 sm:p-4 transition-transform hover:scale-[1.02] touch-manipulation">
+                <span className="flex items-center gap-1 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                  <Trophy className="w-3 h-3 text-foreground" aria-hidden="true" />
+                  Rank
+                </span>
                 <div className="flex items-baseline gap-1.5">
-                  <span className="text-2xl md:text-3xl font-black bg-gradient-to-r from-[#2bbcff] to-[#a855f7] bg-clip-text text-transparent">
+                  <span className="text-2xl md:text-3xl font-black text-foreground">
                     #{currentUser.rank}
                   </span>
-                  <TrendingUp className="w-4 h-4 text-green-500 shrink-0" aria-hidden="true" />
+                  <TrendingUp className="w-4 h-4 text-foreground shrink-0" aria-hidden="true" />
                 </div>
               </div>
-              <div className="flex flex-col items-center md:items-start gap-1 rounded-xl border border-white/5 bg-white/5 p-3 sm:p-4 transition-transform hover:scale-[1.02] touch-manipulation">
-                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">EliteScore</span>
+              <div className="flex flex-col items-center md:items-start gap-1 rounded-xl border border-border/60 bg-muted/40 p-3 sm:p-4 transition-transform hover:scale-[1.02] touch-manipulation">
+                <span className="flex items-center gap-1 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                  <Target className="w-3 h-3 text-foreground" aria-hidden="true" />
+                  EliteScore
+                </span>
                 <span className="text-2xl md:text-3xl font-bold text-foreground">{currentUser.score}</span>
               </div>
               <div className="flex flex-col items-center md:items-start gap-1 rounded-xl border border-green-500/20 bg-green-500/5 p-3 sm:p-4 transition-transform hover:scale-[1.02] touch-manipulation">
-                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Movement</span>
+                <span className="flex items-center gap-1 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                  <ArrowUp className="w-3 h-3 text-foreground" aria-hidden="true" />
+                  Movement
+                </span>
                 <div className="flex items-center gap-1.5">
-                  <ArrowUp className="w-5 h-5 text-green-500 shrink-0" aria-hidden="true" />
-                  <span className="text-2xl md:text-3xl font-bold text-green-500">+{currentUser.movement}</span>
+                  <ArrowUp className="w-5 h-5 text-foreground shrink-0" aria-hidden="true" />
+                  <span className="text-2xl md:text-3xl font-bold text-foreground">+{currentUser.movement}</span>
                 </div>
+              </div>
+            </div>
+            <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs text-muted-foreground">
+              <div className="rounded-xl border border-border/60 bg-card/60 p-3">
+                <div className="text-[10px] uppercase tracking-wider">Total players</div>
+                <div className="mt-1 text-sm font-semibold text-foreground">{leaderboardStats.totalPlayers.toLocaleString()}</div>
+              </div>
+              <div className="rounded-xl border border-border/60 bg-card/60 p-3">
+                <div className="text-[10px] uppercase tracking-wider">Active today</div>
+                <div className="mt-1 text-sm font-semibold text-foreground">{leaderboardStats.activeToday.toLocaleString()}</div>
+              </div>
+              <div className="rounded-xl border border-border/60 bg-card/60 p-3">
+                <div className="text-[10px] uppercase tracking-wider">Avg streak</div>
+                <div className="mt-1 text-sm font-semibold text-foreground">{leaderboardStats.avgStreak} days</div>
               </div>
             </div>
           </div>
@@ -251,7 +280,7 @@ export default function LeaderboardPage() {
       {/* Podium - top 3 with avatars */}
       <section className="container mx-auto px-4 py-4 md:py-6">
         <div className="max-w-6xl mx-auto">
-          <div className="glass-card rounded-2xl border border-[#2bbcff]/20 bg-gradient-to-br from-card/80 to-background backdrop-blur-md p-4 sm:p-6 md:p-8 shadow-xl relative overflow-hidden">
+          <div className="glass-card rounded-2xl border border-border/60 bg-card/70 p-4 sm:p-6 md:p-8 shadow-xl relative overflow-hidden">
             <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] mb-4 sm:mb-6 text-center">
               Top 3
             </p>
@@ -264,7 +293,7 @@ export default function LeaderboardPage() {
                   onClick={() => handleProfileClick(topThree[1])}
                   onKeyDown={(e) => handlePodiumKeyDown(e, topThree[1])}
                   aria-label={`View ${topThree[1].name}'s profile, rank 2`}
-                  className="flex flex-col items-center gap-2 sm:gap-3 order-1 md:order-1 rounded-2xl border border-white/10 bg-white/5 py-4 sm:py-6 px-3 sm:px-4 transition-all hover:border-[#2bbcff]/30 hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2bbcff]/50 cursor-pointer touch-manipulation min-h-[44px]"
+                  className="flex flex-col items-center gap-2 sm:gap-3 order-1 md:order-1 rounded-2xl border border-border/60 bg-muted/40 py-4 sm:py-6 px-3 sm:px-4 transition-all hover:border-border/60 hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2563eb]/50 cursor-pointer touch-manipulation min-h-[44px]"
                 >
                   <div className="relative">
                     <ProfilePicture name={topThree[1].name} avatarUrl={topThree[1].avatarUrl} size="lg" />
@@ -273,7 +302,7 @@ export default function LeaderboardPage() {
                     </div>
                   </div>
                   <span className="text-sm font-bold text-foreground truncate w-full text-center">{topThree[1].name}</span>
-                  <span className="text-lg font-black text-[#2bbcff]">{topThree[1].score}</span>
+                  <span className="text-lg font-black text-foreground">{topThree[1].score}</span>
                   <span className="text-[10px] text-muted-foreground uppercase">2nd</span>
                 </div>
               )}
@@ -285,7 +314,7 @@ export default function LeaderboardPage() {
                   onClick={() => handleProfileClick(topThree[0])}
                   onKeyDown={(e) => handlePodiumKeyDown(e, topThree[0])}
                   aria-label={`View ${topThree[0].name}'s profile, rank 1`}
-                  className="flex flex-col items-center gap-2 sm:gap-3 order-2 md:order-2 rounded-2xl border-2 border-[#2bbcff]/30 bg-gradient-to-b from-[#2bbcff]/10 to-transparent py-6 sm:py-8 px-3 sm:px-4 md:-mt-4 transition-all hover:border-[#2bbcff]/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2bbcff]/50 cursor-pointer touch-manipulation min-h-[44px]"
+                  className="flex flex-col items-center gap-2 sm:gap-3 order-2 md:order-2 rounded-2xl border-2 border-border/60 bg-gradient-to-b from-[#2563eb]/10 to-transparent py-6 sm:py-8 px-3 sm:px-4 md:-mt-4 transition-all hover:border-[#2563eb]/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2563eb]/50 cursor-pointer touch-manipulation min-h-[44px]"
                 >
                   <div className="relative">
                     <ProfilePicture name={topThree[0].name} avatarUrl={topThree[0].avatarUrl} size="lg" />
@@ -294,7 +323,7 @@ export default function LeaderboardPage() {
                     </div>
                   </div>
                   <span className="text-sm font-bold text-foreground truncate w-full text-center">{topThree[0].name}</span>
-                  <span className="text-xl font-black bg-gradient-to-r from-[#2bbcff] to-[#a855f7] bg-clip-text text-transparent">{topThree[0].score}</span>
+                  <span className="text-xl font-black text-foreground">{topThree[0].score}</span>
                   <span className="text-[10px] text-muted-foreground uppercase">1st</span>
                 </div>
               )}
@@ -306,7 +335,7 @@ export default function LeaderboardPage() {
                   onClick={() => handleProfileClick(topThree[2])}
                   onKeyDown={(e) => handlePodiumKeyDown(e, topThree[2])}
                   aria-label={`View ${topThree[2].name}'s profile, rank 3`}
-                  className="flex flex-col items-center gap-2 sm:gap-3 order-3 md:order-3 rounded-2xl border border-white/10 bg-white/5 py-4 sm:py-6 px-3 sm:px-4 transition-all hover:border-[#2bbcff]/30 hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2bbcff]/50 cursor-pointer touch-manipulation min-h-[44px]"
+                  className="flex flex-col items-center gap-2 sm:gap-3 order-3 md:order-3 rounded-2xl border border-border/60 bg-muted/40 py-4 sm:py-6 px-3 sm:px-4 transition-all hover:border-border/60 hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2563eb]/50 cursor-pointer touch-manipulation min-h-[44px]"
                 >
                   <div className="relative">
                     <ProfilePicture name={topThree[2].name} avatarUrl={topThree[2].avatarUrl} size="lg" />
@@ -315,7 +344,7 @@ export default function LeaderboardPage() {
                     </div>
                   </div>
                   <span className="text-sm font-bold text-foreground truncate w-full text-center">{topThree[2].name}</span>
-                  <span className="text-lg font-black text-[#2bbcff]">{topThree[2].score}</span>
+                  <span className="text-lg font-black text-foreground">{topThree[2].score}</span>
                   <span className="text-[10px] text-muted-foreground uppercase">3rd</span>
                 </div>
               )}
@@ -327,20 +356,20 @@ export default function LeaderboardPage() {
       {/* Full ranking table - with avatars */}
       <section className="container mx-auto px-4 pb-6 sm:pb-8 md:pb-12">
         <div className="max-w-6xl mx-auto">
-          <div className="glass-card rounded-2xl border border-[#2bbcff]/20 bg-gradient-to-br from-card/80 to-background backdrop-blur-md p-4 sm:p-5 md:p-6 shadow-xl relative overflow-hidden">
+          <div className="glass-card rounded-2xl border border-border/60 bg-card/70 p-4 sm:p-5 md:p-6 shadow-xl relative overflow-hidden">
             <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 rounded-xl bg-[#a855f7]/10 flex items-center justify-center shrink-0" aria-hidden="true">
-                <Trophy className="w-5 h-5 text-[#a855f7]" />
+              <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center shrink-0" aria-hidden="true">
+                <Trophy className="w-5 h-5 text-foreground" />
               </div>
               <div>
                 <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">
                   Full ranking
                 </p>
-                <p className="text-base font-bold text-foreground">EliteScore → Streak tiebreak</p>
+                <p className="text-base font-bold text-foreground">EliteScore - Streak tiebreak</p>
               </div>
             </div>
 
-            <div className="hidden md:flex items-center px-3 md:px-4 pb-4 mb-4 border-b border-white/10 gap-4">
+            <div className="hidden md:flex items-center px-3 md:px-4 pb-4 mb-4 border-b border-border/60 gap-4">
               <div className="w-14 text-center">
                 <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Rank</span>
               </div>
@@ -368,7 +397,7 @@ export default function LeaderboardPage() {
                   <div key={user.id}>
                     {hasGap && (
                       <div className="py-2 text-center" role="presentation">
-                        <span className="text-xs text-muted-foreground/50">· · ·</span>
+                        <span className="text-xs text-muted-foreground/50">  </span>
                       </div>
                     )}
                     <div
@@ -384,22 +413,22 @@ export default function LeaderboardPage() {
                       className={cn(
                         "flex items-center gap-3 md:gap-4 px-3 md:px-4 py-3.5 min-h-[48px] rounded-xl transition-all duration-200 group touch-manipulation",
                         user.isCurrentUser &&
-                          "bg-gradient-to-r from-[#2bbcff]/10 to-[#a855f7]/10 border-2 border-[#2bbcff]/40 shadow-lg",
+                          "bg-muted/60 border-2 border-border/60 shadow-lg",
                         !user.isCurrentUser &&
                           user.isActive &&
-                          "border border-white/5 hover:border-[#2bbcff]/30 hover:bg-white/5 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2bbcff]/50",
+                          "border border-border/60 hover:border-border/60 hover:bg-muted/40 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2563eb]/50",
                         !user.isCurrentUser &&
                           !user.isActive &&
-                          "border border-white/5 bg-white/[0.02] opacity-70 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2bbcff]/50"
+                          "border border-border/60 bg-white/[0.02] opacity-70 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2563eb]/50"
                       )}
                     >
                       <div className="w-10 md:w-14 flex justify-center shrink-0">
                         {user.rank === 1 ? (
-                          <Crown className="w-5 h-5 md:w-6 md:h-6 text-yellow-400" aria-hidden="true" />
+                          <Crown className="w-5 h-5 md:w-6 md:h-6 text-foreground" aria-hidden="true" />
                         ) : user.rank === 2 ? (
-                          <Medal className="w-4 h-4 md:w-5 md:h-5 text-slate-400" aria-hidden="true" />
+                          <Medal className="w-4 h-4 md:w-5 md:h-5 text-foreground" aria-hidden="true" />
                         ) : user.rank === 3 ? (
-                          <Medal className="w-4 h-4 md:w-5 md:h-5 text-amber-600" aria-hidden="true" />
+                          <Medal className="w-4 h-4 md:w-5 md:h-5 text-foreground" aria-hidden="true" />
                         ) : (
                           <span className="text-xs md:text-sm font-bold text-muted-foreground">#{user.rank}</span>
                         )}
@@ -409,18 +438,19 @@ export default function LeaderboardPage() {
                         <span
                           className={cn(
                             "text-sm font-semibold truncate",
-                            user.isCurrentUser && "bg-gradient-to-r from-[#2bbcff] to-[#a855f7] bg-clip-text text-transparent",
-                            !user.isCurrentUser && "text-foreground group-hover:text-[#2bbcff] transition-colors"
+                            user.isCurrentUser && "text-foreground",
+                            !user.isCurrentUser && "text-foreground group-hover:text-foreground transition-colors"
                           )}
                         >
                           {user.name}
                         </span>
                       </div>
                       <div className="w-20 md:w-24 shrink-0">
-                        <span className="text-sm font-bold text-[#2bbcff]">{user.score}</span>
+                        <span className="text-sm font-bold text-foreground">{user.score}</span>
+                        <span className="text-[10px] text-muted-foreground ml-1">pts</span>
                       </div>
                       <div className="hidden sm:flex w-16 md:w-24 items-center gap-1 shrink-0">
-                        <Flame className="w-3 h-3 text-orange-500" aria-hidden="true" />
+                        <Flame className="w-3 h-3 text-foreground" aria-hidden="true" />
                         <span className="text-sm font-bold text-foreground">{user.streak}</span>
                       </div>
                       <div className="hidden md:flex w-20 items-center gap-2 shrink-0">
@@ -443,13 +473,13 @@ export default function LeaderboardPage() {
                           >
                             {user.movement > 0 ? (
                               <>
-                                <ArrowUp className="w-2.5 h-2.5 md:w-3 md:h-3 text-green-500" aria-hidden="true" />
-                                <span className="text-[10px] md:text-xs font-bold text-green-500">{user.movement}</span>
+                                <ArrowUp className="w-2.5 h-2.5 md:w-3 md:h-3 text-foreground" aria-hidden="true" />
+                                <span className="text-[10px] md:text-xs font-bold text-foreground">{user.movement}</span>
                               </>
                             ) : (
                               <>
-                                <ArrowDown className="w-2.5 h-2.5 md:w-3 md:h-3 text-red-500" aria-hidden="true" />
-                                <span className="text-[10px] md:text-xs font-bold text-red-500">{Math.abs(user.movement)}</span>
+                                <ArrowDown className="w-2.5 h-2.5 md:w-3 md:h-3 text-foreground" aria-hidden="true" />
+                                <span className="text-[10px] md:text-xs font-bold text-foreground">{Math.abs(user.movement)}</span>
                               </>
                             )}
                           </span>
@@ -473,7 +503,7 @@ export default function LeaderboardPage() {
         >
           {selectedProfile && (
             <>
-              <DialogHeader className="p-4 sm:p-6 pb-4 border-b border-white/10 shrink-0">
+              <DialogHeader className="p-4 sm:p-6 pb-4 border-b border-border/60 shrink-0">
                 <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 w-full">
                   <ProfilePicture
                     name={selectedProfile.name}
@@ -490,16 +520,16 @@ export default function LeaderboardPage() {
                     </p>
                     <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 text-xs">
                       <span className="flex items-center gap-1.5">
-                        <Trophy className="w-3.5 h-3.5 text-[#2bbcff]" aria-hidden="true" />
-                        <span className="font-bold text-[#2bbcff]">{selectedProfile.score}</span>
+                        <Trophy className="w-3.5 h-3.5 text-foreground" aria-hidden="true" />
+                        <span className="font-bold text-foreground">{selectedProfile.score}</span>
                         <span className="text-muted-foreground">EliteScore</span>
                       </span>
-                      <span className="text-muted-foreground">·</span>
+                      <span className="text-muted-foreground"></span>
                       <span className="text-muted-foreground">Rank #{selectedProfile.rank}</span>
-                      <span className="text-muted-foreground">·</span>
+                      <span className="text-muted-foreground"></span>
                       <span className="flex items-center gap-1">
-                        <Flame className="w-3.5 h-3.5 text-orange-500" aria-hidden="true" />
-                        <span className="font-bold text-orange-500">{selectedProfile.streak}</span>
+                        <Flame className="w-3.5 h-3.5 text-foreground" aria-hidden="true" />
+                        <span className="font-bold text-foreground">{selectedProfile.streak}</span>
                         <span className="text-muted-foreground">day streak</span>
                       </span>
                     </div>
@@ -509,28 +539,28 @@ export default function LeaderboardPage() {
 
               <div className="px-6 py-5 space-y-3">
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="flex items-center gap-2 rounded-xl border border-[#2bbcff]/20 bg-[#2bbcff]/5 p-3">
-                    <Check className="w-4 h-4 text-[#2bbcff] shrink-0" aria-hidden="true" />
+                  <div className="flex items-center gap-2 rounded-xl border border-border/60 bg-brand/5 p-3">
+                    <Check className="w-4 h-4 text-foreground shrink-0" aria-hidden="true" />
                     <div>
                       <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Rank</p>
                       <p className="text-lg font-bold text-foreground">#{selectedProfile.rank}</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 rounded-xl border border-[#a855f7]/20 bg-[#a855f7]/5 p-3">
-                    <Target className="w-4 h-4 text-[#a855f7] shrink-0" aria-hidden="true" />
+                  <div className="flex items-center gap-2 rounded-xl border border-border/60 bg-card/60 p-3">
+                    <Target className="w-4 h-4 text-foreground shrink-0" aria-hidden="true" />
                     <div>
                       <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">EliteScore</p>
-                      <p className="text-lg font-bold text-[#2bbcff]">{selectedProfile.score}</p>
+                      <p className="text-lg font-bold text-foreground">{selectedProfile.score}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2 rounded-xl border border-orange-500/20 bg-orange-500/5 p-3">
-                    <Flame className="w-4 h-4 text-orange-500 shrink-0" aria-hidden="true" />
+                    <Flame className="w-4 h-4 text-foreground shrink-0" aria-hidden="true" />
                     <div>
                       <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Streak</p>
                       <p className="text-lg font-bold text-foreground">{selectedProfile.streak} days</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 p-3">
+                  <div className="flex items-center gap-2 rounded-xl border border-border/60 bg-muted/40 p-3">
                     <span
                       className={cn(
                         "w-2.5 h-2.5 rounded-full shrink-0",
@@ -552,7 +582,7 @@ export default function LeaderboardPage() {
                 >
                   <Button
                     variant="outline"
-                    className="w-full min-h-[48px] sm:h-10 border-[#2bbcff]/30 text-[#2bbcff] hover:bg-[#2bbcff]/10 text-[10px] font-bold uppercase tracking-wider touch-manipulation"
+                    className="w-full min-h-[48px] sm:h-10 border-border/60 text-foreground hover:bg-brand/15 text-[10px] font-bold uppercase tracking-wider touch-manipulation"
                   >
                     View full profile
                   </Button>
@@ -560,7 +590,7 @@ export default function LeaderboardPage() {
 
                 <Button
                   onClick={handleCloseProfile}
-                  className="w-full min-h-[48px] sm:h-10 bg-gradient-to-r from-[#2bbcff] to-[#a855f7] hover:opacity-90 text-white border-0 text-[10px] font-bold uppercase tracking-wider touch-manipulation"
+                  className="w-full min-h-[48px] sm:h-10 bg-foreground hover:bg-foreground/90 text-background border-0 text-[10px] font-bold uppercase tracking-wider touch-manipulation"
                   aria-label="Close profile"
                 >
                   Close
@@ -571,7 +601,7 @@ export default function LeaderboardPage() {
         </DialogContent>
       </Dialog>
 
-      <BottomNav />
     </div>
   )
 }
+
