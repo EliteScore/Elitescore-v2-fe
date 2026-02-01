@@ -181,11 +181,11 @@ export default function LeaderboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-20">
+    <div className="min-h-[100dvh] sm:min-h-screen bg-background pt-[max(1rem,env(safe-area-inset-top))] pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] pb-[max(5rem,calc(4rem+env(safe-area-inset-bottom)))] overflow-x-hidden">
       {/* Hero - advanced: gradient mesh, strong typography */}
-      <section className="container mx-auto px-4 pt-6 md:pt-8 pb-4">
+      <section className="container mx-auto px-4 pt-4 sm:pt-6 md:pt-8 pb-4">
         <div className="max-w-6xl mx-auto">
-          <div className="glass-card rounded-2xl border border-[#2bbcff]/20 bg-gradient-to-br from-card/80 to-background backdrop-blur-md p-6 md:p-10 shadow-2xl relative overflow-hidden">
+          <div className="glass-card rounded-2xl border border-[#2bbcff]/20 bg-gradient-to-br from-card/80 to-background backdrop-blur-md p-5 sm:p-6 md:p-10 shadow-2xl relative overflow-hidden">
             <div
               className="absolute top-0 left-1/2 -translate-x-1/2 w-80 h-80 bg-gradient-to-r from-[#2bbcff]/25 to-[#a855f7]/25 blur-[120px] rounded-full -z-10"
               aria-hidden="true"
@@ -218,12 +218,12 @@ export default function LeaderboardPage() {
       {/* Your standing - single card, 3 metrics */}
       <section className="container mx-auto px-4 py-4 md:py-6">
         <div className="max-w-6xl mx-auto">
-          <div className="glass-card rounded-2xl border border-[#2bbcff]/20 bg-gradient-to-br from-card/80 to-background backdrop-blur-md p-5 md:p-6 shadow-xl">
-            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] mb-4">
+          <div className="glass-card rounded-2xl border border-[#2bbcff]/20 bg-gradient-to-br from-card/80 to-background backdrop-blur-md p-4 sm:p-5 md:p-6 shadow-xl">
+            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] mb-3 sm:mb-4">
               Your standing
             </p>
-            <div className="grid grid-cols-3 gap-4 md:gap-6">
-              <div className="flex flex-col items-center md:items-start gap-1 rounded-xl border border-white/5 bg-white/5 p-4 transition-transform hover:scale-[1.02]">
+            <div className="grid grid-cols-3 gap-3 sm:gap-4 md:gap-6">
+              <div className="flex flex-col items-center md:items-start gap-1 rounded-xl border border-white/5 bg-white/5 p-3 sm:p-4 transition-transform hover:scale-[1.02] touch-manipulation">
                 <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Rank</span>
                 <div className="flex items-baseline gap-1.5">
                   <span className="text-2xl md:text-3xl font-black bg-gradient-to-r from-[#2bbcff] to-[#a855f7] bg-clip-text text-transparent">
@@ -232,11 +232,11 @@ export default function LeaderboardPage() {
                   <TrendingUp className="w-4 h-4 text-green-500 shrink-0" aria-hidden="true" />
                 </div>
               </div>
-              <div className="flex flex-col items-center md:items-start gap-1 rounded-xl border border-white/5 bg-white/5 p-4 transition-transform hover:scale-[1.02]">
+              <div className="flex flex-col items-center md:items-start gap-1 rounded-xl border border-white/5 bg-white/5 p-3 sm:p-4 transition-transform hover:scale-[1.02] touch-manipulation">
                 <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">EliteScore</span>
                 <span className="text-2xl md:text-3xl font-bold text-foreground">{currentUser.score}</span>
               </div>
-              <div className="flex flex-col items-center md:items-start gap-1 rounded-xl border border-green-500/20 bg-green-500/5 p-4 transition-transform hover:scale-[1.02]">
+              <div className="flex flex-col items-center md:items-start gap-1 rounded-xl border border-green-500/20 bg-green-500/5 p-3 sm:p-4 transition-transform hover:scale-[1.02] touch-manipulation">
                 <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Movement</span>
                 <div className="flex items-center gap-1.5">
                   <ArrowUp className="w-5 h-5 text-green-500 shrink-0" aria-hidden="true" />
@@ -251,11 +251,11 @@ export default function LeaderboardPage() {
       {/* Podium - top 3 with avatars */}
       <section className="container mx-auto px-4 py-4 md:py-6">
         <div className="max-w-6xl mx-auto">
-          <div className="glass-card rounded-2xl border border-[#2bbcff]/20 bg-gradient-to-br from-card/80 to-background backdrop-blur-md p-6 md:p-8 shadow-xl relative overflow-hidden">
-            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] mb-6 text-center">
+          <div className="glass-card rounded-2xl border border-[#2bbcff]/20 bg-gradient-to-br from-card/80 to-background backdrop-blur-md p-4 sm:p-6 md:p-8 shadow-xl relative overflow-hidden">
+            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] mb-4 sm:mb-6 text-center">
               Top 3
             </p>
-            <div className="grid grid-cols-3 gap-2 md:gap-4 items-end">
+            <div className="grid grid-cols-3 gap-2 sm:gap-3 md:gap-4 items-end">
               {/* 2nd */}
               {topThree[1] && (
                 <div
@@ -264,7 +264,7 @@ export default function LeaderboardPage() {
                   onClick={() => handleProfileClick(topThree[1])}
                   onKeyDown={(e) => handlePodiumKeyDown(e, topThree[1])}
                   aria-label={`View ${topThree[1].name}'s profile, rank 2`}
-                  className="flex flex-col items-center gap-3 order-1 md:order-1 rounded-2xl border border-white/10 bg-white/5 py-6 px-4 transition-all hover:border-[#2bbcff]/30 hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2bbcff]/50 cursor-pointer"
+                  className="flex flex-col items-center gap-2 sm:gap-3 order-1 md:order-1 rounded-2xl border border-white/10 bg-white/5 py-4 sm:py-6 px-3 sm:px-4 transition-all hover:border-[#2bbcff]/30 hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2bbcff]/50 cursor-pointer touch-manipulation min-h-[44px]"
                 >
                   <div className="relative">
                     <ProfilePicture name={topThree[1].name} avatarUrl={topThree[1].avatarUrl} size="lg" />
@@ -285,7 +285,7 @@ export default function LeaderboardPage() {
                   onClick={() => handleProfileClick(topThree[0])}
                   onKeyDown={(e) => handlePodiumKeyDown(e, topThree[0])}
                   aria-label={`View ${topThree[0].name}'s profile, rank 1`}
-                  className="flex flex-col items-center gap-3 order-2 md:order-2 rounded-2xl border-2 border-[#2bbcff]/30 bg-gradient-to-b from-[#2bbcff]/10 to-transparent py-8 px-4 md:-mt-4 transition-all hover:border-[#2bbcff]/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2bbcff]/50 cursor-pointer"
+                  className="flex flex-col items-center gap-2 sm:gap-3 order-2 md:order-2 rounded-2xl border-2 border-[#2bbcff]/30 bg-gradient-to-b from-[#2bbcff]/10 to-transparent py-6 sm:py-8 px-3 sm:px-4 md:-mt-4 transition-all hover:border-[#2bbcff]/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2bbcff]/50 cursor-pointer touch-manipulation min-h-[44px]"
                 >
                   <div className="relative">
                     <ProfilePicture name={topThree[0].name} avatarUrl={topThree[0].avatarUrl} size="lg" />
@@ -306,7 +306,7 @@ export default function LeaderboardPage() {
                   onClick={() => handleProfileClick(topThree[2])}
                   onKeyDown={(e) => handlePodiumKeyDown(e, topThree[2])}
                   aria-label={`View ${topThree[2].name}'s profile, rank 3`}
-                  className="flex flex-col items-center gap-3 order-3 md:order-3 rounded-2xl border border-white/10 bg-white/5 py-6 px-4 transition-all hover:border-[#2bbcff]/30 hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2bbcff]/50 cursor-pointer"
+                  className="flex flex-col items-center gap-2 sm:gap-3 order-3 md:order-3 rounded-2xl border border-white/10 bg-white/5 py-4 sm:py-6 px-3 sm:px-4 transition-all hover:border-[#2bbcff]/30 hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2bbcff]/50 cursor-pointer touch-manipulation min-h-[44px]"
                 >
                   <div className="relative">
                     <ProfilePicture name={topThree[2].name} avatarUrl={topThree[2].avatarUrl} size="lg" />
@@ -325,9 +325,9 @@ export default function LeaderboardPage() {
       </section>
 
       {/* Full ranking table - with avatars */}
-      <section className="container mx-auto px-4 pb-8 md:pb-12">
+      <section className="container mx-auto px-4 pb-6 sm:pb-8 md:pb-12">
         <div className="max-w-6xl mx-auto">
-          <div className="glass-card rounded-2xl border border-[#2bbcff]/20 bg-gradient-to-br from-card/80 to-background backdrop-blur-md p-4 md:p-6 shadow-xl relative overflow-hidden">
+          <div className="glass-card rounded-2xl border border-[#2bbcff]/20 bg-gradient-to-br from-card/80 to-background backdrop-blur-md p-4 sm:p-5 md:p-6 shadow-xl relative overflow-hidden">
             <div className="flex items-center gap-3 mb-6">
               <div className="w-10 h-10 rounded-xl bg-[#a855f7]/10 flex items-center justify-center shrink-0" aria-hidden="true">
                 <Trophy className="w-5 h-5 text-[#a855f7]" />
@@ -382,7 +382,7 @@ export default function LeaderboardPage() {
                           : `View ${user.name}'s profile, rank ${user.rank}`
                       }
                       className={cn(
-                        "flex items-center gap-3 md:gap-4 px-3 md:px-4 py-3.5 rounded-xl transition-all duration-200 group",
+                        "flex items-center gap-3 md:gap-4 px-3 md:px-4 py-3.5 min-h-[48px] rounded-xl transition-all duration-200 group touch-manipulation",
                         user.isCurrentUser &&
                           "bg-gradient-to-r from-[#2bbcff]/10 to-[#a855f7]/10 border-2 border-[#2bbcff]/40 shadow-lg",
                         !user.isCurrentUser &&
@@ -464,16 +464,16 @@ export default function LeaderboardPage() {
         </div>
       </section>
 
-      {/* Profile modal - matches app/profile header: picture + name + stats row */}
+      {/* Profile modal - bottom-sheet on mobile, scrollable */}
       <Dialog open={!!selectedProfile} onOpenChange={(open) => !open && handleCloseProfile()}>
         <DialogContent
-          className="w-full max-w-md p-0 gap-0 bg-card/95 backdrop-blur-xl border border-white/20 shadow-2xl rounded-2xl overflow-hidden"
+          className="w-full max-w-md p-0 gap-0 bg-card/95 backdrop-blur-xl border border-white/20 shadow-2xl overflow-hidden max-h-[85dvh] overflow-y-auto fixed bottom-0 left-0 right-0 top-auto rounded-t-2xl translate-y-0 translate-x-0 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] sm:pt-0 sm:pb-0 sm:top-[50%] sm:left-[50%] sm:right-auto sm:bottom-auto sm:max-h-[calc(100vh-2rem)] sm:rounded-2xl sm:translate-y-[-50%] sm:translate-x-[-50%]"
           aria-describedby={selectedProfile ? "profile-description" : undefined}
           showCloseButton={true}
         >
           {selectedProfile && (
             <>
-              <DialogHeader className="p-6 pb-4 border-b border-white/10">
+              <DialogHeader className="p-4 sm:p-6 pb-4 border-b border-white/10 shrink-0">
                 <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 w-full">
                   <ProfilePicture
                     name={selectedProfile.name}
@@ -552,7 +552,7 @@ export default function LeaderboardPage() {
                 >
                   <Button
                     variant="outline"
-                    className="w-full border-[#2bbcff]/30 text-[#2bbcff] hover:bg-[#2bbcff]/10 text-[10px] h-10 font-bold uppercase tracking-wider"
+                    className="w-full min-h-[48px] sm:h-10 border-[#2bbcff]/30 text-[#2bbcff] hover:bg-[#2bbcff]/10 text-[10px] font-bold uppercase tracking-wider touch-manipulation"
                   >
                     View full profile
                   </Button>
@@ -560,7 +560,7 @@ export default function LeaderboardPage() {
 
                 <Button
                   onClick={handleCloseProfile}
-                  className="w-full bg-gradient-to-r from-[#2bbcff] to-[#a855f7] hover:opacity-90 text-white border-0 text-[10px] h-10 font-bold uppercase tracking-wider"
+                  className="w-full min-h-[48px] sm:h-10 bg-gradient-to-r from-[#2bbcff] to-[#a855f7] hover:opacity-90 text-white border-0 text-[10px] font-bold uppercase tracking-wider touch-manipulation"
                   aria-label="Close profile"
                 >
                   Close

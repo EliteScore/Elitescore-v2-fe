@@ -89,47 +89,47 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-black p-4 py-12 overflow-x-hidden">
+    <div className="min-h-[100dvh] sm:min-h-screen flex flex-col items-center justify-center bg-background p-4 pt-[max(1.5rem,env(safe-area-inset-top))] pb-[max(1.5rem,env(safe-area-inset-bottom))] pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] overflow-x-hidden">
       {/* App name at the top */}
-      <div className="w-full flex justify-center pt-8 pb-4">
-        <span className="text-2xl font-extrabold tracking-widest uppercase bg-gradient-to-r from-[#2bbcff] to-[#a259ff] bg-clip-text text-transparent">
+      <div className="w-full flex justify-center pt-4 sm:pt-8 pb-4">
+        <span className="text-xl sm:text-2xl font-extrabold tracking-widest uppercase bg-gradient-to-r from-[#2bbcff] to-[#a855f7] bg-clip-text text-transparent">
           ELITESCORE
         </span>
       </div>
 
       {/* Background elements */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
         <div className="absolute left-1/2 top-0 -z-10 h-[800px] w-[800px] -translate-x-1/2 rounded-full bg-blue-500/10 blur-[100px]" />
         <div className="absolute right-0 top-1/3 -z-10 h-[600px] w-[600px] rounded-full bg-purple-500/10 blur-[100px]" />
       </div>
 
       <motion.div
-        className="w-full max-w-sm space-y-8"
+        className="w-full max-w-sm space-y-6 sm:space-y-8"
         variants={containerVariants}
         initial="hidden"
         animate="visible"
       >
         <motion.div className="text-center" variants={itemVariants}>
-          <h1 className="text-2xl font-extrabold tracking-widest uppercase bg-gradient-to-r from-[#2bbcff] to-[#a259ff] bg-clip-text text-transparent">
+          <h1 className="text-xl sm:text-2xl font-extrabold tracking-widest uppercase bg-gradient-to-r from-[#2bbcff] to-[#a855f7] bg-clip-text text-transparent">
             Sign In
           </h1>
-          <p className="mt-2 text-white text-sm">Sign in to continue your journey</p>
+          <p className="mt-2 text-muted-foreground text-sm">Sign in to continue your journey</p>
         </motion.div>
 
-        <motion.div variants={itemVariants}>
-          <Card className="shadow-2xl rounded-2xl border-0 bg-card/90 backdrop-blur-lg">
-            <CardHeader>
-              <CardTitle className="text-lg font-extrabold tracking-widest uppercase bg-gradient-to-r from-[#2bbcff] to-[#a259ff] bg-clip-text text-transparent">
+        <motion.div variants={itemVariants} className="w-full">
+          <Card className="shadow-2xl rounded-2xl border border-[#2bbcff]/20 bg-card/90 backdrop-blur-lg overflow-hidden">
+            <CardHeader className="p-4 sm:p-6 pb-2 sm:pb-2">
+              <CardTitle className="text-base sm:text-lg font-extrabold tracking-widest uppercase bg-gradient-to-r from-[#2bbcff] to-[#a855f7] bg-clip-text text-transparent">
                 Welcome back
               </CardTitle>
-              <CardDescription className="text-white text-sm">
+              <CardDescription className="text-muted-foreground text-sm">
                 Enter your credentials to access your account
               </CardDescription>
             </CardHeader>
 
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-0">
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-4 p-4 sm:p-6 pt-2 sm:pt-2">
                   {loginError && (
                     <Alert variant="destructive" className="animate-shake">
                       <AlertDescription>{loginError}</AlertDescription>
@@ -141,9 +141,9 @@ export default function LoginPage() {
                     name="email"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-white text-sm">Email</FormLabel>
+                        <FormLabel className="text-foreground text-sm">Email</FormLabel>
                         <Input
-                          className="py-3 text-base rounded-xl border border-zinc-700 bg-black/60 text-white focus:ring-2 focus:ring-[#2bbcff] focus:border-[#2bbcff] transition-all lowercase"
+                          className="min-h-[48px] py-3 text-base rounded-xl border border-white/10 bg-white/5 text-foreground focus:ring-2 focus:ring-[#2bbcff] focus:border-[#2bbcff] transition-all lowercase touch-manipulation"
                           placeholder="john@example.com"
                           type="email"
                           autoComplete="email"
@@ -163,17 +163,18 @@ export default function LoginPage() {
                     render={({ field }) => (
                       <FormItem>
                         <div className="flex items-center justify-between">
-                          <FormLabel className="text-white text-sm">Password</FormLabel>
+                          <FormLabel className="text-foreground text-sm">Password</FormLabel>
                           <Link
                             href="/forgot-password"
-                            className="text-xs text-zinc-400 hover:text-[#2bbcff] transition-colors"
+                            className="text-xs text-muted-foreground hover:text-[#2bbcff] transition-colors min-h-[44px] flex items-center touch-manipulation"
+                            aria-label="Forgot password?"
                           >
                             Forgot password?
                           </Link>
                         </div>
                         <div className="relative">
                           <Input
-                            className="py-3 text-base rounded-xl border border-zinc-700 bg-black/60 text-white focus:ring-2 focus:ring-[#2bbcff] focus:border-[#2bbcff] transition-all pr-12"
+                            className="min-h-[48px] py-3 text-base rounded-xl border border-white/10 bg-white/5 text-foreground focus:ring-2 focus:ring-[#2bbcff] focus:border-[#2bbcff] transition-all pr-12 touch-manipulation"
                             placeholder="Enter your password"
                             type={showPassword ? "text" : "password"}
                             autoComplete="current-password"
@@ -183,8 +184,9 @@ export default function LoginPage() {
                             type="button"
                             variant="ghost"
                             size="icon"
-                            className="absolute right-0 top-0 h-full px-3 text-zinc-400 hover:text-[#2bbcff] transition-colors"
+                            className="absolute right-0 top-0 h-full min-w-[48px] min-h-[48px] px-3 text-muted-foreground hover:text-[#2bbcff] transition-colors touch-manipulation"
                             onClick={() => setShowPassword(!showPassword)}
+                            aria-label={showPassword ? "Hide password" : "Show password"}
                           >
                             {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                           </Button>
@@ -202,46 +204,48 @@ export default function LoginPage() {
                         <Checkbox
                           checked={field.value}
                           onCheckedChange={field.onChange}
-                          className="rounded-md border-zinc-700 focus:ring-[#2bbcff]"
+                          className="rounded-md border-white/20 focus:ring-[#2bbcff]"
                         />
                         <div className="leading-none">
-                          <FormLabel className="text-white text-xs">Remember me for 30 days</FormLabel>
+                          <FormLabel className="text-foreground text-xs cursor-pointer">Remember me for 30 days</FormLabel>
                         </div>
                       </FormItem>
                     )}
                   />
                 </CardContent>
 
-                <CardFooter className="flex flex-col space-y-4">
+                <CardFooter className="flex flex-col space-y-4 p-4 sm:p-6 pt-2 sm:pt-2">
                   <Button
                     type="submit"
-                    className="w-full py-3 rounded-2xl font-bold bg-gradient-to-r from-[#2bbcff] to-[#a259ff] text-white shadow-lg hover:scale-[1.02] transition-transform"
+                    className="w-full min-h-[48px] sm:h-11 py-3 rounded-2xl font-bold bg-gradient-to-r from-[#2bbcff] to-[#a855f7] text-white shadow-lg hover:opacity-90 transition-opacity touch-manipulation"
                     disabled={isLoading}
+                    aria-label={isLoading ? "Signing in" : "Sign in"}
                   >
                     {isLoading ? (
                       <>
-                        <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                        <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" aria-hidden="true" />
                         Signing in...
                       </>
                     ) : (
                       <>
-                        Sign in <ArrowRight className="ml-2 h-4 w-4" />
+                        Sign in <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
                       </>
                     )}
                   </Button>
 
                   <div className="relative w-full flex items-center my-2">
-                    <div className="flex-grow border-t border-zinc-700" />
-                    <span className="mx-2 bg-transparent px-2 text-xs text-zinc-400">OR</span>
-                    <div className="flex-grow border-t border-zinc-700" />
+                    <div className="flex-grow border-t border-white/10" />
+                    <span className="mx-2 bg-transparent px-2 text-xs text-muted-foreground">OR</span>
+                    <div className="flex-grow border-t border-white/10" />
                   </div>
 
                   <Button
                     type="button"
                     variant="outline"
-                    className="w-full rounded-xl border-zinc-700 text-white hover:bg-zinc-900 transition-colors bg-transparent"
+                    className="w-full min-h-[48px] sm:h-11 rounded-xl border-white/20 text-foreground hover:bg-white/10 transition-colors bg-transparent touch-manipulation"
                     onClick={handleGoogleSignIn}
                     disabled={isLoading}
+                    aria-label="Sign in with Google"
                   >
                     <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
                       <path
@@ -265,9 +269,9 @@ export default function LoginPage() {
                     Sign in with Google
                   </Button>
 
-                  <div className="text-center text-xs text-zinc-400">
+                  <div className="text-center text-xs text-muted-foreground">
                     Don't have an account?{" "}
-                    <Link href="/signup" className="text-zinc-400 hover:text-[#2bbcff] transition-colors">
+                    <Link href="/signup" className="text-[#2bbcff] hover:underline transition-colors min-h-[44px] inline-flex items-center touch-manipulation" aria-label="Go to sign up">
                       Sign up
                     </Link>
                   </div>
@@ -278,12 +282,14 @@ export default function LoginPage() {
         </motion.div>
 
         <motion.div
-          className="flex items-center justify-center text-xs text-zinc-500"
+          className="flex items-center justify-center text-xs text-muted-foreground"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.6 }}
+          role="status"
+          aria-label="Secure login"
         >
-          <Lock className="h-3 w-3 mr-1" />
+          <Lock className="h-3 w-3 mr-1" aria-hidden="true" />
           <span>Secure login - 256-bit encryption</span>
         </motion.div>
       </motion.div>

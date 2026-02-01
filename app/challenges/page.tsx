@@ -326,25 +326,25 @@ export default function ChallengesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-20">
-      {/* Hero - same style as home page */}
-      <section className="container mx-auto px-4 pt-6 md:pt-8 pb-4">
+    <div className="min-h-[100dvh] sm:min-h-screen bg-background pb-[max(5rem,calc(5rem+env(safe-area-inset-bottom)))] pt-[env(safe-area-inset-top)] overflow-x-hidden">
+      {/* Hero - mobile-first: compact, single column */}
+      <section className="container mx-auto px-3 sm:px-4 pt-4 sm:pt-6 md:pt-8 pb-3 sm:pb-4">
         <div className="max-w-6xl mx-auto">
-          <div className="glass-card rounded-2xl border border-[#2bbcff]/20 bg-gradient-to-br from-card/80 to-background backdrop-blur-md p-6 md:p-8 shadow-2xl relative overflow-hidden">
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-64 bg-gradient-to-r from-[#2bbcff]/20 to-[#a855f7]/20 blur-[100px] rounded-full -z-10" aria-hidden="true" />
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="glass-card rounded-xl sm:rounded-2xl border border-[#2bbcff]/20 bg-gradient-to-br from-card/80 to-background backdrop-blur-md p-4 sm:p-6 md:p-8 shadow-xl relative overflow-hidden">
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-48 sm:w-64 h-48 sm:h-64 bg-gradient-to-r from-[#2bbcff]/20 to-[#a855f7]/20 blur-[80px] sm:blur-[100px] rounded-full -z-10" aria-hidden="true" />
+            <div className="flex flex-col gap-3 sm:gap-4">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-xl bg-[#2bbcff]/10 flex items-center justify-center flex-shrink-0" aria-hidden="true">
-                  <Target className="w-6 h-6 text-[#2bbcff]" />
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-[#2bbcff]/10 flex items-center justify-center flex-shrink-0" aria-hidden="true">
+                  <Target className="w-5 h-5 sm:w-6 sm:h-6 text-[#2bbcff]" />
                 </div>
-                <div>
+                <div className="min-w-0 flex-1">
                   <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Challenges • Arena</div>
-                  <h1 className="text-xl md:text-2xl font-black bg-gradient-to-r from-[#2bbcff] via-[#a855f7] to-[#2bbcff] bg-clip-text text-transparent">
+                  <h1 className="text-lg sm:text-xl md:text-2xl font-black bg-gradient-to-r from-[#2bbcff] via-[#a855f7] to-[#2bbcff] bg-clip-text text-transparent leading-tight truncate sm:truncate-none">
                     Your commitments
                   </h1>
                 </div>
               </div>
-              <p className="text-xs text-muted-foreground max-w-md sm:text-right">
+              <p className="text-xs text-muted-foreground leading-relaxed sm:text-right">
                 Lock in. Submit proof. Every challenge brings you closer to the top.
               </p>
             </div>
@@ -352,32 +352,32 @@ export default function ChallengesPage() {
         </div>
       </section>
 
-      {/* Main Content */}
-      <section className="container mx-auto px-4 pb-12 md:pb-16">
+      {/* Main Content - mobile: full width, touch-friendly tabs */}
+      <section className="container mx-auto px-3 sm:px-4 pb-6 sm:pb-12 md:pb-16">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="max-w-6xl mx-auto">
-          <TabsList className="grid w-full max-w-sm md:max-w-md mx-auto grid-cols-3 mb-6 md:mb-8 glass-card rounded-xl border border-white/10 bg-card/40 backdrop-blur-sm h-10 md:h-11 p-1">
-            <TabsTrigger value="active" className="text-[10px] md:text-xs font-bold uppercase tracking-wider data-[state=active]:bg-[#2bbcff]/20 data-[state=active]:text-[#2bbcff] rounded-lg">
+          <TabsList className="grid w-full grid-cols-3 mb-4 sm:mb-6 md:mb-8 glass-card rounded-xl border border-white/10 bg-card/40 backdrop-blur-sm min-h-[44px] sm:h-11 p-1 touch-manipulation">
+            <TabsTrigger value="active" className="text-[10px] sm:text-xs font-bold uppercase tracking-wider data-[state=active]:bg-[#2bbcff]/20 data-[state=active]:text-[#2bbcff] rounded-lg min-h-[40px] sm:min-h-0 py-2.5 sm:py-0 touch-manipulation">
               Active
             </TabsTrigger>
-            <TabsTrigger value="library" className="text-[10px] md:text-xs font-bold uppercase tracking-wider data-[state=active]:bg-[#a855f7]/20 data-[state=active]:text-[#a855f7] rounded-lg">
+            <TabsTrigger value="library" className="text-[10px] sm:text-xs font-bold uppercase tracking-wider data-[state=active]:bg-[#a855f7]/20 data-[state=active]:text-[#a855f7] rounded-lg min-h-[40px] sm:min-h-0 py-2.5 sm:py-0 touch-manipulation">
               Library
             </TabsTrigger>
-            <TabsTrigger value="history" className="text-[10px] md:text-xs font-bold uppercase tracking-wider data-[state=active]:bg-white/10 data-[state=active]:text-foreground rounded-lg">
+            <TabsTrigger value="history" className="text-[10px] sm:text-xs font-bold uppercase tracking-wider data-[state=active]:bg-white/10 data-[state=active]:text-foreground rounded-lg min-h-[40px] sm:min-h-0 py-2.5 sm:py-0 touch-manipulation">
               History
             </TabsTrigger>
           </TabsList>
 
           {/* Active Tab: Today's tasks first, then Enrolled challenges */}
-          <TabsContent value="active" className="space-y-8">
+          <TabsContent value="active" className="space-y-5 sm:space-y-8 mt-0">
             {/* 1. Today's tasks / Daily assignments */}
-            <div className="glass-card rounded-2xl border border-[#2bbcff]/20 bg-gradient-to-br from-card/80 to-background backdrop-blur-md p-6 md:p-8 shadow-xl relative overflow-hidden">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 rounded-xl bg-[#2bbcff]/10 flex items-center justify-center flex-shrink-0" aria-hidden="true">
-                  <ListTodo className="w-5 h-5 text-[#2bbcff]" />
+            <div className="glass-card rounded-xl sm:rounded-2xl border border-[#2bbcff]/20 bg-gradient-to-br from-card/80 to-background backdrop-blur-md p-4 sm:p-6 md:p-8 shadow-xl relative overflow-hidden">
+              <div className="flex items-center gap-3 mb-4 sm:mb-6">
+                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-[#2bbcff]/10 flex items-center justify-center flex-shrink-0" aria-hidden="true">
+                  <ListTodo className="w-4 h-4 sm:w-5 sm:h-5 text-[#2bbcff]" />
                 </div>
-                <div>
+                <div className="min-w-0">
                   <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Today • Daily tasks</div>
-                  <div className="text-base font-bold text-foreground">
+                  <div className="text-sm sm:text-base font-bold text-foreground">
                     {dailyTasksFromChallenges.length > 0
                       ? `${dailyTasksFromChallenges.length} task${dailyTasksFromChallenges.length > 1 ? "s" : ""} from your challenges`
                       : "No tasks today"}
@@ -386,28 +386,28 @@ export default function ChallengesPage() {
               </div>
 
               {dailyTasksFromChallenges.length > 0 ? (
-                <div className="grid grid-cols-1 gap-3">
+                <div className="grid grid-cols-1 gap-2.5 sm:gap-3">
                   {dailyTasksFromChallenges.map((task) => (
                     <Link
                       key={task.id}
                       href={`/challenges/${task.id}`}
-                      className="glass-card rounded-xl border border-white/5 bg-card/30 backdrop-blur-sm p-4 hover:border-[#2bbcff]/30 transition-all flex items-start gap-3 group block"
+                      className="glass-card rounded-xl border border-white/5 bg-card/30 backdrop-blur-sm p-3.5 sm:p-4 hover:border-[#2bbcff]/30 active:scale-[0.99] transition-all flex items-start gap-3 group block min-h-[56px] touch-manipulation"
                     >
                       <div className="w-8 h-8 rounded-lg bg-[#2bbcff]/10 flex items-center justify-center flex-shrink-0 group-hover:bg-[#2bbcff]/20 transition-colors" aria-hidden="true">
                         <Check className="w-4 h-4 text-[#2bbcff]" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-bold text-foreground mb-0.5 group-hover:text-[#2bbcff] transition-colors">{task.todayTask}</p>
+                        <p className="text-sm font-bold text-foreground mb-0.5 group-hover:text-[#2bbcff] transition-colors line-clamp-2">{task.todayTask}</p>
                         <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{task.challengeName}</p>
                       </div>
-                      <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" aria-hidden="true" />
+                      <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-0.5" aria-hidden="true" />
                     </Link>
                   ))}
                 </div>
               ) : (
-                <div className="rounded-xl border border-dashed border-white/10 bg-white/5 p-6 text-center">
+                <div className="rounded-xl border border-dashed border-white/10 bg-white/5 p-4 sm:p-6 text-center">
                   <p className="text-sm text-muted-foreground">Enroll in a challenge to see daily tasks here.</p>
-                  <Button size="sm" variant="ghost" className="mt-3 text-[#2bbcff] hover:bg-[#2bbcff]/10" onClick={() => setActiveTab("library")}>
+                  <Button size="sm" variant="ghost" className="mt-3 min-h-[44px] text-[#2bbcff] hover:bg-[#2bbcff]/10 touch-manipulation" onClick={() => setActiveTab("library")}>
                     Browse Library
                     <ChevronRight className="ml-0.5 h-3 w-3" aria-hidden="true" />
                   </Button>
@@ -416,8 +416,8 @@ export default function ChallengesPage() {
             </div>
 
             {/* 2. Enrolled challenges */}
-            <div className="glass-card rounded-2xl border border-[#2bbcff]/20 bg-gradient-to-br from-card/80 to-background backdrop-blur-md p-6 md:p-8 shadow-xl relative overflow-hidden">
-              <div className="flex items-center justify-between mb-6">
+            <div className="glass-card rounded-xl sm:rounded-2xl border border-[#2bbcff]/20 bg-gradient-to-br from-card/80 to-background backdrop-blur-md p-4 sm:p-6 md:p-8 shadow-xl relative overflow-hidden">
+              <div className="flex items-center justify-between gap-2 mb-4 sm:mb-6">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-xl bg-[#2bbcff]/10 flex items-center justify-center flex-shrink-0" aria-hidden="true">
                     <Trophy className="w-5 h-5 text-[#2bbcff]" />
@@ -451,33 +451,33 @@ export default function ChallengesPage() {
               )}
 
               {activeChallenges.length > 0 ? (
-                <div className="grid md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
                   {activeChallenges.map((challenge) => (
                     <div
                       key={challenge.id}
-                      className="glass-card rounded-xl border border-white/5 bg-card/30 backdrop-blur-sm p-4 hover:border-[#2bbcff]/30 transition-all"
+                      className="glass-card rounded-xl border border-white/5 bg-card/30 backdrop-blur-sm p-3.5 sm:p-4 hover:border-[#2bbcff]/30 transition-all"
                     >
-                      <div className="flex items-start justify-between mb-3">
+                      <div className="flex items-start justify-between gap-2 mb-2.5 sm:mb-3">
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-0.5">
+                          <div className="flex items-center gap-2 mb-0.5 flex-wrap">
                             <h3 className="text-sm font-bold text-foreground truncate">{challenge.name}</h3>
                             <Badge variant="secondary" className="text-[10px] font-bold uppercase tracking-wider bg-[#2bbcff]/10 text-[#2bbcff] border-[#2bbcff]/30 flex-shrink-0">
                               Active
                             </Badge>
                           </div>
                           <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground uppercase tracking-wider">
-                            <Target className="w-2.5 h-2.5" aria-hidden="true" />
-                            Difficulty {challenge.difficulty}/5
-                            <span className="mx-1">•</span>
-                            <Calendar className="w-2.5 h-2.5" aria-hidden="true" />
+                            <Target className="w-2.5 h-2.5 shrink-0" aria-hidden="true" />
+                            {challenge.difficulty}/5
+                            <span className="mx-0.5">•</span>
+                            <Calendar className="w-2.5 h-2.5 shrink-0" aria-hidden="true" />
                             Day {challenge.currentDay}/{challenge.totalDays}
                           </div>
                         </div>
                         <Trophy className="w-5 h-5 text-[#a855f7] flex-shrink-0" aria-hidden="true" />
                       </div>
 
-                      <div className="space-y-3 mb-4">
-                        <div className="glass-card rounded-lg border border-white/5 bg-white/5 p-2.5">
+                      <div className="space-y-2 sm:space-y-3 mb-3 sm:mb-4">
+                        <div className="glass-card rounded-lg border border-white/5 bg-white/5 p-2 sm:p-2.5">
                           <div className="flex items-center justify-between gap-1.5 mb-1">
                             <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Progress</span>
                             <span className="text-xs font-bold text-foreground">{challenge.progress}%</span>
@@ -490,18 +490,18 @@ export default function ChallengesPage() {
                           </div>
                         </div>
                         <div className="flex items-center gap-2 text-[10px] text-muted-foreground uppercase tracking-wider">
-                          <Clock className="w-3 h-3 text-[#2bbcff]" aria-hidden="true" />
-                          {challenge.daysRemaining} days remaining
+                          <Clock className="w-3 h-3 text-[#2bbcff] shrink-0" aria-hidden="true" />
+                          {challenge.daysRemaining} days left
                         </div>
                       </div>
 
-                      <div className="glass-card rounded-lg border border-[#2bbcff]/10 bg-[#2bbcff]/5 p-3 mb-4">
-                        <div className="text-[10px] font-bold text-[#2bbcff] uppercase tracking-wider mb-1">Today&apos;s task</div>
-                        <p className="text-xs text-muted-foreground leading-relaxed">{challenge.todayTask}</p>
+                      <div className="glass-card rounded-lg border border-[#2bbcff]/10 bg-[#2bbcff]/5 p-2.5 sm:p-3 mb-3 sm:mb-4">
+                        <div className="text-[10px] font-bold text-[#2bbcff] uppercase tracking-wider mb-0.5">Today&apos;s task</div>
+                        <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">{challenge.todayTask}</p>
                       </div>
 
-                      <div className="flex gap-2">
-                        <Button size="sm" asChild className="flex-1 bg-gradient-to-r from-[#2bbcff] to-[#a855f7] hover:opacity-90 text-white border-0 text-[10px] h-8 font-bold uppercase tracking-wider">
+                      <div className="flex flex-col sm:flex-row gap-2">
+                        <Button size="sm" asChild className="flex-1 min-h-[44px] sm:h-8 bg-gradient-to-r from-[#2bbcff] to-[#a855f7] hover:opacity-90 text-white border-0 text-[10px] font-bold uppercase tracking-wider touch-manipulation">
                           <Link href={`/challenges/${challenge.id}`}>View Details</Link>
                         </Button>
                         <Button
@@ -511,7 +511,7 @@ export default function ChallengesPage() {
                             e.stopPropagation()
                             handleQuitChallenge(challenge.id)
                           }}
-                          className="border-red-500/50 hover:bg-red-500/10 text-red-500 text-[10px] h-8 font-bold uppercase tracking-wider bg-transparent"
+                          className="min-h-[44px] sm:h-8 border-red-500/50 hover:bg-red-500/10 text-red-500 text-[10px] font-bold uppercase tracking-wider bg-transparent touch-manipulation"
                         >
                           Quit
                         </Button>
@@ -520,14 +520,14 @@ export default function ChallengesPage() {
                   ))}
                 </div>
               ) : (
-                <div className="glass-card rounded-xl border border-orange-500/20 bg-orange-500/5 backdrop-blur-sm p-8 text-center">
-                  <AlertTriangle className="w-12 h-12 text-orange-500 mx-auto mb-3" aria-hidden="true" />
+                <div className="glass-card rounded-xl border border-orange-500/20 bg-orange-500/5 backdrop-blur-sm p-5 sm:p-8 text-center">
+                  <AlertTriangle className="w-10 h-10 sm:w-12 sm:h-12 text-orange-500 mx-auto mb-2 sm:mb-3" aria-hidden="true" />
                   <div className="text-[10px] font-bold text-orange-500 uppercase tracking-wider mb-1">No active challenges</div>
-                  <h3 className="text-lg font-bold mb-2">Lock in a challenge</h3>
+                  <h3 className="text-base sm:text-lg font-bold mb-2">Lock in a challenge</h3>
                   <p className="text-sm text-muted-foreground mb-4">
                     Your credibility grows with finished work. Browse the library and commit.
                   </p>
-                  <Button size="sm" className="bg-gradient-to-r from-[#2bbcff] to-[#a855f7] hover:opacity-90 text-white border-0 text-[10px] h-9 font-bold uppercase tracking-wider" onClick={() => setActiveTab("library")}>
+                  <Button size="sm" className="min-h-[48px] sm:h-9 bg-gradient-to-r from-[#2bbcff] to-[#a855f7] hover:opacity-90 text-white border-0 text-[10px] font-bold uppercase tracking-wider touch-manipulation" onClick={() => setActiveTab("library")}>
                     Browse Library
                     <ArrowRight className="ml-2 h-3 w-3" aria-hidden="true" />
                   </Button>
@@ -537,36 +537,36 @@ export default function ChallengesPage() {
           </TabsContent>
 
           {/* Challenge Library Tab */}
-          <TabsContent value="library" className="space-y-8">
-            <div className="glass-card rounded-2xl border border-[#a855f7]/20 bg-gradient-to-br from-card/80 to-background backdrop-blur-md p-6 md:p-8 shadow-xl relative overflow-hidden">
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-[#a855f7]/10 flex items-center justify-center flex-shrink-0" aria-hidden="true">
-                    <BookOpen className="w-5 h-5 text-[#a855f7]" />
+          <TabsContent value="library" className="space-y-5 sm:space-y-8 mt-0">
+            <div className="glass-card rounded-xl sm:rounded-2xl border border-[#a855f7]/20 bg-gradient-to-br from-card/80 to-background backdrop-blur-md p-4 sm:p-6 md:p-8 shadow-xl relative overflow-hidden">
+              <div className="flex items-center justify-between gap-2 mb-4 sm:mb-6">
+                <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                  <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-[#a855f7]/10 flex items-center justify-center flex-shrink-0" aria-hidden="true">
+                    <BookOpen className="w-4 h-4 sm:w-5 sm:h-5 text-[#a855f7]" />
                   </div>
-                  <div>
-                    <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Challenge Library • Browse</div>
-                    <div className="text-base font-bold text-foreground">Lock in your next commitment</div>
+                  <div className="min-w-0">
+                    <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Library • Browse</div>
+                    <div className="text-sm sm:text-base font-bold text-foreground truncate">Lock in your next commitment</div>
                   </div>
                 </div>
-                <Button size="sm" variant="ghost" className="text-[10px] h-8 font-bold uppercase tracking-wider text-[#a855f7] hover:bg-[#a855f7]/10 px-3">
+                <Button size="sm" variant="ghost" className="text-[10px] min-h-[40px] h-8 font-bold uppercase tracking-wider text-[#a855f7] hover:bg-[#a855f7]/10 px-2.5 sm:px-3 shrink-0 touch-manipulation">
                   Filter
                 </Button>
               </div>
 
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                 {challengeLibrary.map((challenge) => (
                   <div
                     key={challenge.id}
-                    className="glass-card rounded-xl border border-white/5 bg-card/30 backdrop-blur-sm p-4 hover:border-[#a855f7]/30 transition-all cursor-pointer group"
+                    className="glass-card rounded-xl border border-white/5 bg-card/30 backdrop-blur-sm p-3.5 sm:p-4 hover:border-[#a855f7]/30 active:scale-[0.99] transition-all cursor-pointer group touch-manipulation"
                     onClick={() => setSelectedChallenge(challenge.id)}
                   >
-                    <div className="flex items-start gap-3 mb-3">
-                      <div className="w-10 h-10 rounded-xl bg-[#a855f7]/10 flex items-center justify-center flex-shrink-0 group-hover:bg-[#a855f7]/20 transition-colors" aria-hidden="true">
-                        <Lock className="w-5 h-5 text-[#a855f7]" />
+                    <div className="flex items-start gap-2 sm:gap-3 mb-2 sm:mb-3">
+                      <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-[#a855f7]/10 flex items-center justify-center flex-shrink-0 group-hover:bg-[#a855f7]/20 transition-colors" aria-hidden="true">
+                        <Lock className="w-4 h-4 sm:w-5 sm:h-5 text-[#a855f7]" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h3 className="text-sm font-bold text-foreground mb-0.5 group-hover:text-[#a855f7] transition-colors truncate">
+                        <h3 className="text-sm font-bold text-foreground mb-0.5 group-hover:text-[#a855f7] transition-colors line-clamp-2">
                           {challenge.name}
                         </h3>
                         <Badge variant="outline" className="text-[10px] font-bold uppercase tracking-wider border-[#a855f7]/30 text-[#a855f7]">
@@ -575,32 +575,32 @@ export default function ChallengesPage() {
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground uppercase tracking-wider mb-2">
-                      <Target className="w-2.5 h-2.5" aria-hidden="true" />
-                      Difficulty {challenge.difficulty}/5
-                      <span className="mx-1">•</span>
-                      <Calendar className="w-2.5 h-2.5" aria-hidden="true" />
-                      {challenge.duration} days
+                    <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground uppercase tracking-wider mb-1.5 sm:mb-2">
+                      <Target className="w-2.5 h-2.5 shrink-0" aria-hidden="true" />
+                      {challenge.difficulty}/5
+                      <span className="mx-0.5">•</span>
+                      <Calendar className="w-2.5 h-2.5 shrink-0" aria-hidden="true" />
+                      {challenge.duration}d
                     </div>
 
-                    <p className="text-xs text-muted-foreground mb-4 leading-relaxed line-clamp-2">
+                    <p className="text-xs text-muted-foreground mb-3 sm:mb-4 leading-relaxed line-clamp-2">
                       {challenge.description}
                     </p>
 
-                    <div className="glass-card rounded-lg border border-white/5 bg-white/5 p-2.5 mb-4">
+                    <div className="glass-card rounded-lg border border-white/5 bg-white/5 p-2 sm:p-2.5 mb-3 sm:mb-4">
                       <div className="flex items-center justify-between text-[10px]">
                         <span className="text-muted-foreground uppercase tracking-wider">Reward</span>
-                        <span className="font-bold text-[#a855f7]">+{challenge.reward} EliteScore</span>
+                        <span className="font-bold text-[#a855f7]">+{challenge.reward}</span>
                       </div>
-                      <div className="flex items-center justify-between text-[10px] mt-1">
-                        <span className="text-muted-foreground uppercase tracking-wider">Completion rate</span>
+                      <div className="flex items-center justify-between text-[10px] mt-0.5">
+                        <span className="text-muted-foreground uppercase tracking-wider">Completion</span>
                         <span className="font-bold text-foreground">{challenge.completionRate}%</span>
                       </div>
                     </div>
 
                     <Button
                       size="sm"
-                      className="w-full bg-gradient-to-r from-[#a855f7] to-[#2bbcff] hover:opacity-90 text-white border-0 text-[10px] h-8 font-bold uppercase tracking-wider disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="w-full min-h-[44px] sm:h-8 bg-gradient-to-r from-[#a855f7] to-[#2bbcff] hover:opacity-90 text-white border-0 text-[10px] font-bold uppercase tracking-wider disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation"
                       onClick={(e) => {
                         e.stopPropagation()
                         setSelectedChallenge(challenge.id)
@@ -623,25 +623,25 @@ export default function ChallengesPage() {
           </TabsContent>
 
           {/* Challenge History Tab */}
-          <TabsContent value="history" className="space-y-8">
-            <div className="glass-card rounded-2xl border border-[#2bbcff]/20 bg-gradient-to-br from-card/80 to-background backdrop-blur-md p-6 md:p-8 shadow-xl relative overflow-hidden">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 rounded-xl bg-[#2bbcff]/10 flex items-center justify-center flex-shrink-0" aria-hidden="true">
-                  <History className="w-5 h-5 text-[#2bbcff]" />
+          <TabsContent value="history" className="space-y-5 sm:space-y-8 mt-0">
+            <div className="glass-card rounded-xl sm:rounded-2xl border border-[#2bbcff]/20 bg-gradient-to-br from-card/80 to-background backdrop-blur-md p-4 sm:p-6 md:p-8 shadow-xl relative overflow-hidden">
+              <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
+                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-[#2bbcff]/10 flex items-center justify-center flex-shrink-0" aria-hidden="true">
+                  <History className="w-4 h-4 sm:w-5 sm:h-5 text-[#2bbcff]" />
                 </div>
-                <div>
-                  <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Challenge History • Completed & Failed</div>
-                  <div className="text-base font-bold text-foreground">Your past commitments</div>
+                <div className="min-w-0">
+                  <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">History • Completed & Failed</div>
+                  <div className="text-sm sm:text-base font-bold text-foreground">Your past commitments</div>
                 </div>
               </div>
 
-              <div className="space-y-3">
+              <div className="space-y-2.5 sm:space-y-3">
                 {historyChallenges.map((challenge) => (
                   <div
                     key={challenge.id}
-                    className="glass-card rounded-xl border border-white/5 bg-card/30 backdrop-blur-sm p-4 hover:border-white/10 transition-all"
+                    className="glass-card rounded-xl border border-white/5 bg-card/30 backdrop-blur-sm p-3.5 sm:p-4 hover:border-white/10 transition-all"
                   >
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-3 sm:gap-4 flex-wrap sm:flex-nowrap">
                       {challenge.status === "completed" ? (
                         <div className="w-10 h-10 rounded-xl bg-green-500/10 flex items-center justify-center flex-shrink-0" aria-hidden="true">
                           <CheckCircle2 className="w-5 h-5 text-green-500" />
@@ -652,33 +652,32 @@ export default function ChallengesPage() {
                         </div>
                       )}
 
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-0.5">
+                      <div className="flex-1 min-w-0 order-2 sm:order-none">
+                        <div className="flex items-center gap-2 mb-0.5 flex-wrap">
                           <h3 className="text-sm font-bold text-foreground">{challenge.name}</h3>
                           <Badge
                             variant="outline"
-                            className={`text-[10px] font-bold uppercase tracking-wider ${
+                            className={`text-[10px] font-bold uppercase tracking-wider shrink-0 ${
                               challenge.status === "completed"
                                 ? "border-green-500/30 text-green-500"
                                 : "border-red-500/30 text-red-500"
                             }`}
                           >
-                            {challenge.status === "completed" ? "Completed" : "Failed"}
+                            {challenge.status === "completed" ? "Done" : "Failed"}
                           </Badge>
                         </div>
-                        <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground uppercase tracking-wider">
-                          <Target className="w-2.5 h-2.5" aria-hidden="true" />
-                          Difficulty {challenge.difficulty}/5
-                          <span className="mx-1">•</span>
-                          <Calendar className="w-2.5 h-2.5" aria-hidden="true" />
-                          {challenge.duration} days
-                          <span className="mx-1">•</span>
-                          <History className="w-2.5 h-2.5" aria-hidden="true" />
+                        <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground uppercase tracking-wider flex-wrap">
+                          <Target className="w-2.5 h-2.5 shrink-0" aria-hidden="true" />
+                          {challenge.difficulty}/5
+                          <span className="mx-0.5">•</span>
+                          <Calendar className="w-2.5 h-2.5 shrink-0" aria-hidden="true" />
+                          {challenge.duration}d
+                          <span className="mx-0.5">•</span>
                           {challenge.completedDate}
                         </div>
                       </div>
 
-                      <div className="text-right flex-shrink-0">
+                      <div className="text-right flex-shrink-0 w-full sm:w-auto order-1 sm:order-none">
                         <div
                           className={`text-sm font-bold ${
                             challenge.status === "completed" ? "text-green-500" : "text-red-500"
@@ -702,29 +701,29 @@ export default function ChallengesPage() {
         </Tabs>
       </section>
 
-      {/* Challenge Detail Modal */}
+      {/* Challenge Detail Modal - full screen on mobile */}
       {selectedChallenge && !showLockInModal && (
         <div
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-0 sm:p-4"
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 pt-[env(safe-area-inset-top)]"
           onClick={() => setSelectedChallenge(null)}
         >
           <div
-            className="glass-card rounded-none sm:rounded-2xl border-0 sm:border border-[#a855f7]/30 bg-card/95 backdrop-blur-xl p-6 max-w-2xl w-full h-full sm:h-auto sm:max-h-[80vh] overflow-y-auto"
+            className="glass-card rounded-t-2xl sm:rounded-2xl border-0 sm:border border-[#a855f7]/30 bg-card/95 backdrop-blur-xl p-4 sm:p-6 max-w-2xl w-full max-h-[92dvh] sm:max-h-[85vh] overflow-y-auto overscroll-contain touch-manipulation"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-start justify-between mb-4">
-              <div className="flex-1">
-                <h2 className="text-2xl font-bold mb-2">{selectedChallengeData?.name}</h2>
-                <Badge variant="outline" className="text-xs border-[#a855f7]/30 text-[#a855f7]">
+            <div className="flex items-start justify-between gap-2 mb-4 pb-2 border-b border-white/10">
+              <div className="flex-1 min-w-0">
+                <h2 className="text-lg sm:text-2xl font-bold mb-1 leading-tight">{selectedChallengeData?.name}</h2>
+                <Badge variant="outline" className="text-[10px] sm:text-xs border-[#a855f7]/30 text-[#a855f7]">
                   {selectedChallengeData?.track}
                 </Badge>
               </div>
-              <Button size="sm" variant="ghost" onClick={() => setSelectedChallenge(null)} className="text-xs h-8">
+              <Button size="sm" variant="ghost" onClick={() => setSelectedChallenge(null)} className="text-xs min-h-[44px] min-w-[44px] shrink-0 touch-manipulation" aria-label="Close">
                 Close
               </Button>
             </div>
 
-            <div className="space-y-6">
+            <div className="space-y-4 sm:space-y-6 pt-2">
               <div>
                 <h3 className="text-sm font-bold mb-2">Challenge Description</h3>
                 <p className="text-sm text-muted-foreground leading-relaxed">
@@ -766,28 +765,28 @@ export default function ChallengesPage() {
                 </ul>
               </div>
 
-              <div className="grid grid-cols-2 gap-4 pt-4 border-t border-border/50">
-                <div>
-                  <p className="text-xs text-muted-foreground mb-1">Difficulty</p>
+              <div className="grid grid-cols-2 gap-3 sm:gap-4 pt-4 border-t border-border/50">
+                <div className="p-2 sm:p-0">
+                  <p className="text-[10px] sm:text-xs text-muted-foreground mb-0.5">Difficulty</p>
                   <p className="text-sm font-bold">{selectedChallengeData?.difficulty}/5</p>
                 </div>
-                <div>
-                  <p className="text-xs text-muted-foreground mb-1">Duration</p>
+                <div className="p-2 sm:p-0">
+                  <p className="text-[10px] sm:text-xs text-muted-foreground mb-0.5">Duration</p>
                   <p className="text-sm font-bold">{selectedChallengeData?.duration} days</p>
                 </div>
-                <div>
-                  <p className="text-xs text-muted-foreground mb-1">Base Reward</p>
-                  <p className="text-sm font-bold text-[#a855f7]">+{selectedChallengeData?.reward} EliteScore</p>
+                <div className="p-2 sm:p-0">
+                  <p className="text-[10px] sm:text-xs text-muted-foreground mb-0.5">Base Reward</p>
+                  <p className="text-sm font-bold text-[#a855f7]">+{selectedChallengeData?.reward}</p>
                 </div>
-                <div>
-                  <p className="text-xs text-muted-foreground mb-1">Completion Rate</p>
+                <div className="p-2 sm:p-0">
+                  <p className="text-[10px] sm:text-xs text-muted-foreground mb-0.5">Completion</p>
                   <p className="text-sm font-bold">{selectedChallengeData?.completionRate}%</p>
                 </div>
               </div>
 
               <Button
                 size="lg"
-                className="w-full bg-gradient-to-r from-[#a855f7] to-[#2bbcff] hover:opacity-90 text-white border-0 text-sm h-11 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full min-h-[48px] sm:h-11 bg-gradient-to-r from-[#a855f7] to-[#2bbcff] hover:opacity-90 text-white border-0 text-sm font-bold disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation"
                 onClick={handleLockInStart}
                 disabled={!canJoinChallenge || isAlreadyEnrolled}
               >
@@ -807,33 +806,33 @@ export default function ChallengesPage() {
         </div>
       )}
 
-      {/* Lock-In Multi-Step Modal with Supporters - Advanced UI */}
+      {/* Lock-In Multi-Step Modal - full height on mobile, scrollable */}
       {showLockInModal && selectedChallenge && (
         <div
-          className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4"
+          className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 pt-[env(safe-area-inset-top)]"
           onClick={handleCloseLockIn}
         >
           <div
-            className="relative w-full max-w-lg overflow-hidden"
+            className="relative w-full max-w-lg max-h-[96dvh] sm:max-h-[90vh] flex flex-col overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Animated Background Glow */}
-            <div className="absolute -top-20 -left-20 w-40 h-40 bg-[#a855f7]/30 rounded-full blur-[80px] animate-pulse" />
-            <div className="absolute -bottom-20 -right-20 w-40 h-40 bg-[#2bbcff]/30 rounded-full blur-[80px] animate-pulse" />
+            <div className="absolute -top-20 -left-20 w-40 h-40 bg-[#a855f7]/30 rounded-full blur-[80px] animate-pulse pointer-events-none" aria-hidden="true" />
+            <div className="absolute -bottom-20 -right-20 w-40 h-40 bg-[#2bbcff]/30 rounded-full blur-[80px] animate-pulse pointer-events-none" aria-hidden="true" />
             
-            <div className="relative glass-card rounded-3xl border border-white/10 bg-card/95 backdrop-blur-2xl overflow-hidden">
+            <div className="relative glass-card rounded-t-2xl sm:rounded-3xl border-0 sm:border border-white/10 bg-card/95 backdrop-blur-2xl overflow-hidden flex flex-col max-h-[96dvh] sm:max-h-[90vh]">
               {/* Progress Bar */}
-              <div className="h-1 bg-white/5">
+              <div className="h-1 bg-white/5 shrink-0" aria-hidden="true">
                 <div 
                   className="h-full bg-gradient-to-r from-[#a855f7] to-[#2bbcff] transition-all duration-500"
                   style={{ width: lockInStep === "invite" ? "33%" : lockInStep === "confirm" ? "66%" : "100%" }}
                 />
               </div>
 
-              <div className="p-6 md:p-8">
+              <div className="p-4 sm:p-6 md:p-8 overflow-y-auto overscroll-contain flex-1 min-h-0">
                 {/* Step 1: Invite Supporters */}
                 {lockInStep === "invite" && (
-                  <div className="space-y-6">
+                  <div className="space-y-4 sm:space-y-6">
                     {/* Header */}
                     <div className="flex items-start justify-between">
                       <div className="space-y-1">
@@ -996,7 +995,7 @@ export default function ChallengesPage() {
 
                 {/* Step 2: Confirm Lock-In */}
                 {lockInStep === "confirm" && (
-                  <div className="space-y-6">
+                  <div className="space-y-4 sm:space-y-6">
                     {/* Header */}
                     <div className="flex items-start justify-between">
                       <div className="space-y-1">
@@ -1146,34 +1145,34 @@ export default function ChallengesPage() {
         </div>
       )}
 
-      {/* Proof Submission Modal */}
+      {/* Proof Submission Modal - mobile friendly */}
       {showProofModal && (
         <div
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 pt-[env(safe-area-inset-top)]"
           onClick={() => setShowProofModal(false)}
         >
           <div
-            className="glass-card rounded-2xl border border-[#2bbcff]/30 bg-card/95 backdrop-blur-xl p-6 max-w-lg w-full"
+            className="glass-card rounded-t-2xl sm:rounded-2xl border-0 sm:border border-[#2bbcff]/30 bg-card/95 backdrop-blur-xl p-4 sm:p-6 max-w-lg w-full max-h-[90dvh] sm:max-h-[85vh] overflow-y-auto overscroll-contain"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="space-y-4">
+            <div className="space-y-4 pb-[env(safe-area-inset-bottom)]">
               <div>
-                <h2 className="text-xl font-bold mb-2">Submit Daily Proof</h2>
-                <p className="text-sm text-muted-foreground">
-                  Upload proof of today's task completion. Submissions are timestamped and immutable.
+                <h2 className="text-lg sm:text-xl font-bold mb-2">Submit Daily Proof</h2>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  Upload proof of today&apos;s task completion. Submissions are timestamped and immutable.
                 </p>
               </div>
 
               <div>
                 <label className="text-sm font-medium mb-2 block">Proof Type</label>
                 <div className="grid grid-cols-3 gap-2 mb-4">
-                  <Button size="sm" variant="outline" className="text-xs h-9 bg-transparent">
+                  <Button size="sm" variant="outline" className="text-xs min-h-[44px] sm:h-9 bg-transparent touch-manipulation">
                     Image
                   </Button>
-                  <Button size="sm" variant="outline" className="text-xs h-9 bg-transparent">
+                  <Button size="sm" variant="outline" className="text-xs min-h-[44px] sm:h-9 bg-transparent touch-manipulation">
                     Link
                   </Button>
-                  <Button size="sm" variant="outline" className="text-xs h-9 bg-transparent">
+                  <Button size="sm" variant="outline" className="text-xs min-h-[44px] sm:h-9 bg-transparent touch-manipulation">
                     Text
                   </Button>
                 </div>
@@ -1181,9 +1180,9 @@ export default function ChallengesPage() {
 
               <div>
                 <label className="text-sm font-medium mb-2 block">Upload Proof</label>
-                <div className="border-2 border-dashed border-border rounded-lg p-8 text-center hover:border-[#2bbcff]/50 transition-colors cursor-pointer">
-                  <Upload className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
-                  <p className="text-sm font-medium mb-1">Click to upload or drag and drop</p>
+                <div className="border-2 border-dashed border-border rounded-xl p-6 sm:p-8 text-center hover:border-[#2bbcff]/50 transition-colors cursor-pointer min-h-[120px] flex flex-col items-center justify-center touch-manipulation">
+                  <Upload className="w-8 h-8 text-muted-foreground mb-2 shrink-0" aria-hidden="true" />
+                  <p className="text-sm font-medium mb-1">Tap to upload</p>
                   <p className="text-xs text-muted-foreground">PNG, JPG, PDF up to 10MB</p>
                 </div>
               </div>
@@ -1191,24 +1190,24 @@ export default function ChallengesPage() {
               <div>
                 <label className="text-sm font-medium mb-2 block">Notes (Optional)</label>
                 <textarea
-                  className="w-full px-3 py-2 text-sm rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-[#2bbcff]/50 resize-none"
+                  className="w-full px-3 py-2.5 text-sm rounded-xl border border-border bg-background focus:outline-none focus:ring-2 focus:ring-[#2bbcff]/50 resize-none min-h-[80px]"
                   rows={3}
                   placeholder="Add any additional context..."
                 />
               </div>
 
-              <div className="flex gap-3 pt-2">
+              <div className="flex flex-col-reverse sm:flex-row gap-2 sm:gap-3 pt-2">
                 <Button
                   size="lg"
                   variant="outline"
                   onClick={() => setShowProofModal(false)}
-                  className="flex-1 text-sm h-10 bg-transparent"
+                  className="flex-1 min-h-[48px] sm:h-10 text-sm bg-transparent touch-manipulation"
                 >
                   Cancel
                 </Button>
                 <Button
                   size="lg"
-                  className="flex-1 bg-gradient-to-r from-[#2bbcff] to-[#a855f7] hover:opacity-90 text-white border-0 text-sm h-10"
+                  className="flex-1 min-h-[48px] sm:h-10 bg-gradient-to-r from-[#2bbcff] to-[#a855f7] hover:opacity-90 text-white border-0 text-sm touch-manipulation"
                   onClick={() => setShowProofModal(false)}
                 >
                   Submit Proof
@@ -1220,38 +1219,38 @@ export default function ChallengesPage() {
       )}
 
       {/* Bottom Navigation */}
-      {/* Quit Challenge Confirmation Modal */}
+      {/* Quit Challenge Confirmation Modal - mobile friendly */}
       {showQuitConfirm && (
         <div
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-3 sm:p-4 pt-[env(safe-area-inset-top)] pb-[max(1rem,env(safe-area-inset-bottom))]"
           onClick={() => setShowQuitConfirm(null)}
         >
           <div
-            className="glass-card rounded-2xl border border-red-500/30 bg-card/95 backdrop-blur-xl p-6 max-w-md w-full"
+            className="glass-card rounded-2xl border border-red-500/30 bg-card/95 backdrop-blur-xl p-4 sm:p-6 max-w-md w-full mx-0 sm:mx-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-start gap-3 mb-4">
-              <div className="w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center flex-shrink-0">
+              <div className="w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center flex-shrink-0" aria-hidden="true">
                 <AlertTriangle className="w-5 h-5 text-red-500" />
               </div>
-              <div>
-                <h3 className="text-lg font-bold mb-1">Quit Challenge?</h3>
-                <p className="text-sm text-muted-foreground">
+              <div className="min-w-0">
+                <h3 className="text-base sm:text-lg font-bold mb-1">Quit Challenge?</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">
                   Quitting will result in a failed challenge and -35 EliteScore penalty. This action cannot be undone.
                 </p>
               </div>
             </div>
-            <div className="flex gap-3">
+            <div className="flex flex-col-reverse sm:flex-row gap-2 sm:gap-3">
               <Button
                 variant="outline"
                 onClick={() => setShowQuitConfirm(null)}
-                className="flex-1 border-border/50 hover:bg-muted/50 bg-transparent"
+                className="flex-1 min-h-[48px] sm:h-10 border-border/50 hover:bg-muted/50 bg-transparent touch-manipulation"
               >
                 Cancel
               </Button>
               <Button
                 onClick={confirmQuitChallenge}
-                className="flex-1 bg-red-500 hover:bg-red-600 text-white border-0"
+                className="flex-1 min-h-[48px] sm:h-10 bg-red-500 hover:bg-red-600 text-white border-0 touch-manipulation"
               >
                 Quit Challenge
               </Button>
