@@ -380,7 +380,7 @@ function InputForm({ ref, onSuccess }: { ref: React.Ref<HTMLTextAreaElement>; on
 
 const SPRING_LOGO = { type: "spring", stiffness: 350 / SPEED_FACTOR, damping: 35 } as const
 
-function KeyHint({ children, className }: { children: string; className?: string }) {
+function KeyHint({ children = "", className }: { children?: string; className?: string }) {
   return (
     <kbd
       className={cx(

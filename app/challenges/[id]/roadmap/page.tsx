@@ -182,8 +182,8 @@ export default function ChallengeRoadmapPage() {
       {/* Hero header - same style as home page */}
       <section className="container mx-auto px-4 pt-6 md:pt-8 pb-4">
         <div className="max-w-7xl mx-auto">
-          <div className="glass-card rounded-2xl border border-[#2563eb]/20 bg-gradient-to-br from-card/80 to-background backdrop-blur-md p-6 md:p-8 shadow-2xl relative overflow-hidden">
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-64 bg-gradient-to-r from-[#2563eb]/20 to-[#7c3aed]/20 blur-[100px] rounded-full -z-10" aria-hidden="true" />
+          <div className="glass-card rounded-2xl border border-[#0ea5e9]/20 bg-gradient-to-br from-card/80 to-background backdrop-blur-md p-6 md:p-8 shadow-2xl relative overflow-hidden">
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-64 bg-gradient-to-r from-[#0ea5e9]/20 to-[#0f766e]/20 blur-[100px] rounded-full -z-10" aria-hidden="true" />
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div className="flex items-start gap-3">
                 <Button
@@ -197,24 +197,24 @@ export default function ChallengeRoadmapPage() {
                 </Button>
                 <div>
                   <nav className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] mb-1" aria-label="Breadcrumb">
-                    <Link href="/challenges" className="hover:text-[#2563eb] transition-colors">Challenges</Link>
+                    <Link href="/challenges" className="hover:text-[#0ea5e9] transition-colors">Challenges</Link>
                     <span className="mx-1.5" aria-hidden="true">/</span>
-                    <Link href={`/challenges/${challengeId}`} className="hover:text-[#2563eb] transition-colors">{challenge.name}</Link>
+                    <Link href={`/challenges/${challengeId}`} className="hover:text-[#0ea5e9] transition-colors">{challenge.name}</Link>
                     <span className="mx-1.5" aria-hidden="true">/</span>
                     <span className="text-foreground">Roadmap</span>
                   </nav>
-                  <h1 className="text-xl md:text-2xl font-black bg-gradient-to-r from-[#2563eb] via-[#7c3aed] to-[#2563eb] text-foreground leading-tight">
+                  <h1 className="text-xl md:text-2xl font-black bg-gradient-to-r from-[#0ea5e9] via-[#0f766e] to-[#0ea5e9] text-foreground leading-tight">
                     {challenge.name}
                   </h1>
                   <p className="text-sm text-muted-foreground mt-2 leading-relaxed max-w-xl">
                     {challenge.description}
                   </p>
                   <div className="flex items-center gap-2 flex-wrap mt-3">
-                    <Badge variant="secondary" className="bg-[#2563eb]/10 text-[#2563eb] border-[#2563eb]/30 text-[10px] font-bold uppercase tracking-wider">
+                    <Badge variant="secondary" className="bg-[#0ea5e9]/10 text-[#0ea5e9] border-[#0ea5e9]/30 text-[10px] font-bold uppercase tracking-wider">
                       <Clock className="w-2.5 h-2.5 mr-0.5" aria-hidden="true" />
                       {challenge.timeEstimate}
                     </Badge>
-                    <Badge variant="secondary" className="bg-[#7c3aed]/10 text-[#7c3aed] border-[#7c3aed]/30 text-[10px] font-bold uppercase tracking-wider">
+                    <Badge variant="secondary" className="bg-[#0f766e]/10 text-[#0f766e] border-[#0f766e]/30 text-[10px] font-bold uppercase tracking-wider">
                       <Trophy className="w-2.5 h-2.5 mr-0.5" aria-hidden="true" />
                       Difficulty {challenge.difficulty}/5
                     </Badge>
@@ -224,7 +224,7 @@ export default function ChallengeRoadmapPage() {
               <Button
                 asChild
                 size="sm"
-                className="bg-gradient-to-r from-[#2563eb] to-[#7c3aed] hover:opacity-90 text-white border-0 text-[10px] h-9 font-bold uppercase tracking-wider shrink-0"
+                className="bg-gradient-to-r from-[#0ea5e9] to-[#0f766e] hover:opacity-90 text-white border-0 text-[10px] h-9 font-bold uppercase tracking-wider shrink-0"
               >
                 <Link href={`/challenges/${challengeId}`} aria-label="Back to challenge details">Challenge details</Link>
               </Button>
@@ -240,10 +240,10 @@ export default function ChallengeRoadmapPage() {
             {/* Main Column */}
             <div className="lg:col-span-2 space-y-8">
               {/* Active Milestone - home UI style */}
-              <div className="glass-card rounded-2xl border border-[#2563eb]/20 bg-gradient-to-br from-card/80 to-background backdrop-blur-md p-6 shadow-xl relative overflow-hidden">
+              <div className="glass-card rounded-2xl border border-[#0ea5e9]/20 bg-gradient-to-br from-card/80 to-background backdrop-blur-md p-6 shadow-xl relative overflow-hidden">
                 <div className="flex items-center gap-3 mb-6">
-                  <div className="w-10 h-10 rounded-xl bg-[#2563eb]/10 flex items-center justify-center flex-shrink-0" aria-hidden="true">
-                    <Trophy className="w-5 h-5 text-[#2563eb]" />
+                  <div className="w-10 h-10 rounded-xl bg-[#0ea5e9]/10 flex items-center justify-center flex-shrink-0" aria-hidden="true">
+                    <Trophy className="w-5 h-5 text-[#0ea5e9]" />
                   </div>
                   <div>
                     <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Active milestone</div>
@@ -268,10 +268,10 @@ export default function ChallengeRoadmapPage() {
               <PathTimeline phases={challenge.phases} />
 
               {/* All Milestones - home UI style */}
-              <div className="glass-card rounded-2xl border border-[#2563eb]/20 bg-gradient-to-br from-card/80 to-background backdrop-blur-md p-6 shadow-xl relative overflow-hidden">
+              <div className="glass-card rounded-2xl border border-[#0ea5e9]/20 bg-gradient-to-br from-card/80 to-background backdrop-blur-md p-6 shadow-xl relative overflow-hidden">
                 <div className="flex items-center gap-3 mb-6">
-                  <div className="w-10 h-10 rounded-xl bg-[#7c3aed]/10 flex items-center justify-center flex-shrink-0" aria-hidden="true">
-                    <Trophy className="w-5 h-5 text-[#7c3aed]" />
+                  <div className="w-10 h-10 rounded-xl bg-[#0f766e]/10 flex items-center justify-center flex-shrink-0" aria-hidden="true">
+                    <Trophy className="w-5 h-5 text-[#0f766e]" />
                   </div>
                   <div>
                     <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">All milestones</div>

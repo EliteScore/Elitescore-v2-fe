@@ -1,4 +1,4 @@
-ï»¿"use client"
+"use client"
 
 import { TrendingUp, Target } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -37,11 +37,11 @@ export function ScoreBreakdown({
   return (
     <div className="space-y-3">
       {/* Compact Header */}
-      <div className="glass-card rounded-xl border border-[#2563eb]/20 bg-card/50 backdrop-blur-sm p-4">
+      <div className="glass-card rounded-xl border border-[#0ea5e9]/20 bg-card/50 backdrop-blur-sm p-4">
         <div className="flex items-center justify-between mb-3">
           <div>
             <h2 className="text-base font-bold mb-0.5">EliteScore</h2>
-            <span className="text-2xl font-black bg-gradient-to-r from-[#2563eb] to-[#7c3aed] text-foreground">
+            <span className="text-2xl font-black bg-gradient-to-r from-[#0ea5e9] to-[#0f766e] text-foreground">
               {totalScore}
             </span>
           </div>
@@ -76,7 +76,7 @@ export function ScoreBreakdown({
       </div>
 
       {/* Compact What Moved */}
-      <div className="glass-card rounded-xl border border-[#2563eb]/20 bg-card/50 backdrop-blur-sm p-3">
+      <div className="glass-card rounded-xl border border-[#0ea5e9]/20 bg-card/50 backdrop-blur-sm p-3">
         <h3 className="text-xs font-bold mb-2">What moved your score this week</h3>
         <div className="space-y-1.5">
           {weeklyChanges.map((change, index) => (
@@ -93,17 +93,17 @@ export function ScoreBreakdown({
 
       {/* Compact Quick Action - only when quickActionText is provided */}
       {quickActionText && (
-        <div className="glass-card rounded-xl border border-[#7c3aed]/20 bg-gradient-to-r from-[#7c3aed]/5 to-[#2563eb]/5 backdrop-blur-sm p-3">
+        <div className="glass-card rounded-xl border border-[#0f766e]/20 bg-gradient-to-r from-[#0f766e]/5 to-[#0ea5e9]/5 backdrop-blur-sm p-3">
           <div className="flex items-start gap-2">
-            <div className="w-7 h-7 rounded-lg bg-[#2563eb]/10 flex items-center justify-center flex-shrink-0">
-              <Target className="w-3.5 h-3.5 text-[#2563eb]" />
+            <div className="w-7 h-7 rounded-lg bg-[#0ea5e9]/10 flex items-center justify-center flex-shrink-0">
+              <Target className="w-3.5 h-3.5 text-[#0ea5e9]" />
             </div>
             <div className="flex-1 min-w-0">
-              <h3 className="text-[10px] font-bold mb-0.5 text-[#2563eb]">Fastest way to +5 points</h3>
+              <h3 className="text-[10px] font-bold mb-0.5 text-[#0ea5e9]">Fastest way to +5 points</h3>
               <p className="text-[10px] text-muted-foreground leading-tight mb-2 line-clamp-2">{quickActionText}</p>
               <Button
                 size="sm"
-                className="bg-gradient-to-r from-[#2563eb] to-[#7c3aed] hover:opacity-90 text-white border-0 text-[10px] h-6 px-2"
+                className="bg-gradient-to-r from-[#0ea5e9] to-[#0f766e] hover:opacity-90 text-white border-0 text-[10px] h-6 px-2"
                 asChild
               >
                 <Link href={quickActionLink ?? "/challenges"}>Start Now</Link>

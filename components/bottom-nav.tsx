@@ -1,13 +1,16 @@
 "use client"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { User, Trophy, Target, Home } from "lucide-react"
+import { User, Trophy, Target, Home, CalendarCheck2, BarChart3, Bell } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const navItems = [
   { name: "Home", href: "/app", icon: Home },
+  { name: "Planner", href: "/planner", icon: CalendarCheck2 },
   { name: "Challenges", href: "/challenges", icon: Target },
+  { name: "Analytics", href: "/analytics", icon: BarChart3 },
   { name: "Leaderboard", href: "/leaderboard", icon: Trophy },
+  { name: "Alerts", href: "/notifications", icon: Bell },
   { name: "Profile", href: "/profile", icon: User },
 ]
 
@@ -21,16 +24,17 @@ export function BottomNav() {
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background/90 backdrop-blur-xl border-t border-border/60 pb-safe">
-      <div className="container mx-auto px-4">
-        <div className="flex items-center justify-around h-16 max-w-lg mx-auto">
+      <div className="container mx-auto px-2">
+        <div className="h-16 overflow-x-auto">
+          <div className="mx-auto flex h-full min-w-max items-center gap-1 px-2">
           {navItems.map((item) => {
-            const isActive = pathname === item.href
+            const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`)
             return (
               <Link
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  "relative flex flex-col items-center justify-center flex-1 gap-1 transition-all duration-200 py-2",
+                  "relative flex min-w-[72px] flex-col items-center justify-center gap-1 px-2 py-2 transition-all duration-200",
                   isActive ? "text-foreground" : "text-foreground/70 hover:text-foreground",
                 )}
                 aria-label={item.name}
@@ -46,6 +50,7 @@ export function BottomNav() {
               </Link>
             )
           })}
+          </div>
         </div>
       </div>
     </nav>

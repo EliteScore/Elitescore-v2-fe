@@ -1,4 +1,4 @@
-ï»¿"use client"
+"use client"
 
 import React from "react"
 
@@ -106,11 +106,11 @@ export function SupportersPanel({
   ]
 
   return (
-    <div className="glass-card rounded-xl border border-[#7c3aed]/20 bg-card/50 backdrop-blur-sm p-5">
+    <div className="glass-card rounded-xl border border-[#0f766e]/20 bg-card/50 backdrop-blur-sm p-5">
       <div className="flex items-center gap-2 mb-4">
-        <Users className="w-4 h-4 text-[#7c3aed]" />
+        <Users className="w-4 h-4 text-[#0f766e]" />
         <h3 className="text-sm font-bold">Supporters</h3>
-        <Badge variant="outline" className="text-[10px] border-[#7c3aed]/30 text-[#7c3aed]">
+        <Badge variant="outline" className="text-[10px] border-[#0f766e]/30 text-[#0f766e]">
           {supporters.length}/3
         </Badge>
       </div>
@@ -130,7 +130,7 @@ export function SupportersPanel({
               className="flex items-center justify-between p-3 rounded-lg bg-muted/20 border border-border/30"
             >
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#2563eb]/20 to-[#7c3aed]/20 flex items-center justify-center">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#0ea5e9]/20 to-[#0f766e]/20 flex items-center justify-center">
                   <span className="text-xs font-bold">
                     {supporter.name?.charAt(0) || supporter.email.charAt(0).toUpperCase()}
                   </span>
@@ -157,9 +157,9 @@ export function SupportersPanel({
                     size="sm"
                     variant="ghost"
                     onClick={() => onResendInvite(supporter.id)}
-                    className="h-7 w-7 p-0 hover:bg-[#2563eb]/10"
+                    className="h-7 w-7 p-0 hover:bg-[#0ea5e9]/10"
                   >
-                    <RefreshCw className="w-3 h-3 text-[#2563eb]" />
+                    <RefreshCw className="w-3 h-3 text-[#0ea5e9]" />
                   </Button>
                 )}
                 <Button
@@ -195,7 +195,7 @@ export function SupportersPanel({
               type="button"
               size="sm"
               onClick={handleAddSupporter}
-              className="h-8 px-3 bg-[#7c3aed] hover:bg-[#7c3aed]/90 text-white text-xs"
+              className="h-8 px-3 bg-[#0f766e] hover:bg-[#0f766e]/90 text-white text-xs"
             >
               Invite
             </Button>
@@ -208,7 +208,7 @@ export function SupportersPanel({
       <div className="space-y-4 pt-4 border-t border-border/30">
         <div>
           <div className="flex items-center gap-2 mb-2">
-            <Bell className="w-3.5 h-3.5 text-[#2563eb]" />
+            <Bell className="w-3.5 h-3.5 text-[#0ea5e9]" />
             <span className="text-xs font-medium">Notification Intensity</span>
           </div>
           <div className="grid grid-cols-3 gap-2">
@@ -219,7 +219,7 @@ export function SupportersPanel({
                 onClick={() => setLocalIntensity(option.value)}
                 className={`p-2 rounded-lg border text-center transition-all ${
                   localIntensity === option.value
-                    ? "border-[#2563eb]/50 bg-[#2563eb]/10"
+                    ? "border-[#0ea5e9]/50 bg-[#0ea5e9]/10"
                     : "border-border/30 hover:border-border/50"
                 }`}
               >
@@ -232,7 +232,7 @@ export function SupportersPanel({
 
         <div>
           <div className="flex items-center gap-2 mb-2">
-            <Shield className="w-3.5 h-3.5 text-[#7c3aed]" />
+            <Shield className="w-3.5 h-3.5 text-[#0f766e]" />
             <span className="text-xs font-medium">Privacy Level</span>
           </div>
           <div className="space-y-2">
@@ -243,13 +243,13 @@ export function SupportersPanel({
                 onClick={() => setLocalPrivacy(option.value)}
                 className={`w-full p-2.5 rounded-lg border flex items-center gap-2 transition-all ${
                   localPrivacy === option.value
-                    ? "border-[#7c3aed]/50 bg-[#7c3aed]/10"
+                    ? "border-[#0f766e]/50 bg-[#0f766e]/10"
                     : "border-border/30 hover:border-border/50"
                 }`}
               >
                 {option.icon}
                 <span className="text-xs">{option.label}</span>
-                {localPrivacy === option.value && <Check className="w-3 h-3 text-[#7c3aed] ml-auto" />}
+                {localPrivacy === option.value && <Check className="w-3 h-3 text-[#0f766e] ml-auto" />}
               </button>
             ))}
           </div>
@@ -258,7 +258,7 @@ export function SupportersPanel({
         <Button
           type="button"
           onClick={handleSaveSettings}
-          className="w-full h-8 text-xs bg-gradient-to-r from-[#2563eb] to-[#7c3aed] hover:opacity-90 text-white border-0"
+          className="w-full h-8 text-xs bg-gradient-to-r from-[#0ea5e9] to-[#0f766e] hover:opacity-90 text-white border-0"
         >
           {showSaved ? (
             <>

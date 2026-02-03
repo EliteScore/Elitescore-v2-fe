@@ -90,9 +90,9 @@ const statusConfig: Record<ChallengeStatus, StatusConfigItem> = {
   },
   completed: {
     label: "Completed",
-    color: "text-[#7c3aed]",
-    bgColor: "bg-[#7c3aed]/10",
-    borderColor: "border-[#7c3aed]/30",
+    color: "text-[#0f766e]",
+    bgColor: "bg-[#0f766e]/10",
+    borderColor: "border-[#0f766e]/30",
     icon: Trophy,
   },
 }
@@ -159,18 +159,18 @@ export default function SupporterViewPage() {
           />
         </div>
 
-        <div className="glass-card rounded-2xl border border-[#2563eb]/20 bg-gradient-to-br from-card/80 to-background backdrop-blur-md overflow-hidden shadow-xl relative">
+        <div className="glass-card rounded-2xl border border-[#0ea5e9]/20 bg-gradient-to-br from-card/80 to-background backdrop-blur-md overflow-hidden shadow-xl relative">
           <div
-            className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-64 bg-gradient-to-r from-[#2563eb]/20 to-[#7c3aed]/20 blur-[100px] rounded-full -z-10"
+            className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-64 bg-gradient-to-r from-[#0ea5e9]/20 to-[#0f766e]/20 blur-[100px] rounded-full -z-10"
             aria-hidden="true"
           />
           <div className="p-5 sm:p-6 md:p-8 border-b border-white/10">
             <div className="flex flex-col items-center text-center">
               <div
-                className="w-16 h-16 rounded-full bg-gradient-to-br from-[#2563eb] to-[#7c3aed] p-1 mb-4"
+                className="w-16 h-16 rounded-full bg-gradient-to-br from-[#0ea5e9] to-[#0f766e] p-1 mb-4"
                 aria-hidden="true"
               >
-                <div className="w-full h-full rounded-full bg-background flex items-center justify-center text-xl font-bold bg-gradient-to-br from-[#2563eb] to-[#7c3aed] text-foreground">
+                <div className="w-full h-full rounded-full bg-background flex items-center justify-center text-xl font-bold bg-gradient-to-br from-[#0ea5e9] to-[#0f766e] text-foreground">
                   {getInitials(userName)}
                 </div>
               </div>
@@ -179,7 +179,7 @@ export default function SupporterViewPage() {
               </p>
               <h1 className="text-lg font-bold text-foreground mb-1">{userName}</h1>
               <p className="text-xs text-muted-foreground">is working on</p>
-              <p className="text-sm font-bold text-[#2563eb] mt-1">{challengeName}</p>
+              <p className="text-sm font-bold text-[#0ea5e9] mt-1">{challengeName}</p>
             </div>
           </div>
 
@@ -190,6 +190,7 @@ export default function SupporterViewPage() {
                 statusInfo.bgColor,
                 statusInfo.borderColor
               )}
+            >
               <StatusIcon className={cn("w-5 h-5", statusInfo.color)} aria-hidden="true" />
               <span className={cn("text-sm font-bold uppercase tracking-wider", statusInfo.color)}>
                 {statusInfo.label}
@@ -209,7 +210,7 @@ export default function SupporterViewPage() {
               </div>
               <div className="h-2 bg-white/10 rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-gradient-to-r from-[#2563eb] to-[#7c3aed] rounded-full transition-all duration-500"
+                  className="h-full bg-gradient-to-r from-[#0ea5e9] to-[#0f766e] rounded-full transition-all duration-500"
                   style={{ width: `${progress}%` }}
                   role="progressbar"
                   aria-valuenow={currentDay}
@@ -227,8 +228,8 @@ export default function SupporterViewPage() {
                   Day Streak
                 </div>
               </div>
-              <div className="glass-card rounded-xl border border-[#2563eb]/20 bg-[#2563eb]/5 p-4 text-center">
-                <Calendar className="w-5 h-5 text-[#2563eb] mx-auto mb-2" aria-hidden="true" />
+              <div className="glass-card rounded-xl border border-[#0ea5e9]/20 bg-[#0ea5e9]/5 p-4 text-center">
+                <Calendar className="w-5 h-5 text-[#0ea5e9] mx-auto mb-2" aria-hidden="true" />
                 <div className="text-xl font-bold text-foreground">{daysLeft}</div>
                 <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
                   Days Left
@@ -260,7 +261,7 @@ export default function SupporterViewPage() {
               </Button>
               <Button
                 onClick={handleOpenHypeModal}
-                className="flex-1 min-h-[48px] sm:h-10 text-xs sm:text-[10px] font-bold uppercase tracking-wider bg-gradient-to-r from-[#2563eb] to-[#7c3aed] hover:opacity-90 text-white border-0 touch-manipulation"
+                className="flex-1 min-h-[48px] sm:h-10 text-xs sm:text-[10px] font-bold uppercase tracking-wider bg-gradient-to-r from-[#0ea5e9] to-[#0f766e] hover:opacity-90 text-white border-0 touch-manipulation"
                 aria-label="Send hype to encourage them"
               >
                 <Heart className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" />
@@ -330,12 +331,12 @@ export default function SupporterViewPage() {
 
       <Dialog open={showHypeModal} onOpenChange={(open) => !open && handleCloseHypeModal()}>
         <DialogContent
-          className="w-[calc(100%-2rem)] max-w-sm max-h-[85dvh] overflow-y-auto bg-card/95 backdrop-blur-xl border border-[#7c3aed]/20 rounded-2xl mx-4 sm:mx-auto"
+          className="w-[calc(100%-2rem)] max-w-sm max-h-[85dvh] overflow-y-auto bg-card/95 backdrop-blur-xl border border-[#0f766e]/20 rounded-2xl mx-4 sm:mx-auto"
           aria-describedby="hype-description"
         >
           <DialogHeader>
             <DialogTitle className="text-base font-bold flex items-center gap-2">
-              <Heart className="w-4 h-4 text-[#7c3aed]" aria-hidden="true" />
+              <Heart className="w-4 h-4 text-[#0f766e]" aria-hidden="true" />
               Send Hype
             </DialogTitle>
             <DialogDescription id="hype-description" className="text-xs text-muted-foreground">
@@ -343,9 +344,9 @@ export default function SupporterViewPage() {
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
-            <div className="glass-card rounded-xl border border-[#7c3aed]/20 bg-[#7c3aed]/5 p-4">
+            <div className="glass-card rounded-xl border border-[#0f766e]/20 bg-[#0f766e]/5 p-4">
               <p className="text-xs text-center leading-relaxed">
-                <Heart className="w-8 h-8 text-[#7c3aed] mx-auto mb-2" aria-hidden="true" />
+                <Heart className="w-8 h-8 text-[#0f766e] mx-auto mb-2" aria-hidden="true" />
                 {userName} will receive an encouraging notification from you.
               </p>
             </div>
@@ -365,7 +366,7 @@ export default function SupporterViewPage() {
               type="button"
               onClick={handleSendHype}
               disabled={hypeSent}
-              className="w-full min-h-[48px] sm:h-9 text-xs sm:text-[10px] font-bold uppercase tracking-wider bg-[#7c3aed] hover:bg-[#7c3aed]/90 text-white border-0 touch-manipulation"
+              className="w-full min-h-[48px] sm:h-9 text-xs sm:text-[10px] font-bold uppercase tracking-wider bg-[#0f766e] hover:bg-[#0f766e]/90 text-white border-0 touch-manipulation"
               aria-label={hypeSent ? "Hype sent" : "Send hype"}
             >
               {hypeSent ? (

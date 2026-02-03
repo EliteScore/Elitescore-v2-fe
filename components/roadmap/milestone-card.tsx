@@ -1,4 +1,4 @@
-ï»¿"use client"
+"use client"
 
 import { Check, Circle, Lock } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
@@ -21,7 +21,7 @@ export function MilestoneCard({ title, description, tasks, status, progress }: M
     <div
       className={`glass-card rounded-xl border backdrop-blur-sm p-5 transition-all ${
         status === "active"
-          ? "border-[#2563eb]/30 bg-gradient-to-br from-[#2563eb]/5 to-card/50"
+          ? "border-[#0ea5e9]/30 bg-gradient-to-br from-[#0ea5e9]/5 to-card/50"
           : status === "completed"
             ? "border-green-500/20 bg-card/30"
             : "border-white/5 bg-card/30 opacity-60"
@@ -32,7 +32,7 @@ export function MilestoneCard({ title, description, tasks, status, progress }: M
           <div className="flex items-center gap-2 mb-2 flex-wrap">
             <h3 className="text-base font-bold text-foreground leading-tight">{title}</h3>
             {status === "active" && (
-              <Badge variant="secondary" className="bg-[#2563eb]/10 text-[#2563eb] border-[#2563eb]/30 text-[10px] font-bold uppercase tracking-wider">
+              <Badge variant="secondary" className="bg-[#0ea5e9]/10 text-[#0ea5e9] border-[#0ea5e9]/30 text-[10px] font-bold uppercase tracking-wider">
                 Active
               </Badge>
             )}
@@ -54,8 +54,8 @@ export function MilestoneCard({ title, description, tasks, status, progress }: M
               <Lock className="w-5 h-5 text-muted-foreground" />
             </div>
           ) : (
-            <div className="w-10 h-10 rounded-full bg-[#2563eb]/10 flex items-center justify-center">
-              <Circle className="w-5 h-5 text-[#2563eb]" />
+            <div className="w-10 h-10 rounded-full bg-[#0ea5e9]/10 flex items-center justify-center">
+              <Circle className="w-5 h-5 text-[#0ea5e9]" />
             </div>
           )}
         </div>
@@ -71,7 +71,7 @@ export function MilestoneCard({ title, description, tasks, status, progress }: M
           <div className="h-2 bg-white/10 rounded-full overflow-hidden">
             <div
               className={`h-full rounded-full transition-all duration-500 ${
-                status === "completed" ? "bg-green-500" : "bg-gradient-to-r from-[#2563eb] to-[#7c3aed]"
+                status === "completed" ? "bg-green-500" : "bg-gradient-to-r from-[#0ea5e9] to-[#0f766e]"
               }`}
               style={{ width: `${progress}%` }}
             />

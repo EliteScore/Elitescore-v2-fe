@@ -1,4 +1,4 @@
-ï»¿"use client"
+"use client"
 
 import { Clock, Check, ListTodo } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -35,11 +35,11 @@ export function DailyTasks({ tasks }: DailyTasksProps) {
   const completedCount = tasks.filter((task) => completedTasks.has(task.id)).length
 
   return (
-    <div className="glass-card rounded-2xl border border-[#2563eb]/20 bg-gradient-to-br from-card/80 to-background backdrop-blur-md p-6 shadow-xl relative overflow-hidden">
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-48 bg-gradient-to-r from-[#2563eb]/15 to-[#7c3aed]/15 blur-[80px] rounded-full -z-10" aria-hidden="true" />
+    <div className="glass-card rounded-2xl border border-[#0ea5e9]/20 bg-gradient-to-br from-card/80 to-background backdrop-blur-md p-6 shadow-xl relative overflow-hidden">
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-48 bg-gradient-to-r from-[#0ea5e9]/15 to-[#0f766e]/15 blur-[80px] rounded-full -z-10" aria-hidden="true" />
       <div className="flex items-center gap-3 mb-6">
-        <div className="w-10 h-10 rounded-xl bg-[#2563eb]/10 flex items-center justify-center flex-shrink-0" aria-hidden="true">
-          <ListTodo className="w-5 h-5 text-[#2563eb]" />
+        <div className="w-10 h-10 rounded-xl bg-[#0ea5e9]/10 flex items-center justify-center flex-shrink-0" aria-hidden="true">
+          <ListTodo className="w-5 h-5 text-[#0ea5e9]" />
         </div>
         <div>
           <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Today â¢ Tasks</div>
@@ -61,7 +61,7 @@ export function DailyTasks({ tasks }: DailyTasksProps) {
               className={`glass-card rounded-xl border p-3 transition-all cursor-pointer ${
                 isCompleted
                   ? "border-green-500/20 bg-green-500/5"
-                  : "border-white/5 bg-card/30 backdrop-blur-sm hover:border-[#2563eb]/30"
+                  : "border-white/5 bg-card/30 backdrop-blur-sm hover:border-[#0ea5e9]/30"
               }`}
             >
               <div className="flex items-start gap-3">
@@ -91,7 +91,7 @@ export function DailyTasks({ tasks }: DailyTasksProps) {
         })}
       </div>
 
-      <Button className="w-full bg-gradient-to-r from-[#2563eb] to-[#7c3aed] hover:opacity-90 text-white border-0 text-[10px] h-9 font-bold uppercase tracking-wider">
+      <Button className="w-full bg-gradient-to-r from-[#0ea5e9] to-[#0f766e] hover:opacity-90 text-white border-0 text-[10px] h-9 font-bold uppercase tracking-wider">
         Start challenge
       </Button>
     </div>

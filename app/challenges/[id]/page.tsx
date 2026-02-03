@@ -197,8 +197,8 @@ export default function ChallengeDetailPage() {
       {/* Hero header - same style as home page */}
       <section className="container mx-auto px-4 pt-6 md:pt-8 pb-4">
         <div className="max-w-4xl mx-auto">
-          <div className="glass-card rounded-2xl border border-[#2563eb]/20 bg-gradient-to-br from-card/80 to-background backdrop-blur-md p-6 shadow-xl relative overflow-hidden">
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-64 bg-gradient-to-r from-[#2563eb]/20 to-[#7c3aed]/20 blur-[100px] rounded-full -z-10" aria-hidden="true" />
+          <div className="glass-card rounded-2xl border border-[#0ea5e9]/20 bg-gradient-to-br from-card/80 to-background backdrop-blur-md p-6 shadow-xl relative overflow-hidden">
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-64 bg-gradient-to-r from-[#0ea5e9]/20 to-[#0f766e]/20 blur-[100px] rounded-full -z-10" aria-hidden="true" />
             <div className="flex items-start gap-3 mb-4">
               <Button
                 variant="ghost"
@@ -217,14 +217,14 @@ export default function ChallengeDetailPage() {
                   <span>/</span>
                   <span className="text-foreground truncate">{challenge.name}</span>
                 </div>
-                <h1 className="text-xl md:text-2xl font-black bg-gradient-to-r from-[#2563eb] via-[#7c3aed] to-[#2563eb] text-foreground truncate">
+                <h1 className="text-xl md:text-2xl font-black bg-gradient-to-r from-[#0ea5e9] via-[#0f766e] to-[#0ea5e9] text-foreground truncate">
                   {challenge.name}
                 </h1>
                 <div className="flex items-center gap-2 flex-wrap mt-2">
-                  <Badge variant="secondary" className="bg-[#2563eb]/10 text-[#2563eb] border-[#2563eb]/30 text-[10px] font-bold uppercase tracking-wider">
+                  <Badge variant="secondary" className="bg-[#0ea5e9]/10 text-[#0ea5e9] border-[#0ea5e9]/30 text-[10px] font-bold uppercase tracking-wider">
                     Day {challenge.currentDay}/{challenge.duration}
                   </Badge>
-                  <Badge variant="secondary" className="bg-[#7c3aed]/10 text-[#7c3aed] border-[#7c3aed]/30 text-[10px] font-bold uppercase tracking-wider">
+                  <Badge variant="secondary" className="bg-[#0f766e]/10 text-[#0f766e] border-[#0f766e]/30 text-[10px] font-bold uppercase tracking-wider">
                     <Trophy className="w-2.5 h-2.5 mr-0.5" aria-hidden="true" />
                     Difficulty {challenge.difficulty}/5
                   </Badge>
@@ -239,10 +239,10 @@ export default function ChallengeDetailPage() {
       <section className="container mx-auto px-4 py-6 md:py-8">
         <div className="max-w-4xl mx-auto space-y-8">
           {/* Today's Task - home UI style, no XP */}
-          <div className="glass-card rounded-2xl border border-[#2563eb]/20 bg-gradient-to-br from-card/80 to-background backdrop-blur-md p-6 shadow-xl relative overflow-hidden">
+          <div className="glass-card rounded-2xl border border-[#0ea5e9]/20 bg-gradient-to-br from-card/80 to-background backdrop-blur-md p-6 shadow-xl relative overflow-hidden">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-xl bg-[#2563eb]/10 flex items-center justify-center flex-shrink-0" aria-hidden="true">
-                <Star className="w-5 h-5 text-[#2563eb]" />
+              <div className="w-10 h-10 rounded-xl bg-[#0ea5e9]/10 flex items-center justify-center flex-shrink-0" aria-hidden="true">
+                <Star className="w-5 h-5 text-[#0ea5e9]" />
               </div>
               <div>
                 <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">
@@ -255,11 +255,11 @@ export default function ChallengeDetailPage() {
               {challenge.todayTask.description}
             </p>
             <div className="glass-card rounded-xl border border-white/5 bg-card/30 backdrop-blur-sm p-4 mb-4">
-              <div className="text-[10px] font-bold text-[#2563eb] uppercase tracking-wider mb-2">Requirements</div>
+              <div className="text-[10px] font-bold text-[#0ea5e9] uppercase tracking-wider mb-2">Requirements</div>
               <ul className="space-y-2">
                 {challenge.todayTask.requirements.map((req, i) => (
                   <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground leading-relaxed">
-                    <Circle className="w-3 h-3 text-[#2563eb] mt-0.5 flex-shrink-0" aria-hidden="true" />
+                    <Circle className="w-3 h-3 text-[#0ea5e9] mt-0.5 flex-shrink-0" aria-hidden="true" />
                     <span>{req}</span>
                   </li>
                 ))}
@@ -268,7 +268,7 @@ export default function ChallengeDetailPage() {
             <Button
               size="sm"
               onClick={() => setShowUploadProof(true)}
-              className="w-full bg-gradient-to-r from-[#2563eb] to-[#7c3aed] hover:opacity-90 text-white border-0 text-[10px] h-9 font-bold uppercase tracking-wider"
+              className="w-full bg-gradient-to-r from-[#0ea5e9] to-[#0f766e] hover:opacity-90 text-white border-0 text-[10px] h-9 font-bold uppercase tracking-wider"
             >
               <Upload className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" />
               Submit proof for today
@@ -276,10 +276,10 @@ export default function ChallengeDetailPage() {
           </div>
 
           {/* Progress Overview - home UI style */}
-          <div className="glass-card rounded-2xl border border-[#2563eb]/20 bg-gradient-to-br from-card/80 to-background backdrop-blur-md p-6 shadow-xl">
+          <div className="glass-card rounded-2xl border border-[#0ea5e9]/20 bg-gradient-to-br from-card/80 to-background backdrop-blur-md p-6 shadow-xl">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-xl bg-[#2563eb]/10 flex items-center justify-center flex-shrink-0" aria-hidden="true">
-                <Target className="w-5 h-5 text-[#2563eb]" />
+              <div className="w-10 h-10 rounded-xl bg-[#0ea5e9]/10 flex items-center justify-center flex-shrink-0" aria-hidden="true">
+                <Target className="w-5 h-5 text-[#0ea5e9]" />
               </div>
               <div>
                 <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Progress â¢ Overview</div>
@@ -289,11 +289,11 @@ export default function ChallengeDetailPage() {
             <div className="glass-card rounded-xl border border-white/5 bg-card/30 p-3 mb-4">
               <div className="flex items-center justify-between gap-2 mb-1.5">
                 <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Progress</span>
-                <span className="text-sm font-bold text-[#2563eb]">{challenge.progress}%</span>
+                <span className="text-sm font-bold text-[#0ea5e9]">{challenge.progress}%</span>
               </div>
               <div className="h-2 bg-white/10 rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-gradient-to-r from-[#2563eb] to-[#7c3aed] rounded-full transition-all duration-500"
+                  className="h-full bg-gradient-to-r from-[#0ea5e9] to-[#0f766e] rounded-full transition-all duration-500"
                   style={{ width: `${challenge.progress}%` }}
                 />
               </div>
@@ -303,18 +303,18 @@ export default function ChallengeDetailPage() {
                 <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-0.5">Days left</div>
                 <div className="text-lg font-bold text-foreground">{challenge.daysRemaining}</div>
               </div>
-              <div className="glass-card rounded-xl border border-[#7c3aed]/20 bg-[#7c3aed]/5 p-3">
+              <div className="glass-card rounded-xl border border-[#0f766e]/20 bg-[#0f766e]/5 p-3">
                 <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-0.5">Reward</div>
-                <div className="text-lg font-bold text-[#7c3aed]">+{challenge.reward} EliteScore</div>
+                <div className="text-lg font-bold text-[#0f766e]">+{challenge.reward} EliteScore</div>
               </div>
             </div>
           </div>
 
           {/* Roadmap - home UI style */}
-          <div className="glass-card rounded-2xl border border-[#2563eb]/20 bg-gradient-to-br from-card/80 to-background backdrop-blur-md p-6 shadow-xl relative overflow-hidden">
+          <div className="glass-card rounded-2xl border border-[#0ea5e9]/20 bg-gradient-to-br from-card/80 to-background backdrop-blur-md p-6 shadow-xl relative overflow-hidden">
             <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 rounded-xl bg-[#2563eb]/10 flex items-center justify-center flex-shrink-0" aria-hidden="true">
-                <Map className="w-5 h-5 text-[#2563eb]" />
+              <div className="w-10 h-10 rounded-xl bg-[#0ea5e9]/10 flex items-center justify-center flex-shrink-0" aria-hidden="true">
+                <Map className="w-5 h-5 text-[#0ea5e9]" />
               </div>
               <div>
                 <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Challenge roadmap</div>
@@ -327,7 +327,7 @@ export default function ChallengeDetailPage() {
                   <div
                     className={`p-4 ${
                       week.status === "in_progress"
-                        ? "bg-[#2563eb]/5 border-b border-[#2563eb]/20"
+                        ? "bg-[#0ea5e9]/5 border-b border-[#0ea5e9]/20"
                         : week.status === "completed"
                           ? "bg-green-500/5 border-b border-green-500/20"
                           : "border-b border-white/5"
@@ -338,7 +338,7 @@ export default function ChallengeDetailPage() {
                         <div
                           className={`w-8 h-8 rounded-xl flex items-center justify-center text-sm font-bold ${
                             week.status === "in_progress"
-                              ? "bg-[#2563eb]/20 text-[#2563eb]"
+                              ? "bg-[#0ea5e9]/20 text-[#0ea5e9]"
                               : week.status === "completed"
                                 ? "bg-green-500/20 text-foreground"
                                 : "bg-white/5 text-muted-foreground"
@@ -391,10 +391,10 @@ export default function ChallengeDetailPage() {
           </div>
 
           {/* Requirements - home UI style */}
-          <div className="glass-card rounded-2xl border border-[#2563eb]/20 bg-gradient-to-br from-card/80 to-background backdrop-blur-md p-6 shadow-xl">
+          <div className="glass-card rounded-2xl border border-[#0ea5e9]/20 bg-gradient-to-br from-card/80 to-background backdrop-blur-md p-6 shadow-xl">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-xl bg-[#2563eb]/10 flex items-center justify-center flex-shrink-0" aria-hidden="true">
-                <FileCheck className="w-5 h-5 text-[#2563eb]" />
+              <div className="w-10 h-10 rounded-xl bg-[#0ea5e9]/10 flex items-center justify-center flex-shrink-0" aria-hidden="true">
+                <FileCheck className="w-5 h-5 text-[#0ea5e9]" />
               </div>
               <div>
                 <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Challenge requirements</div>
@@ -404,7 +404,7 @@ export default function ChallengeDetailPage() {
             <ul className="space-y-3">
               {challenge.requirements.map((req, i) => (
                 <li key={i} className="flex items-start gap-3 p-3 rounded-xl bg-white/5 border border-white/5">
-                  <AlertCircle className="w-4 h-4 text-[#2563eb] mt-0.5 flex-shrink-0" aria-hidden="true" />
+                  <AlertCircle className="w-4 h-4 text-[#0ea5e9] mt-0.5 flex-shrink-0" aria-hidden="true" />
                   <span className="text-sm text-muted-foreground leading-relaxed">{req}</span>
                 </li>
               ))}
@@ -420,7 +420,7 @@ export default function ChallengeDetailPage() {
           onClick={() => setShowUploadProof(false)}
         >
           <div
-            className="glass-card rounded-t-2xl sm:rounded-2xl border-0 sm:border border-[#2563eb]/20 bg-card/95 backdrop-blur-xl p-6 max-w-md w-full shadow-2xl"
+            className="glass-card rounded-t-2xl sm:rounded-2xl border-0 sm:border border-[#0ea5e9]/20 bg-card/95 backdrop-blur-xl p-6 max-w-md w-full shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] mb-0.5">Submit proof</div>
@@ -430,14 +430,14 @@ export default function ChallengeDetailPage() {
                 <label className="text-[10px] text-muted-foreground mb-1 block">Upload Screenshot/Photo</label>
                 <input
                   type="file"
-                  className="w-full text-[10px] text-foreground file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-[10px] file:font-medium file:bg-[#2563eb]/10 file:text-[#2563eb] hover:file:bg-[#2563eb]/20"
+                  className="w-full text-[10px] text-foreground file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-[10px] file:font-medium file:bg-[#0ea5e9]/10 file:text-[#0ea5e9] hover:file:bg-[#0ea5e9]/20"
                 />
               </div>
               <div>
                 <label className="text-[10px] text-muted-foreground mb-1 block">Description</label>
                 <textarea
                   placeholder="Describe what you completed..."
-                  className="w-full p-2 rounded-lg bg-background/50 border border-border/50 text-xs text-foreground placeholder:text-muted-foreground resize-none focus:border-[#2563eb]/50 focus:outline-none"
+                  className="w-full p-2 rounded-lg bg-background/50 border border-border/50 text-xs text-foreground placeholder:text-muted-foreground resize-none focus:border-[#0ea5e9]/50 focus:outline-none"
                   rows={3}
                 />
               </div>
@@ -449,7 +449,7 @@ export default function ChallengeDetailPage() {
                 >
                   Cancel
                 </Button>
-                <Button className="flex-1 bg-gradient-to-r from-[#2563eb] to-[#7c3aed] hover:opacity-90 text-white text-[10px] h-9 font-bold uppercase tracking-wider border-0">
+                <Button className="flex-1 bg-gradient-to-r from-[#0ea5e9] to-[#0f766e] hover:opacity-90 text-white text-[10px] h-9 font-bold uppercase tracking-wider border-0">
                   Submit
                 </Button>
               </div>

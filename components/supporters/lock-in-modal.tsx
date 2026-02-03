@@ -1,4 +1,4 @@
-ï»¿"use client"
+"use client"
 
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
@@ -76,11 +76,11 @@ export function LockInModal({ open, onOpenChange, challengeName, onLockIn, onSki
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md bg-card/95 backdrop-blur-xl border-[#2563eb]/30">
+      <DialogContent className="sm:max-w-md bg-card/95 backdrop-blur-xl border-[#0ea5e9]/30">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold">Lock in your challenge</DialogTitle>
           <DialogDescription className="text-xs text-muted-foreground">
-            You're about to start <span className="text-[#2563eb] font-medium">{challengeName}</span>
+            You're about to start <span className="text-[#0ea5e9] font-medium">{challengeName}</span>
           </DialogDescription>
         </DialogHeader>
 
@@ -90,10 +90,10 @@ export function LockInModal({ open, onOpenChange, challengeName, onLockIn, onSki
             <button
               type="button"
               onClick={() => setShowSupporters(!showSupporters)}
-              className="w-full flex items-center justify-between p-3 rounded-lg bg-[#7c3aed]/5 border border-[#7c3aed]/20 hover:border-[#7c3aed]/40 transition-all"
+              className="w-full flex items-center justify-between p-3 rounded-lg bg-[#0f766e]/5 border border-[#0f766e]/20 hover:border-[#0f766e]/40 transition-all"
             >
               <div className="flex items-center gap-2">
-                <Users className="w-4 h-4 text-[#7c3aed]" />
+                <Users className="w-4 h-4 text-[#0f766e]" />
                 <span className="text-sm font-medium">Add Supporters (optional)</span>
               </div>
               {showSupporters ? (
@@ -128,7 +128,7 @@ export function LockInModal({ open, onOpenChange, challengeName, onLockIn, onSki
                     size="sm"
                     onClick={handleAddSupporter}
                     disabled={supporters.length >= 3}
-                    className="h-9 px-4 bg-[#7c3aed] hover:bg-[#7c3aed]/90 text-white text-xs"
+                    className="h-9 px-4 bg-[#0f766e] hover:bg-[#0f766e]/90 text-white text-xs"
                   >
                     Invite
                   </Button>
@@ -172,7 +172,7 @@ export function LockInModal({ open, onOpenChange, challengeName, onLockIn, onSki
 
                 {/* Privacy Notice */}
                 <div className="flex items-start gap-2 p-2 rounded-lg bg-muted/30">
-                  <Shield className="w-3.5 h-3.5 text-[#2563eb] mt-0.5 flex-shrink-0" />
+                  <Shield className="w-3.5 h-3.5 text-[#0ea5e9] mt-0.5 flex-shrink-0" />
                   <p className="text-[10px] text-muted-foreground leading-relaxed">
                     Supporters see status only (not proof) unless you allow. You can change this later.
                   </p>
@@ -194,7 +194,7 @@ export function LockInModal({ open, onOpenChange, challengeName, onLockIn, onSki
           <Button
             type="button"
             onClick={handleLockIn}
-            className="w-full sm:w-auto text-xs h-9 bg-gradient-to-r from-[#2563eb] to-[#7c3aed] hover:opacity-90 text-white border-0"
+            className="w-full sm:w-auto text-xs h-9 bg-gradient-to-r from-[#0ea5e9] to-[#0f766e] hover:opacity-90 text-white border-0"
           >
             Start Challenge
           </Button>

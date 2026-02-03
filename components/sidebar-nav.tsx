@@ -4,12 +4,25 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useState } from "react"
 import { cn } from "@/lib/utils"
-import { Home, Target, Trophy, User, ChevronLeft, ChevronRight } from "lucide-react"
+import {
+  Home,
+  Target,
+  Trophy,
+  User,
+  ChevronLeft,
+  ChevronRight,
+  CalendarCheck2,
+  BarChart3,
+  Bell,
+} from "lucide-react"
 
 const navItems = [
   { name: "Home", href: "/app", icon: Home },
+  { name: "Planner", href: "/planner", icon: CalendarCheck2 },
   { name: "Challenges", href: "/challenges", icon: Target },
+  { name: "Analytics", href: "/analytics", icon: BarChart3 },
   { name: "Leaderboard", href: "/leaderboard", icon: Trophy },
+  { name: "Notifications", href: "/notifications", icon: Bell },
   { name: "Profile", href: "/profile", icon: User },
 ]
 
@@ -47,7 +60,7 @@ export function SidebarNav() {
 
         <nav className="flex-1 space-y-1 px-2">
           {navItems.map((item) => {
-            const isActive = pathname === item.href
+            const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`)
             return (
               <Link
                 key={item.href}
