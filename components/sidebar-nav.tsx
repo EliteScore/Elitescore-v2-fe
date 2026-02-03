@@ -30,7 +30,14 @@ export function SidebarNav() {
   const pathname = usePathname()
   const [collapsed, setCollapsed] = useState(false)
 
-  if (pathname === "/" || pathname === "/login" || pathname === "/signup") {
+  if (
+    pathname === "/" ||
+    pathname === "/login" ||
+    pathname === "/signup" ||
+    pathname === "/terms" ||
+    pathname === "/privacy" ||
+    pathname === "/forgot-password"
+  ) {
     return null
   }
 

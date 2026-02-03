@@ -7,7 +7,14 @@ import { ThemeToggle } from "@/components/theme-toggle"
 export function TopBar() {
   const pathname = usePathname()
 
-  if (pathname === "/" || pathname === "/login" || pathname === "/signup") {
+  if (
+    pathname === "/" ||
+    pathname === "/login" ||
+    pathname === "/signup" ||
+    pathname === "/terms" ||
+    pathname === "/privacy" ||
+    pathname === "/forgot-password"
+  ) {
     return null
   }
 
