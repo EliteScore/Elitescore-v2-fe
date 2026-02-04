@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Form, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { WingMark } from "@/components/wing-mark"
 
 const signupSchema = z
   .object({
@@ -88,7 +89,7 @@ export default function SignupPage() {
         <Card className="w-full max-w-lg border-border/60 bg-card/90">
           <CardHeader>
             <div className="mb-2 flex items-center gap-3">
-              <img src="/logo.jpeg" alt="EliteScore" className="h-10 w-10 rounded-xl object-cover" />
+              <WingMark className="h-10 w-10 text-foreground" />
               <div>
                 <CardTitle className="text-xl">Create account</CardTitle>
                 <CardDescription>Set up your profile and start your first challenge.</CardDescription>

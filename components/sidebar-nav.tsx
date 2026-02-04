@@ -4,6 +4,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useState } from "react"
 import { cn } from "@/lib/utils"
+import { WingMark } from "@/components/wing-mark"
 import {
   Home,
   Target,
@@ -52,7 +53,7 @@ export function SidebarNav() {
       <div className="flex h-full flex-col">
         <div className="flex items-center justify-between px-3 py-4">
           <Link href="/app" className="flex items-center gap-3">
-            <img src="/logo.jpeg" alt="EliteScore" className="h-10 w-10 rounded-xl object-cover" />
+            <WingMark className="h-10 w-10 text-foreground" />
             {!collapsed && <span className="text-base font-semibold text-foreground">EliteScore</span>}
           </Link>
           <button

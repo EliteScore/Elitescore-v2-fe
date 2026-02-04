@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Form, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { WingMark } from "@/components/wing-mark"
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address." }),
@@ -58,7 +59,7 @@ export default function LoginPage() {
         <Card className="w-full max-w-md border-border/60 bg-card/90">
           <CardHeader>
             <div className="mb-2 flex items-center gap-3">
-              <img src="/logo.jpeg" alt="EliteScore" className="h-10 w-10 rounded-xl object-cover" />
+              <WingMark className="h-10 w-10 text-foreground" />
               <div>
                 <CardTitle className="text-xl">Welcome back</CardTitle>
                 <CardDescription>Sign in to continue your progress.</CardDescription>

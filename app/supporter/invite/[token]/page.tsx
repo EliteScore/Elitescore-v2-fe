@@ -2,12 +2,12 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Badge } from "@/components/ui/badge"
 import { Users, Bell, Eye, Shield, CheckCircle2, XCircle, AlertCircle } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { WingMark } from "@/components/wing-mark"
 
 type InviteStatus = "pending" | "accepted" | "declined"
 
@@ -196,13 +196,7 @@ export default function SupporterInvitePage() {
     <div className="min-h-[100dvh] sm:min-h-screen bg-background flex items-center justify-center p-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] overflow-x-hidden overflow-y-auto">
       <div className="w-full max-w-md flex flex-col flex-1 py-4">
         <div className="flex justify-center mb-6">
-          <Image
-            src="/images/logo.png"
-            alt="EliteScore"
-            width={120}
-            height={40}
-            className="h-8 w-auto"
-          />
+          <WingMark className="h-10 w-10 text-foreground" />
         </div>
 
         <div className="glass-card rounded-2xl border border-[#0ea5e9]/20 bg-gradient-to-br from-card/80 to-background backdrop-blur-md p-5 sm:p-6 md:p-8 shadow-xl relative overflow-hidden">
