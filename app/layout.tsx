@@ -1,13 +1,22 @@
 import type React from "react"
 import type { Metadata } from "next"
-import { Geist } from "next/font/google"
+import { JetBrains_Mono, Space_Grotesk } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import { ThemeProvider } from "@/components/theme-provider"
 import { AuthGate } from "@/components/auth-gate"
 import { AppShell } from "@/components/app-shell"
 import "./globals.css"
 
-const _geist = Geist({ subsets: ["latin"], variable: "--font-geist-sans" })
+const _spaceGrotesk = Space_Grotesk({
+  subsets: ["latin"],
+  variable: "--font-space",
+  display: "swap",
+})
+const _jetBrainsMono = JetBrains_Mono({
+  subsets: ["latin"],
+  variable: "--font-mono",
+  display: "swap",
+})
 
 export const metadata: Metadata = {
   title: "EliteScore - Level Up In Real Life",
@@ -28,7 +37,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${_geist.variable} font-sans antialiased pb-20 md:pb-0`}>
+      <body className={`${_spaceGrotesk.variable} ${_jetBrainsMono.variable} font-sans antialiased pb-20 md:pb-0`}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           <AuthGate>
             <AppShell>{children}</AppShell>

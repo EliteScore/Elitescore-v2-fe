@@ -84,8 +84,11 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto flex min-h-screen items-center justify-center px-4 py-8">
+    <div className="relative min-h-screen overflow-hidden bg-slate-950">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(56,189,248,0.25),_transparent_55%),radial-gradient(circle_at_bottom,_rgba(14,116,144,0.25),_transparent_55%)]" />
+      <div className="pointer-events-none absolute -left-40 top-10 h-96 w-96 rounded-full bg-emerald-400/20 blur-[120px]" />
+      <div className="pointer-events-none absolute -right-32 bottom-0 h-80 w-80 rounded-full bg-sky-400/20 blur-[120px]" />
+      <div className="relative container mx-auto flex min-h-screen items-center justify-center px-4 py-8">
         <Card className="w-full max-w-lg border-border/60 bg-card/90">
           <CardHeader>
             <div className="mb-2 flex items-center gap-3">
