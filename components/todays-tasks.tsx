@@ -31,7 +31,7 @@ export function TodaysTasks({ tasks }: TodaysTasksProps) {
   const completedCount = tasks.filter((task) => completedTasks.has(task.id)).length
 
   return (
-    <div className="glass-card rounded-2xl border border-[#2bbcff]/20 bg-gradient-to-br from-card/80 to-background backdrop-blur-md p-6 shadow-xl relative overflow-hidden mb-8">
+    <div className="glass-card rounded-2xl bg-gradient-to-br from-card/80 to-background backdrop-blur-md p-6 shadow-xl relative overflow-hidden mb-8">
       <div className="flex items-center gap-3 mb-4">
         <div className="w-10 h-10 rounded-xl bg-[#2bbcff]/10 flex items-center justify-center flex-shrink-0" aria-hidden="true">
           <ListTodo className="w-5 h-5 text-[#2bbcff]" />
@@ -53,16 +53,14 @@ export function TodaysTasks({ tasks }: TodaysTasksProps) {
               tabIndex={0}
               onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && toggleTask(task.id)}
               aria-label={isCompleted ? `Mark ${task.title} incomplete` : `Mark ${task.title} complete`}
-              className={`glass-card rounded-xl border p-3 transition-all cursor-pointer ${
-                isCompleted
-                  ? "border-green-500/20 bg-green-500/5"
-                  : "border-white/5 bg-card/30 backdrop-blur-sm hover:border-[#2bbcff]/30"
+              className={`glass-card rounded-xl p-3 transition-all cursor-pointer ${
+                isCompleted ? "bg-green-500/5" : "bg-card/30 backdrop-blur-sm hover:bg-card/40"
               }`}
             >
               <div className="flex items-start gap-3">
                 <div
                   className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5 ${
-                    isCompleted ? "bg-green-500/20 border border-green-500/30" : "bg-white/5 border border-white/10"
+                    isCompleted ? "bg-green-500/20" : "bg-white/5"
                   }`}
                   aria-hidden="true"
                 >
