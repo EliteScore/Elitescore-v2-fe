@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import Link from "next/link"
 import { Space_Grotesk, Sora } from "next/font/google"
@@ -318,17 +318,19 @@ export default function LandingPage() {
                   <Link href="/signup">Create account</Link>
                 </Button>
                 <Button variant="outline" className="w-full border-[#f6f3eb]/40 bg-transparent text-[#f6f3eb] hover:bg-[#f6f3eb]/15" asChild>
-                  <Link href="/supporter/invite/mock-token">Try supporter view</Link>
+                  <Link href="/supporter/invite/live">Try supporter view</Link>
                 </Button>
               </div>
             </motion.div>
           </div>
 
           <motion.div variants={fadeUp} className="mt-8 border-t border-white/15 pt-4 text-xs text-[#f6f3eb]/65">
-            © {new Date().getFullYear()} EliteScore. Built for execution.
+            Â© {new Date().getFullYear()} EliteScore. Built for execution.
           </motion.div>
         </div>
       </motion.footer>
     </div>
   )
 }
+
+
