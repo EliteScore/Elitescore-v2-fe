@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -18,6 +18,9 @@ export default function PrivacyPage() {
               <h2 className="text-sm font-semibold text-foreground">1. Data We Store</h2>
               <p className="mt-1">
                 Account details, challenge progress, proof metadata, and leaderboard activity are stored to run core features.
+              </p>
+              <p className="mt-1">
+                If you connect a learning provider, we also store provider connection metadata, linked course IDs, and synced progress state.
               </p>
             </section>
             <section>
@@ -47,3 +50,4 @@ export default function PrivacyPage() {
     </div>
   )
 }
+

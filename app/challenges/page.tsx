@@ -1,7 +1,8 @@
-"use client"
+﻿"use client"
 
-import { useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import Link from "next/link"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -12,7 +13,9 @@ import {
   Clock3,
   Filter,
   Flame,
+  Link2,
   Plus,
+  RefreshCcw,
   Search,
   ShieldCheck,
   Target,
@@ -20,6 +23,7 @@ import {
   Upload,
   XCircle,
 } from "lucide-react"
+import type { LearningProvider, ProviderConnection, ProviderCourse, QuestProgressSync } from "@/lib/types/integrations"
 
 type Track = "Technical Skills" | "Career Development" | "Wellness" | "Learning"
 
@@ -146,8 +150,18 @@ const initialHistory: HistoryChallenge[] = [
 
 const trackFilters: Array<"All" | Track> = ["All", "Technical Skills", "Career Development", "Learning", "Wellness"]
 const difficultyFilters: Array<"All" | 1 | 2 | 3 | 4 | 5> = ["All", 1, 2, 3, 4, 5]
+const providerOptions: Array<{ provider: LearningProvider; label: string }> = [
+  { provider: "udemy_business", label: "Udemy Business" },
+  { provider: "coursera_enterprise", label: "Coursera Enterprise" },
+]
+
+function providerLabel(provider: LearningProvider) {
+  return provider === "udemy_business" ? "Udemy Business" : "Coursera Enterprise"
+}
 
 export default function ChallengesPage() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
   const [activeChallenges, setActiveChallenges] = useState<ActiveChallenge[]>(initialActiveChallenges)
   const [history, setHistory] = useState<HistoryChallenge[]>(initialHistory)
   const [query, setQuery] = useState("")
@@ -155,6 +169,18 @@ export default function ChallengesPage() {
   const [difficulty, setDifficulty] = useState<"All" | 1 | 2 | 3 | 4 | 5>("All")
   const [proofChallengeId, setProofChallengeId] = useState<number | null>(null)
   const [proofText, setProofText] = useState("")
+  const [connections, setConnections] = useState<ProviderConnection[]>([])
+  const [syncStates, setSyncStates] = useState<Record<number, QuestProgressSync>>({})
+  const [statusMessage, setStatusMessage] = useState<string | null>(null)
+  const [isConnectingProvider, setIsConnectingProvider] = useState<LearningProvider | null>(null)
+  const [loadingConnections, setLoadingConnections] = useState(false)
+  const [linkChallengeId, setLinkChallengeId] = useState<number | null>(null)
+  const [selectedConnectionId, setSelectedConnectionId] = useState("")
+  const [courseQuery, setCourseQuery] = useState("")
+  const [courses, setCourses] = useState<ProviderCourse[]>([])
+  const [selectedCourseId, setSelectedCourseId] = useState("")
+  const [loadingCourses, setLoadingCourses] = useState(false)
+  const [savingLink, setSavingLink] = useState(false)
 
   const activeCount = activeChallenges.length
   const canJoin = activeCount < MAX_ACTIVE_CHALLENGES
@@ -165,6 +191,55 @@ export default function ChallengesPage() {
     task: challenge.todayTask,
     due: "Today",
   }))
+
+  const loadConnections = useCallback(async () => {
+    setLoadingConnections(true)
+    try {
+      const response = await fetch("/api/integrations/connections")
+      if (!response.ok) return
+      const data = (await response.json()) as { connections: ProviderConnection[] }
+      setConnections(data.connections)
+    } finally {
+      setLoadingConnections(false)
+    }
+  }, [])
+
+  const loadSyncStates = useCallback(async (questIds: number[]) => {
+    if (questIds.length === 0) return
+    const response = await fetch(`/api/quests/sync-states?questIds=${questIds.join(",")}`)
+    if (!response.ok) return
+    const data = (await response.json()) as { states: QuestProgressSync[] }
+    setSyncStates((prev) => {
+      const next = { ...prev }
+      for (const state of data.states) {
+        next[state.questId] = state
+      }
+      return next
+    })
+  }, [])
+
+  useEffect(() => {
+    void loadConnections()
+    void loadSyncStates(initialActiveChallenges.map((item) => item.id))
+  }, [loadConnections, loadSyncStates])
+
+  useEffect(() => {
+    const integration = searchParams.get("integration")
+    if (integration === "connected") {
+      setStatusMessage("Learning account connected successfully.")
+      void loadConnections()
+    } else if (integration === "failed") {
+      setStatusMessage("Connection failed. Try again.")
+    } else if (integration === "missing_code") {
+      setStatusMessage("Missing provider callback code.")
+    }
+
+    if (integration) {
+      const params = new URLSearchParams(searchParams.toString())
+      params.delete("integration")
+      router.replace(`/challenges${params.toString() ? `?${params.toString()}` : ""}`)
+    }
+  }, [searchParams, router, loadConnections])
 
   const discoverList = useMemo(() => {
     return challengeLibrary.filter((item) => {
@@ -194,6 +269,7 @@ export default function ChallengesPage() {
       todayTask: `Start strong: ${item.description.slice(0, 70)}...`,
     }
     setActiveChallenges((prev) => [...prev, newChallenge])
+    void loadSyncStates([item.id])
   }
 
   const quitChallenge = (id: number) => {
@@ -214,6 +290,10 @@ export default function ChallengesPage() {
 
   const submitProof = () => {
     if (!proofChallengeId) return
+    if (syncStates[proofChallengeId]?.linked) {
+      setStatusMessage("This quest is linked to a provider course. Refresh provider progress instead.")
+      return
+    }
     setActiveChallenges((prev) =>
       prev.map((challenge) => {
         if (challenge.id !== proofChallengeId) return challenge
@@ -229,9 +309,118 @@ export default function ChallengesPage() {
     setProofChallengeId(null)
   }
 
+  const connectProvider = async (provider: LearningProvider) => {
+    setIsConnectingProvider(provider)
+    try {
+      const response = await fetch(`/api/integrations/${provider}/connect`, { method: "POST" })
+      const data = (await response.json()) as { authUrl?: string; error?: string }
+      if (!response.ok || !data.authUrl) {
+        setStatusMessage(data.error || "Unable to start provider connection.")
+        return
+      }
+      window.location.href = data.authUrl
+    } finally {
+      setIsConnectingProvider(null)
+    }
+  }
+
+  const refreshLinkedProgress = async (questId: number) => {
+    const response = await fetch(`/api/quests/${questId}/refresh-progress`, { method: "POST" })
+    const data = (await response.json()) as { progress?: QuestProgressSync; error?: string }
+    if (!response.ok || !data.progress) {
+      setStatusMessage(data.error || "Failed to sync progress.")
+      return
+    }
+    setSyncStates((prev) => ({ ...prev, [questId]: data.progress! }))
+    setStatusMessage("Progress synced from provider.")
+  }
+
+  const openLinkModal = (challengeId: number) => {
+    setLinkChallengeId(challengeId)
+    setSelectedConnectionId(connections[0]?.id || "")
+    setCourseQuery("")
+    setCourses([])
+    setSelectedCourseId("")
+  }
+
+  const fetchCourses = useCallback(async () => {
+    if (!selectedConnectionId) return
+    const selectedConnection = connections.find((item) => item.id === selectedConnectionId)
+    if (!selectedConnection) return
+
+    setLoadingCourses(true)
+    try {
+      const queryPart = courseQuery.trim() ? `&q=${encodeURIComponent(courseQuery.trim())}` : ""
+      const response = await fetch(
+        `/api/integrations/${selectedConnection.provider}/courses?connectionId=${selectedConnectionId}${queryPart}`
+      )
+      const data = (await response.json()) as { courses?: ProviderCourse[]; error?: string }
+      if (!response.ok) {
+        setStatusMessage(data.error || "Failed to fetch courses.")
+        return
+      }
+      setCourses(data.courses || [])
+      if (!selectedCourseId && data.courses?.[0]) {
+        setSelectedCourseId(data.courses[0].providerCourseId)
+      }
+    } finally {
+      setLoadingCourses(false)
+    }
+  }, [selectedConnectionId, connections, courseQuery, selectedCourseId])
+
+  useEffect(() => {
+    if (!linkChallengeId || !selectedConnectionId) return
+    void fetchCourses()
+  }, [linkChallengeId, selectedConnectionId, fetchCourses])
+
+  const linkCourseToQuest = async () => {
+    if (!linkChallengeId || !selectedConnectionId || !selectedCourseId) return
+    const selectedConnection = connections.find((item) => item.id === selectedConnectionId)
+    if (!selectedConnection) return
+
+    setSavingLink(true)
+    try {
+      const response = await fetch(`/api/quests/${linkChallengeId}/link-course`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          connectionId: selectedConnectionId,
+          provider: selectedConnection.provider,
+          providerCourseId: selectedCourseId,
+        }),
+      })
+      const data = (await response.json()) as { error?: string }
+      if (!response.ok) {
+        setStatusMessage(data.error || "Failed to link course.")
+        return
+      }
+      await loadSyncStates([linkChallengeId])
+      setStatusMessage("Course linked. Refresh provider progress to update quest.")
+      setLinkChallengeId(null)
+    } finally {
+      setSavingLink(false)
+    }
+  }
+
+  const unlinkCourse = async (questId: number) => {
+    const response = await fetch(`/api/quests/${questId}/unlink-course`, { method: "POST" })
+    if (!response.ok) {
+      setStatusMessage("Failed to unlink course.")
+      return
+    }
+    await loadSyncStates([questId])
+    setStatusMessage("Course unlinked. Manual proof is enabled.")
+  }
+
   return (
     <div className="min-h-screen bg-background pb-20">
       <section className="container mx-auto max-w-7xl px-4 py-6 md:py-8 space-y-6">
+        {statusMessage && (
+          <div className="rounded-xl border border-border/60 bg-card/70 p-3 text-sm text-foreground">
+            {statusMessage}
+          </div>
+        )}
+
         <div className="glass-card rounded-2xl border border-border/60 bg-card/70 p-6 md:p-8">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center gap-3">
@@ -266,6 +455,59 @@ export default function ChallengesPage() {
           </div>
         </div>
 
+        <div className="glass-card rounded-2xl border border-border/60 bg-card/70 p-5 md:p-6">
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
+            <h2 className="text-base font-semibold text-foreground">Learning account connections</h2>
+            <Badge variant="outline">{connections.length} connected</Badge>
+          </div>
+
+          <div className="flex flex-wrap gap-2 mb-4">
+            {providerOptions.map((option) => (
+              <Button
+                key={option.provider}
+                size="sm"
+                variant="outline"
+                onClick={() => void connectProvider(option.provider)}
+                disabled={isConnectingProvider === option.provider}
+              >
+                <Link2 className="mr-1 h-3.5 w-3.5" />
+                {isConnectingProvider === option.provider ? "Connecting..." : `Connect ${option.label}`}
+              </Button>
+            ))}
+          </div>
+
+          <div className="space-y-2">
+            {loadingConnections ? (
+              <p className="text-sm text-muted-foreground">Loading connections...</p>
+            ) : connections.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No provider connected yet.</p>
+            ) : (
+              connections.map((connection) => (
+                <div
+                  key={connection.id}
+                  className="rounded-lg border border-border/60 bg-card/60 p-3 flex items-center justify-between"
+                >
+                  <div>
+                    <p className="text-sm font-medium text-foreground">{providerLabel(connection.provider)}</p>
+                    <p className="text-xs text-muted-foreground">Status: {connection.status}</p>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={async () => {
+                      await fetch(`/api/integrations/connections/${connection.id}`, { method: "DELETE" })
+                      await loadConnections()
+                      await loadSyncStates(activeChallenges.map((item) => item.id))
+                    }}
+                  >
+                    Disconnect
+                  </Button>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
         <div className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
           <div className="glass-card rounded-2xl border border-border/60 bg-card/70 p-5 md:p-6">
             <div className="flex items-center justify-between mb-4">
@@ -281,7 +523,12 @@ export default function ChallengesPage() {
                   <p className="text-sm text-muted-foreground">No active challenges. Join one below to begin climbing.</p>
                 </div>
               ) : (
-                activeChallenges.map((challenge) => (
+                activeChallenges.map((challenge) => {
+                  const sync = syncStates[challenge.id]
+                  const isLinked = Boolean(sync?.linked)
+                  const displayProgress = isLinked ? sync?.progressPercent ?? challenge.progress : challenge.progress
+
+                  return (
                   <article key={challenge.id} className="rounded-xl border border-border/60 bg-card/60 p-4">
                     <div className="flex items-start justify-between gap-3">
                       <div>
@@ -299,12 +546,18 @@ export default function ChallengesPage() {
 
                     <div className="mt-3">
                       <div className="mb-1 flex items-center justify-between text-xs text-muted-foreground">
-                        <span>Progress</span>
-                        <span className="font-semibold text-foreground">{challenge.progress}%</span>
+                        <span>Progress {isLinked ? "(synced)" : "(manual)"}</span>
+                        <span className="font-semibold text-foreground">{displayProgress}%</span>
                       </div>
                       <div className="h-2 rounded-full bg-muted overflow-hidden">
-                        <div className="h-full bg-gradient-to-r from-brand to-brand-2" style={{ width: `${challenge.progress}%` }} />
+                        <div className="h-full bg-gradient-to-r from-brand to-brand-2" style={{ width: `${displayProgress}%` }} />
                       </div>
+                      {isLinked && (
+                        <p className="mt-1 text-[11px] text-muted-foreground">
+                          Source: {sync?.syncSource ? providerLabel(sync.syncSource) : "Linked provider"}
+                          {sync?.lastSyncedAtISO ? ` - Last sync: ${new Date(sync.lastSyncedAtISO).toLocaleString()}` : ""}
+                        </p>
+                      )}
                     </div>
 
                     <div className="mt-3 rounded-lg border border-border/60 bg-muted/40 p-3">
@@ -313,9 +566,24 @@ export default function ChallengesPage() {
                     </div>
 
                     <div className="mt-3 flex flex-wrap gap-2">
-                      <Button size="sm" onClick={() => setProofChallengeId(challenge.id)}>
-                        <Upload className="mr-1 h-3.5 w-3.5" />
-                        Submit proof
+                      {isLinked ? (
+                        <Button size="sm" onClick={() => void refreshLinkedProgress(challenge.id)}>
+                          <RefreshCcw className="mr-1 h-3.5 w-3.5" />
+                          Refresh provider progress
+                        </Button>
+                      ) : (
+                        <Button size="sm" onClick={() => setProofChallengeId(challenge.id)}>
+                          <Upload className="mr-1 h-3.5 w-3.5" />
+                          Submit proof
+                        </Button>
+                      )}
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => void (isLinked ? unlinkCourse(challenge.id) : openLinkModal(challenge.id))}
+                        disabled={!isLinked && connections.length === 0}
+                      >
+                        {isLinked ? "Unlink course" : connections.length === 0 ? "Connect account first" : "Link provider course"}
                       </Button>
                       <Button size="sm" variant="outline" asChild>
                         <Link href={`/challenges/${challenge.id}`}>Details</Link>
@@ -325,7 +593,8 @@ export default function ChallengesPage() {
                       </Button>
                     </div>
                   </article>
-                ))
+                  )
+                })
               )}
             </div>
           </div>
@@ -511,6 +780,80 @@ export default function ChallengesPage() {
           </div>
         </div>
       )}
+
+      {linkChallengeId && (
+        <div
+          className="fixed inset-0 z-50 bg-black/55 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4"
+          onClick={() => setLinkChallengeId(null)}
+        >
+          <div
+            className="w-full max-w-lg rounded-t-2xl sm:rounded-2xl border border-border/60 bg-card p-5"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <h3 className="text-lg font-semibold text-foreground">Link provider course</h3>
+            <p className="mt-1 text-sm text-muted-foreground">Choose one connected account and one course for this quest.</p>
+
+            <div className="mt-4 space-y-3">
+              <div>
+                <label className="text-xs text-muted-foreground">Connected account</label>
+                <select
+                  className="mt-1 w-full rounded-lg border border-border/60 bg-background px-3 py-2 text-sm"
+                  value={selectedConnectionId}
+                  onChange={(event) => setSelectedConnectionId(event.target.value)}
+                >
+                  <option value="">Select account</option>
+                  {connections.map((connection) => (
+                    <option key={connection.id} value={connection.id}>
+                      {providerLabel(connection.provider)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="text-xs text-muted-foreground">Course search</label>
+                <div className="mt-1 flex gap-2">
+                  <Input value={courseQuery} onChange={(event) => setCourseQuery(event.target.value)} placeholder="Type course name" />
+                  <Button type="button" variant="outline" onClick={() => void fetchCourses()} disabled={!selectedConnectionId || loadingCourses}>
+                    {loadingCourses ? "Searching..." : "Search"}
+                  </Button>
+                </div>
+              </div>
+
+              <div className="max-h-52 overflow-auto rounded-lg border border-border/60 bg-card/40 p-2 space-y-2">
+                {courses.length === 0 ? (
+                  <p className="text-sm text-muted-foreground p-2">No courses found.</p>
+                ) : (
+                  courses.map((course) => (
+                    <button
+                      key={course.providerCourseId}
+                      type="button"
+                      onClick={() => setSelectedCourseId(course.providerCourseId)}
+                      className={`w-full text-left rounded-lg border p-2 ${
+                        selectedCourseId === course.providerCourseId ? "border-brand bg-brand/10" : "border-border/60 bg-card/60"
+                      }`}
+                    >
+                      <p className="text-sm font-medium text-foreground">{course.title}</p>
+                      <p className="text-xs text-muted-foreground break-all">{course.providerUrl}</p>
+                    </button>
+                  ))
+                )}
+              </div>
+            </div>
+
+            <div className="mt-4 flex gap-2">
+              <Button variant="outline" className="flex-1" onClick={() => setLinkChallengeId(null)}>
+                Cancel
+              </Button>
+              <Button className="flex-1" onClick={() => void linkCourseToQuest()} disabled={!selectedConnectionId || !selectedCourseId || savingLink}>
+                {savingLink ? "Linking..." : "Link course"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
+
+

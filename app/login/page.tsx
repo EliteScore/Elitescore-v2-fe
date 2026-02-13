@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
@@ -41,6 +41,8 @@ export default function LoginPage() {
     setTimeout(() => {
       localStorage.setItem("elitescore_logged_in", "true")
       localStorage.setItem("elitescore_email", values.email)
+      document.cookie = `elitescore_email=${encodeURIComponent(values.email)}; path=/; max-age=2592000; samesite=lax`
+      document.cookie = `elitescore_user=${encodeURIComponent(values.email)}; path=/; max-age=2592000; samesite=lax`
       router.push("/app")
     }, 700)
   }
@@ -49,6 +51,7 @@ export default function LoginPage() {
     setIsLoading(true)
     setTimeout(() => {
       localStorage.setItem("elitescore_logged_in", "true")
+      document.cookie = "elitescore_user=google_user@elitescore.local; path=/; max-age=2592000; samesite=lax"
       router.push("/app")
     }, 600)
   }
@@ -141,3 +144,4 @@ export default function LoginPage() {
     </div>
   )
 }
+

@@ -1,4 +1,4 @@
-import Link from "next/link"
+﻿import Link from "next/link"
 import { ArrowLeft, Mail } from "lucide-react"
 import { WingMark } from "@/components/wing-mark"
 import { Button } from "@/components/ui/button"
@@ -20,12 +20,16 @@ const termsItems = [
     title: "Content Responsibility",
     body: "You keep ownership of your content, but grant EliteScore permission to process and display it for challenge tracking and product features.",
   },
+  {
+    title: "Connected Learning Accounts",
+    body: "If you link supported learning providers, EliteScore may sync course progress and completion status to update quest progress automatically.",
+  },
 ]
 
 const privacyItems = [
   {
     title: "Data We Collect",
-    body: "We collect account profile details, challenge activity, proof metadata, and in-product interactions required to run the experience.",
+    body: "We collect account profile details, challenge activity, proof metadata, in-product interactions, and linked provider course progress required to run the experience.",
   },
   {
     title: "How Data Is Used",
@@ -121,3 +125,4 @@ export default function TermsPolicyPage() {
     </div>
   )
 }
+
