@@ -106,40 +106,41 @@ export function SupportersPanel({
   ]
 
   return (
-    <div className="glass-card rounded-xl border border-[#a855f7]/20 bg-card/50 backdrop-blur-sm p-5">
-      <div className="flex items-center gap-2 mb-4">
-        <Users className="w-4 h-4 text-[#a855f7]" />
-        <h3 className="text-sm font-bold">Supporters</h3>
-        <Badge variant="outline" className="text-[10px] border-[#a855f7]/30 text-[#a855f7]">
+    <div className="rounded-xl bg-white/[0.04] p-3 sm:p-4 md:p-5">
+      {/* Header - compact, single line */}
+      <div className="flex items-center gap-2 mb-3 sm:mb-4">
+        <Users className="w-4 h-4 shrink-0 text-[#fb923c]" aria-hidden="true" />
+        <h3 className="text-xs sm:text-sm font-bold truncate">Supporters</h3>
+        <Badge variant="outline" className="text-[10px] border-[#fb923c]/30 text-[#fb923c] shrink-0">
           {supporters.length}/3
         </Badge>
       </div>
 
-      {/* Supporters List */}
-      <div className="space-y-2 mb-4">
+      {/* Supporters List - compact rows */}
+      <div className="space-y-1.5 sm:space-y-2 mb-3 sm:mb-4">
         {supporters.length === 0 ? (
-          <div className="text-center py-6 border border-dashed border-border/50 rounded-lg">
-            <Users className="w-8 h-8 text-muted-foreground mx-auto mb-2 opacity-30" />
-            <p className="text-xs text-muted-foreground mb-1">No supporters yet</p>
-            <p className="text-[10px] text-muted-foreground">Add friends to hold you accountable</p>
+          <div className="text-center py-4 sm:py-5 rounded-xl border border-dashed border-white/10 bg-white/[0.02]">
+            <Users className="w-6 h-6 sm:w-8 sm:h-8 text-muted-foreground mx-auto mb-1.5 opacity-30" aria-hidden="true" />
+            <p className="text-[11px] sm:text-xs text-muted-foreground mb-0.5">No supporters yet</p>
+            <p className="text-[10px] text-muted-foreground/80">Add friends to hold you accountable</p>
           </div>
         ) : (
           supporters.map((supporter) => (
             <div
               key={supporter.id}
-              className="flex items-center justify-between p-3 rounded-lg bg-muted/20 border border-border/30"
+              className="flex items-center justify-between gap-2 py-2.5 px-3 rounded-xl bg-white/[0.04] min-h-[44px] touch-manipulation"
             >
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#2bbcff]/20 to-[#a855f7]/20 flex items-center justify-center">
-                  <span className="text-xs font-bold">
+              <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                <div className="w-8 h-8 shrink-0 rounded-full bg-gradient-to-br from-[#0ea5e9]/20 to-[#fb923c]/20 flex items-center justify-center">
+                  <span className="text-[10px] sm:text-xs font-bold">
                     {supporter.name?.charAt(0) || supporter.email.charAt(0).toUpperCase()}
                   </span>
                 </div>
-                <div>
-                  <p className="text-xs font-medium">{supporter.name || supporter.email}</p>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[11px] sm:text-xs font-medium truncate">{supporter.name || supporter.email}</p>
                   <Badge
                     variant="outline"
-                    className={`text-[10px] mt-0.5 ${
+                    className={`text-[9px] sm:text-[10px] mt-0.5 shrink-0 ${
                       supporter.status === "accepted"
                         ? "border-green-500/30 text-green-500"
                         : supporter.status === "declined"
@@ -151,24 +152,26 @@ export function SupportersPanel({
                   </Badge>
                 </div>
               </div>
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-0.5 shrink-0">
                 {supporter.status === "pending" && (
                   <Button
                     size="sm"
                     variant="ghost"
                     onClick={() => onResendInvite(supporter.id)}
-                    className="h-7 w-7 p-0 hover:bg-[#2bbcff]/10"
+                    className="h-10 w-10 min-h-[44px] min-w-[44px] p-0 hover:bg-[#0ea5e9]/10 touch-manipulation rounded-lg"
+                    aria-label="Resend invite"
                   >
-                    <RefreshCw className="w-3 h-3 text-[#2bbcff]" />
+                    <RefreshCw className="w-3.5 h-3.5 text-[#0ea5e9]" />
                   </Button>
                 )}
                 <Button
                   size="sm"
                   variant="ghost"
                   onClick={() => setShowRemoveConfirm(supporter.id)}
-                  className="h-7 w-7 p-0 hover:bg-red-500/10"
+                  className="h-10 w-10 min-h-[44px] min-w-[44px] p-0 hover:bg-red-500/10 touch-manipulation rounded-lg"
+                  aria-label="Remove supporter"
                 >
-                  <X className="w-3 h-3 text-red-500" />
+                  <X className="w-3.5 h-3.5 text-red-500" />
                 </Button>
               </div>
             </div>
@@ -176,80 +179,80 @@ export function SupportersPanel({
         )}
       </div>
 
-      {/* Add Supporter */}
+      {/* Add Supporter - full-width input + button row */}
       {supporters.length < 3 && (
-        <div className="space-y-2 mb-6">
+        <div className="space-y-1.5 mb-4 sm:mb-5">
           <div className="flex gap-2">
-            <div className="relative flex-1">
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+            <div className="relative flex-1 min-w-0">
+              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" aria-hidden="true" />
               <Input
                 type="email"
-                placeholder="Add supporter email"
+                placeholder="Email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleAddSupporter()}
-                className="pl-9 h-8 text-xs bg-background/50 border-border/50"
+                className="pl-9 min-h-[44px] h-11 text-[13px] sm:text-sm bg-white/[0.04] border-white/10 placeholder:text-muted-foreground rounded-xl touch-manipulation"
               />
             </div>
             <Button
               type="button"
               size="sm"
               onClick={handleAddSupporter}
-              className="h-8 px-3 bg-[#a855f7] hover:bg-[#a855f7]/90 text-white text-xs"
+              className="min-h-[44px] h-11 px-4 bg-[#fb923c] hover:bg-[#fb923c]/90 text-white text-xs font-medium rounded-xl touch-manipulation shrink-0"
             >
               Invite
             </Button>
           </div>
-          {error && <p className="text-[10px] text-red-500">{error}</p>}
+          {error && <p className="text-[10px] text-red-500 px-0.5">{error}</p>}
         </div>
       )}
 
-      {/* Notification Settings */}
-      <div className="space-y-4 pt-4 border-t border-border/30">
+      {/* Notification Settings - compact sections */}
+      <div className="space-y-3 sm:space-y-4 pt-3 sm:pt-4 border-t border-white/5">
         <div>
-          <div className="flex items-center gap-2 mb-2">
-            <Bell className="w-3.5 h-3.5 text-[#2bbcff]" />
-            <span className="text-xs font-medium">Notification Intensity</span>
+          <div className="flex items-center gap-1.5 mb-1.5 sm:mb-2">
+            <Bell className="w-3.5 h-3.5 shrink-0 text-[#0ea5e9]" aria-hidden="true" />
+            <span className="text-[11px] sm:text-xs font-medium">Notification Intensity</span>
           </div>
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
             {intensityOptions.map((option) => (
               <button
                 key={option.value}
                 type="button"
                 onClick={() => setLocalIntensity(option.value)}
-                className={`p-2 rounded-lg border text-center transition-all ${
+                className={`py-2.5 px-1.5 sm:px-2 rounded-xl text-center transition-all touch-manipulation min-h-[44px] flex flex-col items-center justify-center gap-0.5 ${
                   localIntensity === option.value
-                    ? "border-[#2bbcff]/50 bg-[#2bbcff]/10"
-                    : "border-border/30 hover:border-border/50"
+                    ? "bg-[#0ea5e9]/10 border border-[#0ea5e9]/30"
+                    : "bg-white/[0.04] border border-white/5 active:bg-white/[0.06]"
                 }`}
               >
-                <span className="text-[10px] font-medium block">{option.label}</span>
-                <span className="text-[9px] text-muted-foreground">{option.description}</span>
+                <span className="text-[10px] font-medium leading-tight">{option.label}</span>
+                <span className="text-[9px] text-muted-foreground leading-tight line-clamp-2">{option.description}</span>
               </button>
             ))}
           </div>
         </div>
 
         <div>
-          <div className="flex items-center gap-2 mb-2">
-            <Shield className="w-3.5 h-3.5 text-[#a855f7]" />
-            <span className="text-xs font-medium">Privacy Level</span>
+          <div className="flex items-center gap-1.5 mb-1.5 sm:mb-2">
+            <Shield className="w-3.5 h-3.5 shrink-0 text-[#fb923c]" aria-hidden="true" />
+            <span className="text-[11px] sm:text-xs font-medium">Privacy Level</span>
           </div>
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             {privacyOptions.map((option) => (
               <button
                 key={option.value}
                 type="button"
                 onClick={() => setLocalPrivacy(option.value)}
-                className={`w-full p-2.5 rounded-lg border flex items-center gap-2 transition-all ${
+                className={`w-full py-2.5 px-3 rounded-xl flex items-center gap-2 transition-all touch-manipulation min-h-[44px] text-left ${
                   localPrivacy === option.value
-                    ? "border-[#a855f7]/50 bg-[#a855f7]/10"
-                    : "border-border/30 hover:border-border/50"
+                    ? "bg-[#fb923c]/10 border border-[#fb923c]/30"
+                    : "bg-white/[0.04] border border-white/5 active:bg-white/[0.06]"
                 }`}
               >
                 {option.icon}
-                <span className="text-xs">{option.label}</span>
-                {localPrivacy === option.value && <Check className="w-3 h-3 text-[#a855f7] ml-auto" />}
+                <span className="text-[11px] sm:text-xs truncate">{option.label}</span>
+                {localPrivacy === option.value && <Check className="w-3.5 h-3.5 text-[#fb923c] ml-auto shrink-0" />}
               </button>
             ))}
           </div>
@@ -258,11 +261,11 @@ export function SupportersPanel({
         <Button
           type="button"
           onClick={handleSaveSettings}
-          className="w-full h-8 text-xs bg-gradient-to-r from-[#2bbcff] to-[#a855f7] hover:opacity-90 text-white border-0"
+          className="w-full min-h-[44px] h-11 text-xs font-medium bg-gradient-to-r from-[#ea580c] to-[#fb923c] hover:opacity-90 text-white border-0 rounded-xl touch-manipulation"
         >
           {showSaved ? (
             <>
-              <Check className="w-3 h-3 mr-1" />
+              <Check className="w-3.5 h-3.5 mr-1.5" />
               Saved
             </>
           ) : (
@@ -271,24 +274,24 @@ export function SupportersPanel({
         </Button>
       </div>
 
-      {/* Remove Confirmation Dialog */}
+      {/* Remove Confirmation Dialog - mobile-friendly */}
       <Dialog open={!!showRemoveConfirm} onOpenChange={() => setShowRemoveConfirm(null)}>
-        <DialogContent className="sm:max-w-sm bg-card/95 backdrop-blur-xl border-red-500/30">
-          <DialogHeader>
-            <DialogTitle className="text-base font-bold flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 text-red-500" />
+        <DialogContent className="w-[calc(100vw-2rem)] max-w-sm bg-[#0c1525]/95 backdrop-blur-xl border-red-500/30 rounded-2xl p-4 sm:p-6">
+          <DialogHeader className="space-y-2">
+            <DialogTitle className="text-sm sm:text-base font-bold flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0 text-red-500" aria-hidden="true" />
               Remove Supporter
             </DialogTitle>
-            <DialogDescription className="text-xs text-muted-foreground">
-              Are you sure you want to remove this supporter? They will no longer receive updates about your challenge.
+            <DialogDescription className="text-[11px] sm:text-xs text-muted-foreground leading-relaxed">
+              They will no longer receive updates about your challenge.
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter className="flex-col sm:flex-row gap-2">
+          <DialogFooter className="flex flex-col-reverse sm:flex-row gap-2 pt-2">
             <Button
               type="button"
               variant="outline"
               onClick={() => setShowRemoveConfirm(null)}
-              className="w-full sm:w-auto text-xs h-8 bg-transparent"
+              className="w-full min-h-[44px] text-xs font-medium bg-transparent border-white/10 rounded-xl touch-manipulation"
             >
               Cancel
             </Button>
@@ -300,7 +303,7 @@ export function SupportersPanel({
                   setShowRemoveConfirm(null)
                 }
               }}
-              className="w-full sm:w-auto text-xs h-8 bg-red-500 hover:bg-red-600 text-white border-0"
+              className="w-full min-h-[44px] text-xs font-medium bg-red-500 hover:bg-red-600 text-white border-0 rounded-xl touch-manipulation"
             >
               Remove
             </Button>

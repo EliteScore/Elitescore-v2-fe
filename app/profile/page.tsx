@@ -112,414 +112,406 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-20">
-      {/* Unified Navbar */}
+    <div className="min-h-screen bg-gradient-to-r from-[#0c1525] via-[#0a0a12] to-[#151008] pb-20">
+      <div className="container mx-auto px-4 py-4 sm:py-6 md:py-8 max-w-5xl">
+        <div className="rounded-2xl bg-gradient-to-br from-[#0c1525]/95 via-[#0a0a12]/98 to-[#151008]/95 backdrop-blur-xl shadow-2xl overflow-hidden relative">
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-64 bg-gradient-to-r from-[#ea580c]/10 via-[#fb923c]/15 to-[#facc15]/10 blur-[100px] rounded-full -z-10 pointer-events-none" aria-hidden="true" />
 
-      <div className="container mx-auto px-4 py-6 md:py-8 max-w-5xl">
-        {/* Profile Header */}
-        <div className="glass-card rounded-xl border border-[#2bbcff]/30 bg-card/50 backdrop-blur-sm p-5 md:p-8 mb-4 md:mb-6">
-          <div className="flex flex-col sm:flex-row items-start justify-between gap-4 md:gap-0 mb-4 md:mb-6">
-            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 md:gap-5 w-full sm:w-auto">
-              {/* Profile Picture */}
-              <div className="relative">
-                <div className="w-20 h-20 md:w-24 md:h-24 rounded-full bg-gradient-to-br from-[#2bbcff] to-[#a855f7] p-1">
-                  <div className="w-full h-full rounded-full bg-background flex items-center justify-center text-2xl md:text-3xl font-bold bg-gradient-to-br from-[#2bbcff] to-[#a855f7] bg-clip-text text-transparent">
-                    AC
+          {/* Profile Header */}
+          <div className="p-4 sm:p-6 md:p-8">
+            <div className="flex flex-col sm:flex-row items-start justify-between gap-4 mb-4 sm:mb-6">
+              <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 w-full sm:w-auto">
+                <div className="relative shrink-0">
+                  <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-gradient-to-br from-[#0ea5e9] to-[#fb923c] p-1">
+                    <div className="w-full h-full rounded-full bg-[#0c1525] flex items-center justify-center text-2xl sm:text-3xl font-bold bg-gradient-to-br from-[#0ea5e9] to-[#fb923c] bg-clip-text text-transparent">
+                      AC
+                    </div>
                   </div>
+                  {userData.verificationBadge && (
+                    <div className="absolute -bottom-0.5 -right-0.5 w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-[#0ea5e9] flex items-center justify-center border-2 border-[#0c1525]" aria-hidden="true">
+                      <ShieldCheck className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
+                    </div>
+                  )}
                 </div>
-                {userData.verificationBadge && (
-                  <div className="absolute -bottom-1 -right-1 w-6 h-6 md:w-7 md:h-7 rounded-full bg-[#2bbcff] flex items-center justify-center border-2 border-background">
-                    <ShieldCheck className="w-3 h-3 md:w-4 md:h-4 text-white" />
+                <div className="space-y-1.5 text-center sm:text-left">
+                  <div className="flex flex-col sm:flex-row items-center gap-2">
+                    <h1 className="text-xl sm:text-2xl md:text-3xl font-bold truncate max-w-full">{userData.name}</h1>
+                    <Badge
+                      variant="secondary"
+                      className="text-[10px] sm:text-xs bg-[#fb923c]/10 text-[#fb923c] border-[#fb923c]/30 shrink-0"
+                    >
+                      Level {userData.level}
+                    </Badge>
                   </div>
-                )}
-              </div>
-
-              {/* Identity */}
-              <div className="space-y-2 text-center sm:text-left">
-                <div className="flex flex-col sm:flex-row items-center gap-2 md:gap-3">
-                  <h1 className="text-2xl md:text-3xl font-bold">{userData.name}</h1>
-                  <Badge
-                    variant="secondary"
-                    className="text-[10px] md:text-xs bg-[#a855f7]/10 text-[#a855f7] border-[#a855f7]/30 px-2 py-0.5"
-                  >
-                    Level {userData.level}
-                  </Badge>
-                </div>
-
-                {/* Stats Row */}
-                <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 md:gap-4 text-xs md:text-sm">
-                  <div className="flex items-center gap-1.5">
-                    <Trophy className="w-3 h-3 md:w-4 md:h-4 text-[#2bbcff]" />
-                    <span className="font-bold text-[#2bbcff]">{userData.eliteScore.toLocaleString()}</span>
-                    <span className="text-muted-foreground hidden sm:inline">EliteScore</span>
-                  </div>
-                  <span className="text-muted-foreground hidden sm:inline">•</span>
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-[10px] md:text-xs font-medium text-muted-foreground">
-                      {userData.rankPercentile}
+                  <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 text-[11px] sm:text-xs">
+                    <span className="flex items-center gap-1">
+                      <Trophy className="w-3 h-3 text-[#0ea5e9]" aria-hidden="true" />
+                      <span className="font-bold text-[#0ea5e9]">{userData.eliteScore.toLocaleString()}</span>
+                      <span className="text-muted-foreground hidden sm:inline">EliteScore</span>
+                    </span>
+                    <span className="text-muted-foreground hidden sm:inline">·</span>
+                    <span className="text-muted-foreground">{userData.rankPercentile}</span>
+                    <span className="text-muted-foreground hidden sm:inline">·</span>
+                    <span className="flex items-center gap-1">
+                      <Flame className="w-3 h-3 text-orange-500" aria-hidden="true" />
+                      <span className="font-bold text-orange-500">{userData.currentStreak}</span>
+                      <span className="text-muted-foreground">day streak</span>
                     </span>
                   </div>
-                  <span className="text-muted-foreground hidden sm:inline">•</span>
-                  <div className="flex items-center gap-1.5">
-                    <Flame className="w-3 h-3 md:w-4 md:h-4 text-orange-500" />
-                    <span className="font-bold text-orange-500">{userData.currentStreak}</span>
-                    <span className="text-muted-foreground text-[10px] md:text-xs">day streak</span>
-                  </div>
                 </div>
               </div>
-            </div>
-
-            {/* Profile Actions */}
-            <div className="flex items-center gap-2 w-full sm:w-auto justify-center">
-              <Button
-                size="sm"
-                variant="outline"
-                className="border-[#2bbcff]/50 hover:bg-[#2bbcff]/10 text-[10px] md:text-xs h-7 md:h-8 bg-transparent flex-1 sm:flex-initial"
-              >
-                <Share2 className="w-3 h-3 mr-1.5" />
-                <span className="hidden sm:inline">Share</span>
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                className="border-[#2bbcff]/50 hover:bg-[#2bbcff]/10 text-[10px] md:text-xs h-7 md:h-8 bg-transparent flex-1 sm:flex-initial"
-              >
-                <LinkIcon className="w-3 h-3 mr-1.5" />
-                <span className="hidden sm:inline">Copy Link</span>
-              </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                className="text-xs h-7 md:h-8"
-                onClick={() => setShowSettings(!showSettings)}
-              >
-                <Settings className="w-3.5 h-3.5 md:w-4 md:h-4" />
-              </Button>
-            </div>
-          </div>
-
-          {/* Settings Panel */}
-          {showSettings && (
-            <div className="border-t border-border/50 pt-6 space-y-3">
-              <h3 className="text-sm font-semibold mb-3">Settings</h3>
-              <div className="space-y-2">
+              <div className="flex items-center gap-1.5 w-full sm:w-auto justify-center sm:justify-end">
                 <Button
                   size="sm"
                   variant="outline"
-                  className="w-full justify-start text-xs h-9 bg-transparent border-border/50"
+                  className="border-[#0ea5e9]/30 hover:bg-[#0ea5e9]/10 text-[10px] sm:text-xs min-h-[44px] flex-1 sm:flex-initial touch-manipulation rounded-xl"
+                  aria-label="Share profile"
                 >
-                  <Lock className="w-3.5 h-3.5 mr-2" />
-                  Change Password
+                  <Share2 className="w-3.5 h-3.5 mr-0 sm:mr-1.5" aria-hidden="true" />
+                  <span className="hidden sm:inline">Share</span>
                 </Button>
                 <Button
                   size="sm"
                   variant="outline"
-                  className="w-full justify-start text-xs h-9 bg-transparent border-border/50"
+                  className="border-[#0ea5e9]/30 hover:bg-[#0ea5e9]/10 text-[10px] sm:text-xs min-h-[44px] flex-1 sm:flex-initial touch-manipulation rounded-xl"
+                  aria-label="Copy profile link"
                 >
-                  <LogOut className="w-3.5 h-3.5 mr-2" />
-                  Logout
+                  <LinkIcon className="w-3.5 h-3.5 mr-0 sm:mr-1.5" aria-hidden="true" />
+                  <span className="hidden sm:inline">Copy Link</span>
                 </Button>
                 <Button
                   size="sm"
-                  variant="outline"
-                  className="w-full justify-start text-xs h-9 bg-transparent border-red-500/50 text-red-500 hover:bg-red-500/10"
-                  onClick={() => setShowDeleteConfirm(true)}
+                  variant="ghost"
+                  className="min-h-[44px] min-w-[44px] p-0 touch-manipulation rounded-xl"
+                  onClick={() => setShowSettings(!showSettings)}
+                  aria-label={showSettings ? "Close settings" : "Open settings"}
                 >
-                  <Trash2 className="w-3.5 h-3.5 mr-2" />
-                  Delete Account
+                  <Settings className="w-4 h-4" />
                 </Button>
               </div>
             </div>
-          )}
 
-          {/* Delete Confirmation */}
-          {showDeleteConfirm && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-              <div className="glass-card rounded-xl border border-red-500/30 bg-card/95 backdrop-blur-md p-6 max-w-md mx-4">
-                <h3 className="text-lg font-bold mb-2">Delete Account?</h3>
-                <p className="text-sm text-muted-foreground mb-6">
-                  This action cannot be undone. Your EliteScore, challenge history, and all data will be permanently
-                  deleted.
-                </p>
-                <div className="flex gap-3">
+            {showSettings && (
+              <div className="border-t border-white/5 pt-4 space-y-2">
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Settings</h3>
+                <div className="space-y-1.5">
                   <Button
                     size="sm"
                     variant="outline"
-                    className="flex-1 text-xs h-9 bg-transparent"
-                    onClick={() => setShowDeleteConfirm(false)}
+                    className="w-full justify-start text-xs min-h-[44px] bg-white/[0.04] border-white/10 rounded-xl touch-manipulation"
                   >
-                    Cancel
+                    <Lock className="w-3.5 h-3.5 mr-2" />
+                    Change Password
                   </Button>
                   <Button
                     size="sm"
-                    className="flex-1 bg-red-500 hover:bg-red-600 text-white text-xs h-9"
-                    onClick={() => setShowDeleteConfirm(false)}
+                    variant="outline"
+                    className="w-full justify-start text-xs min-h-[44px] bg-white/[0.04] border-white/10 rounded-xl touch-manipulation"
                   >
-                    Delete Permanently
+                    <LogOut className="w-3.5 h-3.5 mr-2" />
+                    Logout
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="w-full justify-start text-xs min-h-[44px] bg-transparent border-red-500/30 text-red-500 hover:bg-red-500/10 rounded-xl touch-manipulation"
+                    onClick={() => setShowDeleteConfirm(true)}
+                  >
+                    <Trash2 className="w-3.5 h-3.5 mr-2" />
+                    Delete Account
                   </Button>
                 </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Level & XP */}
-          <div className="bg-[#a855f7]/5 rounded-lg p-3 md:p-4 border border-[#a855f7]/20">
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2">
-                <Zap className="w-4 h-4 text-[#a855f7]" />
-                <span className="text-sm font-semibold">Level {userData.level}</span>
-              </div>
-              <span className="text-xs text-muted-foreground">
-                {userData.currentXP.toLocaleString()} / {userData.xpToNextLevel.toLocaleString()} XP
-              </span>
-            </div>
-            <div className="h-2 bg-muted rounded-full overflow-hidden">
+            {showDeleteConfirm && (
               <div
-                className="h-full bg-gradient-to-r from-[#2bbcff] to-[#a855f7] rounded-full transition-all duration-500"
-                style={{ width: `${(userData.currentXP / userData.xpToNextLevel) * 100}%` }}
-              />
-            </div>
-            <p className="text-xs text-muted-foreground mt-2">XP shown only here and after proof submission</p>
-          </div>
-        </div>
-
-        {/* Credibility Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-4 md:mb-6">
-          <div className="glass-card rounded-xl border border-[#2bbcff]/20 bg-card/50 backdrop-blur-sm p-4">
-            <div className="flex items-center gap-2 mb-1">
-              <Check className="w-4 h-4 text-[#2bbcff]" />
-              <span className="text-xs text-muted-foreground">Completed</span>
-            </div>
-            <p className="text-2xl font-bold">{userData.stats.totalCompleted}</p>
-          </div>
-          <div className="glass-card rounded-xl border border-[#a855f7]/20 bg-card/50 backdrop-blur-sm p-4">
-            <div className="flex items-center gap-2 mb-1">
-              <Target className="w-4 h-4 text-[#a855f7]" />
-              <span className="text-xs text-muted-foreground">Max Difficulty</span>
-            </div>
-            <p className="text-2xl font-bold">{userData.stats.highestDifficulty}/5</p>
-          </div>
-          <div className="glass-card rounded-xl border border-orange-500/20 bg-card/50 backdrop-blur-sm p-4">
-            <div className="flex items-center gap-2 mb-1">
-              <Flame className="w-4 h-4 text-orange-500" />
-              <span className="text-xs text-muted-foreground">Longest Streak</span>
-            </div>
-            <p className="text-2xl font-bold">{userData.stats.longestStreak}</p>
-          </div>
-          <div className="glass-card rounded-xl border border-green-500/20 bg-card/50 backdrop-blur-sm p-4">
-            <div className="flex items-center gap-2 mb-1">
-              <TrendingUp className="w-4 h-4 text-green-500" />
-              <span className="text-xs text-muted-foreground">Consistency</span>
-            </div>
-            <p className="text-2xl font-bold">{userData.stats.consistencyRate}%</p>
-          </div>
-        </div>
-
-        {/* Challenge History */}
-        <div className="glass-card rounded-xl border border-[#2bbcff]/30 bg-card/50 backdrop-blur-sm p-5 md:p-6 mb-4 md:mb-6">
-          <h2 className="text-base md:text-lg font-bold mb-3 md:mb-4">Challenge History</h2>
-          <p className="text-[10px] md:text-xs text-muted-foreground mb-3 md:mb-4">
-            Public & immutable — failures are visible
-          </p>
-          <div className="space-y-3">
-            {userData.challengeHistory.map((challenge) => (
-              <div
-                key={challenge.id}
-                className={`flex items-center justify-between p-4 rounded-lg border transition-all ${
-                  challenge.status === "completed"
-                    ? "bg-[#2bbcff]/5 border-[#2bbcff]/20 hover:border-[#2bbcff]/40"
-                    : "bg-red-500/5 border-red-500/20 hover:border-red-500/40"
-                }`}
+                className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-4 sm:p-0"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="delete-dialog-title"
               >
-                <div className="flex items-center gap-4 flex-1">
+                <div className="rounded-2xl sm:rounded-2xl border border-red-500/30 bg-[#0c1525]/95 backdrop-blur-xl p-4 sm:p-6 w-full max-w-md">
+                  <h3 id="delete-dialog-title" className="text-base sm:text-lg font-bold mb-2">Delete Account?</h3>
+                  <p className="text-xs sm:text-sm text-muted-foreground mb-4 sm:mb-6 leading-relaxed">
+                    This cannot be undone. Your EliteScore, history, and data will be permanently deleted.
+                  </p>
+                  <div className="flex gap-2 sm:gap-3">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="flex-1 min-h-[44px] text-xs rounded-xl bg-transparent border-white/10 touch-manipulation"
+                      onClick={() => setShowDeleteConfirm(false)}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      size="sm"
+                      className="flex-1 min-h-[44px] bg-red-500 hover:bg-red-600 text-white text-xs rounded-xl touch-manipulation"
+                      onClick={() => setShowDeleteConfirm(false)}
+                    >
+                      Delete Permanently
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="rounded-xl bg-white/[0.04] p-3 sm:p-4 mt-4">
+              <div className="flex items-center justify-between gap-2 mb-2">
+                <div className="flex items-center gap-2">
+                  <Zap className="w-4 h-4 text-[#fb923c]" aria-hidden="true" />
+                  <span className="text-xs sm:text-sm font-semibold">Level {userData.level}</span>
+                </div>
+                <span className="text-[10px] sm:text-xs text-muted-foreground">
+                  {userData.currentXP.toLocaleString()} / {userData.xpToNextLevel.toLocaleString()} XP
+                </span>
+              </div>
+              <div className="h-2 bg-white/10 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-[#0ea5e9] to-[#fb923c] rounded-full transition-all duration-500"
+                  style={{ width: `${(userData.currentXP / userData.xpToNextLevel) * 100}%` }}
+                  role="progressbar"
+                  aria-valuenow={userData.currentXP}
+                  aria-valuemin={0}
+                  aria-valuemax={userData.xpToNextLevel}
+                />
+              </div>
+              <p className="text-[10px] text-muted-foreground mt-1.5">XP shown here and after proof submission</p>
+            </div>
+          </div>
+
+          {/* Credibility Stats */}
+          <div className="border-t border-white/5 p-4 sm:p-6">
+            <div className="grid grid-cols-2 gap-2 sm:gap-3">
+              <div className="rounded-xl bg-white/[0.04] p-3 sm:p-4 min-h-[44px] flex flex-col justify-center">
+                <div className="flex items-center gap-1.5 mb-0.5">
+                  <Check className="w-3.5 h-3.5 text-[#0ea5e9]" aria-hidden="true" />
+                  <span className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wider">Completed</span>
+                </div>
+                <p className="text-xl sm:text-2xl font-bold">{userData.stats.totalCompleted}</p>
+              </div>
+              <div className="rounded-xl bg-white/[0.04] p-3 sm:p-4 min-h-[44px] flex flex-col justify-center">
+                <div className="flex items-center gap-1.5 mb-0.5">
+                  <Target className="w-3.5 h-3.5 text-[#fb923c]" aria-hidden="true" />
+                  <span className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wider">Max Difficulty</span>
+                </div>
+                <p className="text-xl sm:text-2xl font-bold">{userData.stats.highestDifficulty}/5</p>
+              </div>
+              <div className="rounded-xl bg-white/[0.04] p-3 sm:p-4 min-h-[44px] flex flex-col justify-center">
+                <div className="flex items-center gap-1.5 mb-0.5">
+                  <Flame className="w-3.5 h-3.5 text-orange-500" aria-hidden="true" />
+                  <span className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wider">Longest Streak</span>
+                </div>
+                <p className="text-xl sm:text-2xl font-bold">{userData.stats.longestStreak}</p>
+              </div>
+              <div className="rounded-xl bg-white/[0.04] p-3 sm:p-4 min-h-[44px] flex flex-col justify-center">
+                <div className="flex items-center gap-1.5 mb-0.5">
+                  <TrendingUp className="w-3.5 h-3.5 text-green-500" aria-hidden="true" />
+                  <span className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wider">Consistency</span>
+                </div>
+                <p className="text-xl sm:text-2xl font-bold">{userData.stats.consistencyRate}%</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Challenge History */}
+          <div className="border-t border-white/5 p-4 sm:p-6">
+            <div className="rounded-xl bg-white/[0.04] p-4 sm:p-5">
+              <h2 className="text-sm sm:text-base font-bold mb-1">Challenge History</h2>
+              <p className="text-[10px] sm:text-xs text-muted-foreground mb-3">
+                Public & immutable — failures are visible
+              </p>
+              <div className="space-y-2">
+                {userData.challengeHistory.map((challenge) => (
                   <div
-                    className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                      challenge.status === "completed" ? "bg-[#2bbcff]/20" : "bg-red-500/20"
+                    key={challenge.id}
+                    className={`flex items-start sm:items-center gap-3 p-3 rounded-xl transition-all touch-manipulation ${
+                      challenge.status === "completed"
+                        ? "bg-[#0ea5e9]/10"
+                        : "bg-red-500/10"
                     }`}
                   >
-                    {challenge.status === "completed" ? (
-                      <Check className="w-5 h-5 text-[#2bbcff]" />
-                    ) : (
-                      <X className="w-5 h-5 text-red-500" />
-                    )}
+                    <div
+                      className={`w-9 h-9 shrink-0 rounded-full flex items-center justify-center ${
+                        challenge.status === "completed" ? "bg-[#0ea5e9]/20" : "bg-red-500/20"
+                      }`}
+                      aria-hidden="true"
+                    >
+                      {challenge.status === "completed" ? (
+                        <Check className="w-4 h-4 text-[#0ea5e9]" />
+                      ) : (
+                        <X className="w-4 h-4 text-red-500" />
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-1.5 mb-0.5">
+                        <h3 className="text-xs sm:text-sm font-semibold truncate">{challenge.name}</h3>
+                        <Badge
+                          variant="secondary"
+                          className={`text-[10px] shrink-0 ${
+                            challenge.status === "completed"
+                              ? "bg-[#0ea5e9]/10 text-[#0ea5e9] border-[#0ea5e9]/30"
+                              : "bg-red-500/10 text-red-500 border-red-500/30"
+                          }`}
+                        >
+                          {challenge.status === "completed" ? "Completed" : "Failed"}
+                        </Badge>
+                      </div>
+                      <p className="text-[10px] sm:text-xs text-muted-foreground">
+                        {challenge.difficulty}/5 · {challenge.duration}d · {challenge.proofCount} proofs · {challenge.status === "completed" ? challenge.completionDate : challenge.failureDate}
+                      </p>
+                    </div>
                   </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3 className="text-sm font-semibold">{challenge.name}</h3>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Background */}
+          <div className="border-t border-white/5 p-4 sm:p-6">
+            <div className="rounded-xl bg-white/[0.04] p-4 sm:p-5">
+              <div className="flex flex-wrap items-center gap-2 mb-2">
+                <h2 className="text-sm sm:text-base font-bold">Background</h2>
+                <Badge variant="secondary" className="text-[10px] bg-white/5 text-muted-foreground border-white/10">
+                  Not Score-Weighted
+                </Badge>
+              </div>
+              <p className="text-[10px] sm:text-xs text-muted-foreground mb-4">
+                Context only — does not affect EliteScore or leaderboard.
+              </p>
+
+              <div className="space-y-4 sm:space-y-5">
+                <div>
+                  <div className="flex items-center gap-1.5 mb-2">
+                    <GraduationCap className="w-3.5 h-3.5 text-[#0ea5e9]" aria-hidden="true" />
+                    <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Education</h3>
+                  </div>
+                  <div className="space-y-1.5">
+                    {userData.background.education.map((edu, index) => (
+                      <div key={index} className="rounded-xl bg-white/[0.04] p-2.5 sm:p-3">
+                        <p className="text-xs sm:text-sm font-medium">{edu.degree}</p>
+                        <p className="text-[10px] sm:text-xs text-muted-foreground">{edu.institution} · {edu.year}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex items-center gap-1.5 mb-2">
+                    <Briefcase className="w-3.5 h-3.5 text-[#fb923c]" aria-hidden="true" />
+                    <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Past Roles</h3>
+                  </div>
+                  <div className="space-y-1.5">
+                    {userData.background.roles.map((role, index) => (
+                      <div key={index} className="rounded-xl bg-white/[0.04] p-2.5 sm:p-3">
+                        <p className="text-xs sm:text-sm font-medium">{role.position}</p>
+                        <p className="text-[10px] sm:text-xs text-muted-foreground">{role.company} · {role.period}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex items-center gap-1.5 mb-2">
+                    <Award className="w-3.5 h-3.5 text-green-500" aria-hidden="true" />
+                    <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Certifications</h3>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {userData.background.certifications.map((cert, index) => (
                       <Badge
+                        key={index}
                         variant="secondary"
-                        className={`text-xs px-2 py-0.5 ${
-                          challenge.status === "completed"
-                            ? "bg-[#2bbcff]/10 text-[#2bbcff] border-[#2bbcff]/30"
-                            : "bg-red-500/10 text-red-500 border-red-500/30"
-                        }`}
+                        className="text-[10px] bg-green-500/10 text-green-500 border-green-500/30"
                       >
-                        {challenge.status === "completed" ? "Completed" : "Failed"}
+                        {cert}
                       </Badge>
-                    </div>
-                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                      <span>Difficulty: {challenge.difficulty}/5</span>
-                      <span>•</span>
-                      <span>{challenge.duration} days</span>
-                      <span>•</span>
-                      <span>{challenge.proofCount} proofs submitted</span>
-                      <span>•</span>
-                      <span>{challenge.status === "completed" ? challenge.completionDate : challenge.failureDate}</span>
-                    </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex items-center gap-1.5 mb-2">
+                    <Trophy className="w-3.5 h-3.5 text-orange-500" aria-hidden="true" />
+                    <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Major Achievements</h3>
+                  </div>
+                  <div className="space-y-1.5">
+                    {userData.background.achievements.map((achievement, index) => (
+                      <div key={index} className="flex items-start gap-2">
+                        <div className="w-1.5 h-1.5 rounded-full bg-orange-500 mt-1.5 shrink-0" aria-hidden="true" />
+                        <p className="text-[11px] sm:text-sm text-muted-foreground">{achievement}</p>
+                      </div>
+                    ))}
                   </div>
                 </div>
               </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Resume / Background */}
-        <div className="glass-card rounded-xl border border-border/50 bg-card/50 backdrop-blur-sm p-5 md:p-6 mb-4 md:mb-6">
-          <div className="flex items-center gap-2 mb-4">
-            <h2 className="text-lg font-bold">Background</h2>
-            <Badge variant="secondary" className="text-xs bg-muted text-muted-foreground border-border px-2 py-0.5">
-              Not Score-Weighted
-            </Badge>
-          </div>
-          <p className="text-xs text-muted-foreground mb-6">
-            This information provides context but does not affect your EliteScore or leaderboard position.
-          </p>
-
-          <div className="space-y-6">
-            {/* Education */}
-            <div>
-              <div className="flex items-center gap-2 mb-3">
-                <GraduationCap className="w-4 h-4 text-[#2bbcff]" />
-                <h3 className="text-sm font-semibold">Education</h3>
-              </div>
-              <div className="space-y-2">
-                {userData.background.education.map((edu, index) => (
-                  <div key={index} className="bg-muted/30 rounded-lg p-3 border border-border/30">
-                    <p className="text-sm font-medium">{edu.degree}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {edu.institution} • {edu.year}
-                    </p>
-                  </div>
-                ))}
-              </div>
             </div>
+          </div>
 
-            {/* Past Roles */}
-            <div>
-              <div className="flex items-center gap-2 mb-3">
-                <Briefcase className="w-4 h-4 text-[#a855f7]" />
-                <h3 className="text-sm font-semibold">Past Roles</h3>
-              </div>
+          {/* External Links */}
+          <div className="border-t border-white/5 p-4 sm:p-6">
+            <div className="rounded-xl bg-white/[0.04] p-4 sm:p-5">
+              <h2 className="text-sm sm:text-base font-bold mb-3">External Links</h2>
               <div className="space-y-2">
-                {userData.background.roles.map((role, index) => (
-                  <div key={index} className="bg-muted/30 rounded-lg p-3 border border-border/30">
-                    <p className="text-sm font-medium">{role.position}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {role.company} • {role.period}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Certifications */}
-            <div>
-              <div className="flex items-center gap-2 mb-3">
-                <Award className="w-4 h-4 text-green-500" />
-                <h3 className="text-sm font-semibold">Certifications</h3>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {userData.background.certifications.map((cert, index) => (
-                  <Badge
-                    key={index}
-                    variant="secondary"
-                    className="text-xs bg-green-500/10 text-green-500 border-green-500/30 px-3 py-1"
+                {userData.links.linkedin && (
+                  <a
+                    href={`https://${userData.links.linkedin}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-between gap-3 p-3 rounded-xl bg-[#0ea5e9]/10 min-h-[44px] touch-manipulation active:bg-[#0ea5e9]/15 transition-colors group"
                   >
-                    {cert}
-                  </Badge>
-                ))}
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-9 h-9 shrink-0 rounded-full bg-[#0ea5e9]/20 flex items-center justify-center">
+                        <LinkIcon className="w-4 h-4 text-[#0ea5e9]" aria-hidden="true" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-xs sm:text-sm font-medium">LinkedIn</p>
+                        <p className="text-[10px] sm:text-xs text-muted-foreground truncate">{userData.links.linkedin}</p>
+                      </div>
+                    </div>
+                    <ExternalLink className="w-4 h-4 shrink-0 text-muted-foreground group-hover:text-[#0ea5e9] transition-colors" aria-hidden="true" />
+                  </a>
+                )}
+                {userData.links.github && (
+                  <a
+                    href={`https://${userData.links.github}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-between gap-3 p-3 rounded-xl bg-[#fb923c]/10 min-h-[44px] touch-manipulation active:bg-[#fb923c]/15 transition-colors group"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-9 h-9 shrink-0 rounded-full bg-[#fb923c]/20 flex items-center justify-center">
+                        <LinkIcon className="w-4 h-4 text-[#fb923c]" aria-hidden="true" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-xs sm:text-sm font-medium">GitHub</p>
+                        <p className="text-[10px] sm:text-xs text-muted-foreground truncate">{userData.links.github}</p>
+                      </div>
+                    </div>
+                    <ExternalLink className="w-4 h-4 shrink-0 text-muted-foreground group-hover:text-[#fb923c] transition-colors" aria-hidden="true" />
+                  </a>
+                )}
+                {userData.links.portfolio && (
+                  <a
+                    href={`https://${userData.links.portfolio}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-between gap-3 p-3 rounded-xl bg-white/[0.04] min-h-[44px] touch-manipulation active:bg-white/[0.06] transition-colors group"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-9 h-9 shrink-0 rounded-full bg-white/10 flex items-center justify-center">
+                        <LinkIcon className="w-4 h-4 text-muted-foreground" aria-hidden="true" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-xs sm:text-sm font-medium">Portfolio</p>
+                        <p className="text-[10px] sm:text-xs text-muted-foreground truncate">{userData.links.portfolio}</p>
+                      </div>
+                    </div>
+                    <ExternalLink className="w-4 h-4 shrink-0 text-muted-foreground group-hover:text-foreground transition-colors" aria-hidden="true" />
+                  </a>
+                )}
               </div>
             </div>
-
-            {/* Major Achievements */}
-            <div>
-              <div className="flex items-center gap-2 mb-3">
-                <Trophy className="w-4 h-4 text-orange-500" />
-                <h3 className="text-sm font-semibold">Major Achievements</h3>
-              </div>
-              <div className="space-y-2">
-                {userData.background.achievements.map((achievement, index) => (
-                  <div key={index} className="flex items-start gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-orange-500 mt-1.5" />
-                    <p className="text-sm text-muted-foreground">{achievement}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* External Links */}
-        <div className="glass-card rounded-xl border border-[#2bbcff]/30 bg-card/50 backdrop-blur-sm p-5 md:p-6">
-          <h2 className="text-lg font-bold mb-4">External Links</h2>
-          <div className="space-y-3">
-            {userData.links.linkedin && (
-              <a
-                href={`https://${userData.links.linkedin}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-between p-3 rounded-lg border border-[#2bbcff]/20 bg-[#2bbcff]/5 hover:border-[#2bbcff]/40 transition-all group"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-[#2bbcff]/20 flex items-center justify-center">
-                    <LinkIcon className="w-4 h-4 text-[#2bbcff]" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium">LinkedIn</p>
-                    <p className="text-xs text-muted-foreground">{userData.links.linkedin}</p>
-                  </div>
-                </div>
-                <ExternalLink className="w-4 h-4 text-muted-foreground group-hover:text-[#2bbcff] transition-colors" />
-              </a>
-            )}
-            {userData.links.github && (
-              <a
-                href={`https://${userData.links.github}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-between p-3 rounded-lg border border-[#a855f7]/20 bg-[#a855f7]/5 hover:border-[#a855f7]/40 transition-all group"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-[#a855f7]/20 flex items-center justify-center">
-                    <LinkIcon className="w-4 h-4 text-[#a855f7]" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium">GitHub</p>
-                    <p className="text-xs text-muted-foreground">{userData.links.github}</p>
-                  </div>
-                </div>
-                <ExternalLink className="w-4 h-4 text-muted-foreground group-hover:text-[#a855f7] transition-colors" />
-              </a>
-            )}
-            {userData.links.portfolio && (
-              <a
-                href={`https://${userData.links.portfolio}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-between p-3 rounded-lg border border-border/20 bg-muted/30 hover:border-border/40 transition-all group"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
-                    <LinkIcon className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium">Portfolio</p>
-                    <p className="text-xs text-muted-foreground">{userData.links.portfolio}</p>
-                  </div>
-                </div>
-                <ExternalLink className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors" />
-              </a>
-            )}
           </div>
         </div>
       </div>

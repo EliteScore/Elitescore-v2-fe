@@ -181,7 +181,7 @@ export default function ChallengeDetailPage() {
 
   if (!challenge) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center pb-20">
+      <div className="min-h-screen bg-gradient-to-r from-[#0c1525] via-[#0a0a12] to-[#151008] flex items-center justify-center pb-20 px-4">
         <div className="text-center p-4">
           <h1 className="text-xl font-bold mb-3">Challenge not found</h1>
           <Button size="sm" asChild>
@@ -193,56 +193,51 @@ export default function ChallengeDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-20">
-      {/* Hero header - same style as home page */}
-      <section className="container mx-auto px-4 pt-6 md:pt-8 pb-4">
-        <div className="max-w-4xl mx-auto">
-          <div className="glass-card rounded-2xl border border-[#2bbcff]/20 bg-gradient-to-br from-card/80 to-background backdrop-blur-md p-6 shadow-xl relative overflow-hidden">
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-64 bg-gradient-to-r from-[#2bbcff]/20 to-[#a855f7]/20 blur-[100px] rounded-full -z-10" aria-hidden="true" />
-            <div className="flex items-start gap-3 mb-4">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => router.back()}
-                className="h-8 w-8 p-0 rounded-lg shrink-0"
-                aria-label="Back to challenges"
-              >
-                <ArrowLeft className="w-4 h-4" />
-              </Button>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 text-[10px] text-muted-foreground uppercase tracking-[0.2em] mb-1">
-                  <Link href="/challenges" className="hover:text-foreground transition-colors">
-                    Challenges
-                  </Link>
-                  <span>/</span>
-                  <span className="text-foreground truncate">{challenge.name}</span>
-                </div>
-                <h1 className="text-xl md:text-2xl font-black bg-gradient-to-r from-[#2bbcff] via-[#a855f7] to-[#2bbcff] bg-clip-text text-transparent truncate">
-                  {challenge.name}
-                </h1>
-                <div className="flex items-center gap-2 flex-wrap mt-2">
-                  <Badge variant="secondary" className="bg-[#2bbcff]/10 text-[#2bbcff] border-[#2bbcff]/30 text-[10px] font-bold uppercase tracking-wider">
-                    Day {challenge.currentDay}/{challenge.duration}
-                  </Badge>
-                  <Badge variant="secondary" className="bg-[#a855f7]/10 text-[#a855f7] border-[#a855f7]/30 text-[10px] font-bold uppercase tracking-wider">
-                    <Trophy className="w-2.5 h-2.5 mr-0.5" aria-hidden="true" />
-                    Difficulty {challenge.difficulty}/5
-                  </Badge>
-                </div>
+    <div className="min-h-screen bg-gradient-to-r from-[#0c1525] via-[#0a0a12] to-[#151008] pb-20">
+      <section className="container mx-auto px-4 pt-4 sm:pt-6 md:pt-8 pb-4 sm:pb-6">
+        <div className="max-w-4xl mx-auto rounded-2xl bg-gradient-to-br from-[#0c1525]/95 via-[#0a0a12]/98 to-[#151008]/95 backdrop-blur-xl shadow-2xl overflow-hidden relative">
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-64 bg-gradient-to-r from-[#ea580c]/10 via-[#fb923c]/15 to-[#facc15]/10 blur-[100px] rounded-full -z-10 pointer-events-none" aria-hidden="true" />
+
+          {/* Hero */}
+          <div className="p-4 sm:p-6 flex items-start gap-3">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => router.back()}
+              className="h-10 w-10 p-0 rounded-xl shrink-0 touch-manipulation min-h-[44px] min-w-[44px]"
+              aria-label="Back to challenges"
+            >
+              <ArrowLeft className="w-4 h-4" />
+            </Button>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 text-[10px] text-muted-foreground uppercase tracking-[0.2em] mb-1">
+                <Link href="/challenges" className="hover:text-foreground transition-colors">
+                  Challenges
+                </Link>
+                <span>/</span>
+                <span className="text-foreground truncate">{challenge.name}</span>
+              </div>
+              <h1 className="text-xl md:text-2xl font-black bg-gradient-to-r from-[#ea580c] via-[#fb923c] to-[#facc15] bg-clip-text text-transparent truncate">
+                {challenge.name}
+              </h1>
+              <div className="flex items-center gap-2 flex-wrap mt-2">
+                <Badge variant="secondary" className="bg-[#0ea5e9]/10 text-[#0ea5e9] border-[#0ea5e9]/30 text-[10px] font-bold uppercase tracking-wider">
+                  Day {challenge.currentDay}/{challenge.duration}
+                </Badge>
+                <Badge variant="secondary" className="bg-[#fb923c]/10 text-[#fb923c] border-[#fb923c]/30 text-[10px] font-bold uppercase tracking-wider">
+                  <Trophy className="w-2.5 h-2.5 mr-0.5" aria-hidden="true" />
+                  Difficulty {challenge.difficulty}/5
+                </Badge>
               </div>
             </div>
           </div>
-        </div>
-      </section>
 
-      {/* Main Content */}
-      <section className="container mx-auto px-4 py-6 md:py-8">
-        <div className="max-w-4xl mx-auto space-y-8">
-          {/* Today's Task - home UI style, no XP */}
-          <div className="glass-card rounded-2xl border border-[#2bbcff]/20 bg-gradient-to-br from-card/80 to-background backdrop-blur-md p-6 shadow-xl relative overflow-hidden">
+          {/* Today's Task */}
+          <div className="border-t border-white/5 p-4 sm:p-6">
+            <div className="rounded-xl bg-white/[0.04] p-4 sm:p-6">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-xl bg-[#2bbcff]/10 flex items-center justify-center flex-shrink-0" aria-hidden="true">
-                <Star className="w-5 h-5 text-[#2bbcff]" />
+              <div className="w-10 h-10 rounded-xl bg-[#0ea5e9]/10 flex items-center justify-center flex-shrink-0" aria-hidden="true">
+                <Star className="w-5 h-5 text-[#0ea5e9]" />
               </div>
               <div>
                 <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">
@@ -254,12 +249,12 @@ export default function ChallengeDetailPage() {
             <p className="text-sm text-muted-foreground leading-relaxed mb-4">
               {challenge.todayTask.description}
             </p>
-            <div className="glass-card rounded-xl border border-white/5 bg-card/30 backdrop-blur-sm p-4 mb-4">
-              <div className="text-[10px] font-bold text-[#2bbcff] uppercase tracking-wider mb-2">Requirements</div>
+            <div className="rounded-xl bg-white/[0.04] p-4 mb-4">
+              <div className="text-[10px] font-bold text-[#0ea5e9] uppercase tracking-wider mb-2">Requirements</div>
               <ul className="space-y-2">
                 {challenge.todayTask.requirements.map((req, i) => (
                   <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground leading-relaxed">
-                    <Circle className="w-3 h-3 text-[#2bbcff] mt-0.5 flex-shrink-0" aria-hidden="true" />
+                    <Circle className="w-3 h-3 text-[#0ea5e9] mt-0.5 flex-shrink-0" aria-hidden="true" />
                     <span>{req}</span>
                   </li>
                 ))}
@@ -268,53 +263,57 @@ export default function ChallengeDetailPage() {
             <Button
               size="sm"
               onClick={() => setShowUploadProof(true)}
-              className="w-full bg-gradient-to-r from-[#2bbcff] to-[#a855f7] hover:opacity-90 text-white border-0 text-[10px] h-9 font-bold uppercase tracking-wider"
+              className="w-full min-h-[44px] bg-gradient-to-r from-[#ea580c] via-[#fb923c] to-[#facc15] hover:opacity-90 text-white border-0 text-[10px] font-bold uppercase tracking-wider touch-manipulation"
             >
               <Upload className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" />
               Submit proof for today
             </Button>
+            </div>
           </div>
 
-          {/* Progress Overview - home UI style */}
-          <div className="glass-card rounded-2xl border border-[#2bbcff]/20 bg-gradient-to-br from-card/80 to-background backdrop-blur-md p-6 shadow-xl">
+          {/* Progress Overview */}
+          <div className="border-t border-white/5 p-4 sm:p-6">
+            <div className="rounded-xl bg-white/[0.04] p-4 sm:p-6">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-xl bg-[#2bbcff]/10 flex items-center justify-center flex-shrink-0" aria-hidden="true">
-                <Target className="w-5 h-5 text-[#2bbcff]" />
+              <div className="w-10 h-10 rounded-xl bg-[#0ea5e9]/10 flex items-center justify-center flex-shrink-0" aria-hidden="true">
+                <Target className="w-5 h-5 text-[#0ea5e9]" />
               </div>
               <div>
                 <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Progress • Overview</div>
                 <div className="text-base font-bold text-foreground">{challenge.progress}% complete</div>
               </div>
             </div>
-            <div className="glass-card rounded-xl border border-white/5 bg-card/30 p-3 mb-4">
+            <div className="rounded-xl bg-white/[0.04] p-3 mb-4">
               <div className="flex items-center justify-between gap-2 mb-1.5">
                 <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Progress</span>
-                <span className="text-sm font-bold text-[#2bbcff]">{challenge.progress}%</span>
+                <span className="text-sm font-bold text-[#0ea5e9]">{challenge.progress}%</span>
               </div>
               <div className="h-2 bg-white/10 rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-gradient-to-r from-[#2bbcff] to-[#a855f7] rounded-full transition-all duration-500"
+                  className="h-full bg-gradient-to-r from-[#0ea5e9] to-[#fb923c] rounded-full transition-all duration-500"
                   style={{ width: `${challenge.progress}%` }}
                 />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <div className="glass-card rounded-xl border border-white/5 bg-card/30 p-3">
+              <div className="rounded-xl bg-white/[0.04] p-3">
                 <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-0.5">Days left</div>
                 <div className="text-lg font-bold text-foreground">{challenge.daysRemaining}</div>
               </div>
-              <div className="glass-card rounded-xl border border-[#a855f7]/20 bg-[#a855f7]/5 p-3">
+              <div className="rounded-xl bg-[#fb923c]/10 p-3">
                 <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-0.5">Reward</div>
-                <div className="text-lg font-bold text-[#a855f7]">+{challenge.reward} EliteScore</div>
+                <div className="text-lg font-bold text-[#fb923c]">+{challenge.reward} EliteScore</div>
               </div>
+            </div>
             </div>
           </div>
 
-          {/* Roadmap - home UI style */}
-          <div className="glass-card rounded-2xl border border-[#2bbcff]/20 bg-gradient-to-br from-card/80 to-background backdrop-blur-md p-6 shadow-xl relative overflow-hidden">
+          {/* Roadmap */}
+          <div className="border-t border-white/5 p-4 sm:p-6">
+            <div className="rounded-xl bg-white/[0.04] p-4 sm:p-6">
             <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 rounded-xl bg-[#2bbcff]/10 flex items-center justify-center flex-shrink-0" aria-hidden="true">
-                <Map className="w-5 h-5 text-[#2bbcff]" />
+              <div className="w-10 h-10 rounded-xl bg-[#0ea5e9]/10 flex items-center justify-center flex-shrink-0" aria-hidden="true">
+                <Map className="w-5 h-5 text-[#0ea5e9]" />
               </div>
               <div>
                 <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Challenge roadmap</div>
@@ -323,11 +322,11 @@ export default function ChallengeDetailPage() {
             </div>
             <div className="space-y-3">
               {challenge.roadmap.map((week, index) => (
-                <div key={week.id} className="glass-card rounded-xl border border-white/5 bg-card/30 backdrop-blur-sm overflow-hidden">
+                <div key={week.id} className="rounded-xl bg-white/[0.04] overflow-hidden">
                   <div
                     className={`p-4 ${
                       week.status === "in_progress"
-                        ? "bg-[#2bbcff]/5 border-b border-[#2bbcff]/20"
+                        ? "bg-[#0ea5e9]/5 border-b border-[#0ea5e9]/20"
                         : week.status === "completed"
                           ? "bg-green-500/5 border-b border-green-500/20"
                           : "border-b border-white/5"
@@ -338,7 +337,7 @@ export default function ChallengeDetailPage() {
                         <div
                           className={`w-8 h-8 rounded-xl flex items-center justify-center text-sm font-bold ${
                             week.status === "in_progress"
-                              ? "bg-[#2bbcff]/20 text-[#2bbcff]"
+                              ? "bg-[#0ea5e9]/20 text-[#0ea5e9]"
                               : week.status === "completed"
                                 ? "bg-green-500/20 text-green-500"
                                 : "bg-white/5 text-muted-foreground"
@@ -388,13 +387,15 @@ export default function ChallengeDetailPage() {
                 </div>
               ))}
             </div>
+            </div>
           </div>
 
-          {/* Requirements - home UI style */}
-          <div className="glass-card rounded-2xl border border-[#2bbcff]/20 bg-gradient-to-br from-card/80 to-background backdrop-blur-md p-6 shadow-xl">
+          {/* Requirements */}
+          <div className="border-t border-white/5 p-4 sm:p-6">
+            <div className="rounded-xl bg-white/[0.04] p-4 sm:p-6">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-xl bg-[#2bbcff]/10 flex items-center justify-center flex-shrink-0" aria-hidden="true">
-                <FileCheck className="w-5 h-5 text-[#2bbcff]" />
+              <div className="w-10 h-10 rounded-xl bg-[#0ea5e9]/10 flex items-center justify-center flex-shrink-0" aria-hidden="true">
+                <FileCheck className="w-5 h-5 text-[#0ea5e9]" />
               </div>
               <div>
                 <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Challenge requirements</div>
@@ -403,12 +404,13 @@ export default function ChallengeDetailPage() {
             </div>
             <ul className="space-y-3">
               {challenge.requirements.map((req, i) => (
-                <li key={i} className="flex items-start gap-3 p-3 rounded-xl bg-white/5 border border-white/5">
-                  <AlertCircle className="w-4 h-4 text-[#2bbcff] mt-0.5 flex-shrink-0" aria-hidden="true" />
+                <li key={i} className="flex items-start gap-3 p-3 rounded-xl bg-white/[0.04]">
+                  <AlertCircle className="w-4 h-4 text-[#0ea5e9] mt-0.5 flex-shrink-0" aria-hidden="true" />
                   <span className="text-sm text-muted-foreground leading-relaxed">{req}</span>
                 </li>
               ))}
             </ul>
+            </div>
           </div>
         </div>
       </section>
@@ -420,7 +422,7 @@ export default function ChallengeDetailPage() {
           onClick={() => setShowUploadProof(false)}
         >
           <div
-            className="glass-card rounded-t-2xl sm:rounded-2xl border-0 sm:border border-[#2bbcff]/20 bg-card/95 backdrop-blur-xl p-6 max-w-md w-full shadow-2xl"
+            className="rounded-t-2xl sm:rounded-2xl border-0 sm:border border-[#0ea5e9]/20 bg-[#0c1525]/95 backdrop-blur-xl p-6 max-w-md w-full shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] mb-0.5">Submit proof</div>
@@ -430,14 +432,14 @@ export default function ChallengeDetailPage() {
                 <label className="text-[10px] text-muted-foreground mb-1 block">Upload Screenshot/Photo</label>
                 <input
                   type="file"
-                  className="w-full text-[10px] text-foreground file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-[10px] file:font-medium file:bg-[#2bbcff]/10 file:text-[#2bbcff] hover:file:bg-[#2bbcff]/20"
+                  className="w-full text-[10px] text-foreground file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-[10px] file:font-medium file:bg-[#0ea5e9]/10 file:text-[#0ea5e9] hover:file:bg-[#0ea5e9]/20"
                 />
               </div>
               <div>
                 <label className="text-[10px] text-muted-foreground mb-1 block">Description</label>
                 <textarea
                   placeholder="Describe what you completed..."
-                  className="w-full p-2 rounded-lg bg-background/50 border border-border/50 text-xs text-foreground placeholder:text-muted-foreground resize-none focus:border-[#2bbcff]/50 focus:outline-none"
+                  className="w-full p-2 rounded-lg bg-background/50 border border-border/50 text-xs text-foreground placeholder:text-muted-foreground resize-none focus:border-[#0ea5e9]/50 focus:outline-none"
                   rows={3}
                 />
               </div>
@@ -449,7 +451,7 @@ export default function ChallengeDetailPage() {
                 >
                   Cancel
                 </Button>
-                <Button className="flex-1 bg-gradient-to-r from-[#2bbcff] to-[#a855f7] hover:opacity-90 text-white text-[10px] h-9 font-bold uppercase tracking-wider border-0">
+                <Button className="flex-1 min-h-[44px] bg-gradient-to-r from-[#ea580c] to-[#fb923c] hover:opacity-90 text-white text-[10px] font-bold uppercase tracking-wider border-0 touch-manipulation">
                   Submit
                 </Button>
               </div>

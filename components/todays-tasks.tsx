@@ -13,9 +13,10 @@ interface Task {
 
 interface TodaysTasksProps {
   tasks: Task[]
+  embedded?: boolean
 }
 
-export function TodaysTasks({ tasks }: TodaysTasksProps) {
+export function TodaysTasks({ tasks, embedded }: TodaysTasksProps) {
   const [completedTasks, setCompletedTasks] = useState<Set<string>>(new Set())
 
   const toggleTask = (taskId: string) => {
@@ -30,11 +31,11 @@ export function TodaysTasks({ tasks }: TodaysTasksProps) {
 
   const completedCount = tasks.filter((task) => completedTasks.has(task.id)).length
 
-  return (
-    <div className="glass-card rounded-2xl bg-gradient-to-br from-card/80 to-background backdrop-blur-md p-6 shadow-xl relative overflow-hidden mb-8">
+  const content = (
+    <>
       <div className="flex items-center gap-3 mb-4">
-        <div className="w-10 h-10 rounded-xl bg-[#2bbcff]/10 flex items-center justify-center flex-shrink-0" aria-hidden="true">
-          <ListTodo className="w-5 h-5 text-[#2bbcff]" />
+        <div className="w-10 h-10 rounded-xl bg-[#0ea5e9]/10 flex items-center justify-center flex-shrink-0" aria-hidden="true">
+          <ListTodo className="w-5 h-5 text-[#0ea5e9]" />
         </div>
         <div>
           <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Today • Tasks</div>
@@ -53,8 +54,8 @@ export function TodaysTasks({ tasks }: TodaysTasksProps) {
               tabIndex={0}
               onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && toggleTask(task.id)}
               aria-label={isCompleted ? `Mark ${task.title} incomplete` : `Mark ${task.title} complete`}
-              className={`glass-card rounded-xl p-3 transition-all cursor-pointer ${
-                isCompleted ? "bg-green-500/5" : "bg-card/30 backdrop-blur-sm hover:bg-card/40"
+              className={`rounded-xl p-3 transition-all cursor-pointer ${
+                isCompleted ? "bg-green-500/10" : "bg-white/[0.04] hover:bg-white/[0.06]"
               }`}
             >
               <div className="flex items-start gap-3">
@@ -86,6 +87,16 @@ export function TodaysTasks({ tasks }: TodaysTasksProps) {
           )
         })}
       </div>
+    </>
+  )
+
+  if (embedded) {
+    return <div className="py-6">{content}</div>
+  }
+
+  return (
+    <div className="glass-card rounded-2xl bg-gradient-to-br from-[#0c1525]/90 via-[#0a0a12]/95 to-[#151008]/90 backdrop-blur-xl p-6 shadow-xl relative overflow-hidden mb-8">
+      {content}
     </div>
   )
 }

@@ -166,7 +166,7 @@ export default function ChallengeRoadmapPage() {
 
   if (!challenge) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center pb-20">
+      <div className="min-h-screen bg-gradient-to-r from-[#0c1525] via-[#0a0a12] to-[#151008] flex items-center justify-center pb-20 px-4">
         <div className="text-center">
           <h1 className="text-2xl font-bold mb-4">Challenge not found</h1>
           <Button asChild>
@@ -178,128 +178,121 @@ export default function ChallengeRoadmapPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-20">
-      {/* Hero header - same style as home page */}
-      <section className="container mx-auto px-4 pt-6 md:pt-8 pb-4">
-        <div className="max-w-7xl mx-auto">
-          <div className="glass-card rounded-2xl border border-[#2bbcff]/20 bg-gradient-to-br from-card/80 to-background backdrop-blur-md p-6 md:p-8 shadow-2xl relative overflow-hidden">
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-64 bg-gradient-to-r from-[#2bbcff]/20 to-[#a855f7]/20 blur-[100px] rounded-full -z-10" aria-hidden="true" />
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <div className="flex items-start gap-3">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => router.back()}
-                  className="h-9 w-9 p-0 rounded-xl shrink-0"
-                  aria-label="Back to challenges"
-                >
-                  <ArrowLeft className="w-4 h-4" />
-                </Button>
-                <div>
-                  <nav className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] mb-1" aria-label="Breadcrumb">
-                    <Link href="/challenges" className="hover:text-[#2bbcff] transition-colors">Challenges</Link>
-                    <span className="mx-1.5" aria-hidden="true">/</span>
-                    <Link href={`/challenges/${challengeId}`} className="hover:text-[#2bbcff] transition-colors">{challenge.name}</Link>
-                    <span className="mx-1.5" aria-hidden="true">/</span>
-                    <span className="text-foreground">Roadmap</span>
-                  </nav>
-                  <h1 className="text-xl md:text-2xl font-black bg-gradient-to-r from-[#2bbcff] via-[#a855f7] to-[#2bbcff] bg-clip-text text-transparent leading-tight">
-                    {challenge.name}
-                  </h1>
-                  <p className="text-sm text-muted-foreground mt-2 leading-relaxed max-w-xl">
-                    {challenge.description}
-                  </p>
-                  <div className="flex items-center gap-2 flex-wrap mt-3">
-                    <Badge variant="secondary" className="bg-[#2bbcff]/10 text-[#2bbcff] border-[#2bbcff]/30 text-[10px] font-bold uppercase tracking-wider">
-                      <Clock className="w-2.5 h-2.5 mr-0.5" aria-hidden="true" />
-                      {challenge.timeEstimate}
-                    </Badge>
-                    <Badge variant="secondary" className="bg-[#a855f7]/10 text-[#a855f7] border-[#a855f7]/30 text-[10px] font-bold uppercase tracking-wider">
-                      <Trophy className="w-2.5 h-2.5 mr-0.5" aria-hidden="true" />
-                      Difficulty {challenge.difficulty}/5
-                    </Badge>
-                  </div>
-                </div>
-              </div>
+    <div className="min-h-screen bg-gradient-to-r from-[#0c1525] via-[#0a0a12] to-[#151008] pb-20">
+      <section className="container mx-auto px-4 pt-4 sm:pt-6 md:pt-8 pb-4 sm:pb-6">
+        <div className="max-w-7xl mx-auto rounded-2xl bg-gradient-to-br from-[#0c1525]/95 via-[#0a0a12]/98 to-[#151008]/95 backdrop-blur-xl shadow-2xl overflow-hidden relative">
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-64 bg-gradient-to-r from-[#ea580c]/10 via-[#fb923c]/15 to-[#facc15]/10 blur-[100px] rounded-full -z-10 pointer-events-none" aria-hidden="true" />
+
+          {/* Hero */}
+          <div className="p-4 sm:p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex items-start gap-3">
               <Button
-                asChild
+                variant="ghost"
                 size="sm"
-                className="bg-gradient-to-r from-[#2bbcff] to-[#a855f7] hover:opacity-90 text-white border-0 text-[10px] h-9 font-bold uppercase tracking-wider shrink-0"
+                onClick={() => router.back()}
+                className="h-10 w-10 min-h-[44px] min-w-[44px] p-0 rounded-xl shrink-0 touch-manipulation"
+                aria-label="Back to challenges"
               >
-                <Link href={`/challenges/${challengeId}`} aria-label="Back to challenge details">Challenge details</Link>
+                <ArrowLeft className="w-4 h-4" />
               </Button>
+              <div>
+                <nav className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] mb-1" aria-label="Breadcrumb">
+                  <Link href="/challenges" className="hover:text-[#0ea5e9] transition-colors">Challenges</Link>
+                  <span className="mx-1.5" aria-hidden="true">/</span>
+                  <Link href={`/challenges/${challengeId}`} className="hover:text-[#0ea5e9] transition-colors">{challenge.name}</Link>
+                  <span className="mx-1.5" aria-hidden="true">/</span>
+                  <span className="text-foreground">Roadmap</span>
+                </nav>
+                <h1 className="text-xl md:text-2xl font-black bg-gradient-to-r from-[#ea580c] via-[#fb923c] to-[#facc15] bg-clip-text text-transparent leading-tight">
+                  {challenge.name}
+                </h1>
+                <p className="text-sm text-muted-foreground mt-2 leading-relaxed max-w-xl">
+                  {challenge.description}
+                </p>
+                <div className="flex items-center gap-2 flex-wrap mt-3">
+                  <Badge variant="secondary" className="bg-[#0ea5e9]/10 text-[#0ea5e9] border-[#0ea5e9]/30 text-[10px] font-bold uppercase tracking-wider">
+                    <Clock className="w-2.5 h-2.5 mr-0.5" aria-hidden="true" />
+                    {challenge.timeEstimate}
+                  </Badge>
+                  <Badge variant="secondary" className="bg-[#fb923c]/10 text-[#fb923c] border-[#fb923c]/30 text-[10px] font-bold uppercase tracking-wider">
+                    <Trophy className="w-2.5 h-2.5 mr-0.5" aria-hidden="true" />
+                    Difficulty {challenge.difficulty}/5
+                  </Badge>
+                </div>
+              </div>
             </div>
+            <Button
+              asChild
+              size="sm"
+              className="min-h-[44px] bg-gradient-to-r from-[#ea580c] to-[#fb923c] hover:opacity-90 text-white border-0 text-[10px] font-bold uppercase tracking-wider shrink-0 touch-manipulation"
+            >
+              <Link href={`/challenges/${challengeId}`} aria-label="Back to challenge details">Challenge details</Link>
+            </Button>
           </div>
-        </div>
-      </section>
 
-      {/* Main Content - home UI section cards */}
-      <section className="container mx-auto px-4 py-6 md:py-8">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Main Column */}
-            <div className="lg:col-span-2 space-y-8">
-              {/* Active Milestone - home UI style */}
-              <div className="glass-card rounded-2xl border border-[#2bbcff]/20 bg-gradient-to-br from-card/80 to-background backdrop-blur-md p-6 shadow-xl relative overflow-hidden">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-10 h-10 rounded-xl bg-[#2bbcff]/10 flex items-center justify-center flex-shrink-0" aria-hidden="true">
-                    <Trophy className="w-5 h-5 text-[#2bbcff]" />
+          {/* Main Content */}
+          <div className="border-t border-white/5 p-4 sm:p-6 md:p-8">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
+              <div className="lg:col-span-2 space-y-6 md:space-y-8">
+                {/* Active Milestone */}
+                <div className="rounded-xl bg-white/[0.04] p-4 sm:p-6">
+                  <div className="flex items-center gap-3 mb-4 sm:mb-6">
+                    <div className="w-10 h-10 rounded-xl bg-[#0ea5e9]/10 flex items-center justify-center flex-shrink-0" aria-hidden="true">
+                      <Trophy className="w-5 h-5 text-[#0ea5e9]" />
+                    </div>
+                    <div>
+                      <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Active milestone</div>
+                      <div className="text-base font-bold text-foreground">Current focus</div>
+                    </div>
                   </div>
-                  <div>
-                    <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Active milestone</div>
-                    <div className="text-base font-bold text-foreground">Current focus</div>
+                  {challenge.milestones
+                    .filter((m) => m.status === "active")
+                    .map((milestone) => (
+                      <MilestoneCard
+                        key={milestone.id}
+                        title={milestone.title}
+                        description={milestone.description}
+                        tasks={milestone.tasks}
+                        status={milestone.status}
+                        progress={milestone.progress}
+                      />
+                    ))}
+                </div>
+
+                <PathTimeline phases={challenge.phases} />
+
+                {/* All Milestones */}
+                <div className="rounded-xl bg-white/[0.04] p-4 sm:p-6">
+                  <div className="flex items-center gap-3 mb-4 sm:mb-6">
+                    <div className="w-10 h-10 rounded-xl bg-[#fb923c]/10 flex items-center justify-center flex-shrink-0" aria-hidden="true">
+                      <Trophy className="w-5 h-5 text-[#fb923c]" />
+                    </div>
+                    <div>
+                      <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">All milestones</div>
+                      <div className="text-base font-bold text-foreground">Full path overview</div>
+                    </div>
+                  </div>
+                  <div className="space-y-4">
+                    {challenge.milestones.map((milestone) => (
+                      <MilestoneCard
+                        key={milestone.id}
+                        title={milestone.title}
+                        description={milestone.description}
+                        tasks={milestone.tasks}
+                        status={milestone.status}
+                        progress={milestone.progress}
+                      />
+                    ))}
                   </div>
                 </div>
-                {challenge.milestones
-                  .filter((m) => m.status === "active")
-                  .map((milestone) => (
-                    <MilestoneCard
-                      key={milestone.id}
-                      title={milestone.title}
-                      description={milestone.description}
-                      tasks={milestone.tasks}
-                      status={milestone.status}
-                      progress={milestone.progress}
-                    />
-                  ))}
+
+                <SkillsProgress skills={challenge.skills} />
               </div>
 
-              {/* Path Timeline - home UI style wrapper */}
-              <PathTimeline phases={challenge.phases} />
-
-              {/* All Milestones - home UI style */}
-              <div className="glass-card rounded-2xl border border-[#2bbcff]/20 bg-gradient-to-br from-card/80 to-background backdrop-blur-md p-6 shadow-xl relative overflow-hidden">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-10 h-10 rounded-xl bg-[#a855f7]/10 flex items-center justify-center flex-shrink-0" aria-hidden="true">
-                    <Trophy className="w-5 h-5 text-[#a855f7]" />
-                  </div>
-                  <div>
-                    <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">All milestones</div>
-                    <div className="text-base font-bold text-foreground">Full path overview</div>
-                  </div>
+              <div className="lg:col-span-1">
+                <div className="sticky top-24">
+                  <DailyTasks tasks={challenge.dailyTasks} />
                 </div>
-                <div className="space-y-4">
-                  {challenge.milestones.map((milestone) => (
-                    <MilestoneCard
-                      key={milestone.id}
-                      title={milestone.title}
-                      description={milestone.description}
-                      tasks={milestone.tasks}
-                      status={milestone.status}
-                      progress={milestone.progress}
-                    />
-                  ))}
-                </div>
-              </div>
-
-              {/* Skills to Build - home UI style wrapper */}
-              <SkillsProgress skills={challenge.skills} />
-            </div>
-
-            {/* Sidebar - Daily Tasks */}
-            <div className="lg:col-span-1">
-              <div className="sticky top-24">
-                <DailyTasks tasks={challenge.dailyTasks} />
               </div>
             </div>
           </div>

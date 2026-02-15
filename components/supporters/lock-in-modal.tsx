@@ -76,50 +76,55 @@ export function LockInModal({ open, onOpenChange, challengeName, onLockIn, onSki
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md bg-card/95 backdrop-blur-xl border-[#2bbcff]/30">
-        <DialogHeader>
-          <DialogTitle className="text-xl font-bold">Lock in your challenge</DialogTitle>
-          <DialogDescription className="text-xs text-muted-foreground">
-            You're about to start <span className="text-[#2bbcff] font-medium">{challengeName}</span>
+      <DialogContent className="w-[calc(100vw-1.5rem)] max-w-md bg-[#0c1525]/95 backdrop-blur-xl border-[#0ea5e9]/30 rounded-2xl p-4 sm:p-6 max-h-[90dvh] overflow-y-auto overscroll-contain">
+        <DialogHeader className="space-y-1 sm:space-y-2">
+          <DialogTitle className="text-base sm:text-xl font-bold leading-tight">
+            Lock in your challenge
+          </DialogTitle>
+          <DialogDescription className="text-[11px] sm:text-xs text-muted-foreground leading-relaxed">
+            You&apos;re about to start <span className="text-[#0ea5e9] font-medium">{challengeName}</span>
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-4">
-          {/* Supporters Section */}
-          <div className="space-y-3">
+        <div className="space-y-3 sm:space-y-4 py-3 sm:py-4">
+          {/* Supporters toggle - clear tap target */}
+          <div className="space-y-2 sm:space-y-3">
             <button
               type="button"
               onClick={() => setShowSupporters(!showSupporters)}
-              className="w-full flex items-center justify-between p-3 rounded-lg bg-[#a855f7]/5 border border-[#a855f7]/20 hover:border-[#a855f7]/40 transition-all"
+              className="w-full flex items-center justify-between gap-2 py-3 px-3 rounded-xl bg-[#fb923c]/10 border border-[#fb923c]/20 active:border-[#fb923c]/40 transition-all touch-manipulation min-h-[44px] text-left"
+              aria-expanded={showSupporters}
+              aria-controls="supporters-content"
+              id="supporters-toggle"
             >
-              <div className="flex items-center gap-2">
-                <Users className="w-4 h-4 text-[#a855f7]" />
-                <span className="text-sm font-medium">Add Supporters (optional)</span>
+              <div className="flex items-center gap-2 min-w-0">
+                <Users className="w-4 h-4 shrink-0 text-[#fb923c]" aria-hidden="true" />
+                <span className="text-xs sm:text-sm font-medium truncate">Add Supporters (optional)</span>
               </div>
               {showSupporters ? (
-                <ChevronUp className="w-4 h-4 text-muted-foreground" />
+                <ChevronUp className="w-4 h-4 shrink-0 text-muted-foreground" aria-hidden="true" />
               ) : (
-                <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                <ChevronDown className="w-4 h-4 shrink-0 text-muted-foreground" aria-hidden="true" />
               )}
             </button>
 
             {showSupporters && (
-              <div className="space-y-3 pl-1">
-                <p className="text-[10px] text-muted-foreground leading-relaxed">
-                  Invite 1-3 friends to hold you accountable. They'll receive notifications on your progress.
+              <div id="supporters-content" role="region" aria-labelledby="supporters-toggle" className="space-y-3 pl-0">
+                <p className="text-[10px] sm:text-[11px] text-muted-foreground leading-relaxed">
+                  Invite 1–3 friends to hold you accountable. They&apos;ll get notifications on your progress.
                 </p>
 
-                {/* Email Input */}
+                {/* Email row - full-width on mobile */}
                 <div className="flex gap-2">
-                  <div className="relative flex-1">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                  <div className="relative flex-1 min-w-0">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" aria-hidden="true" />
                     <Input
                       type="email"
                       placeholder="friend@example.com"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       onKeyDown={(e) => e.key === "Enter" && handleAddSupporter()}
-                      className="pl-9 h-9 text-xs bg-background/50 border-border/50"
+                      className="pl-9 min-h-[44px] h-11 text-[13px] sm:text-sm bg-white/[0.04] border-white/10 rounded-xl touch-manipulation placeholder:text-muted-foreground"
                       disabled={supporters.length >= 3}
                     />
                   </div>
@@ -128,7 +133,7 @@ export function LockInModal({ open, onOpenChange, challengeName, onLockIn, onSki
                     size="sm"
                     onClick={handleAddSupporter}
                     disabled={supporters.length >= 3}
-                    className="h-9 px-4 bg-[#a855f7] hover:bg-[#a855f7]/90 text-white text-xs"
+                    className="min-h-[44px] h-11 px-4 bg-[#fb923c] hover:bg-[#fb923c]/90 text-white text-xs font-medium rounded-xl touch-manipulation shrink-0"
                   >
                     Invite
                   </Button>
@@ -136,25 +141,26 @@ export function LockInModal({ open, onOpenChange, challengeName, onLockIn, onSki
 
                 {error && <p className="text-[10px] text-red-500">{error}</p>}
 
-                {/* Invited List */}
+                {/* Invited list - wrap badges, larger remove tap */}
                 {supporters.length > 0 && (
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-1.5 sm:gap-2">
                     {supporters.map((supporter) => (
                       <Badge
                         key={supporter.email}
                         variant="outline"
-                        className={`text-xs py-1 px-2 flex items-center gap-1.5 ${
+                        className={`text-[10px] sm:text-xs py-1.5 px-2.5 flex items-center gap-1.5 max-w-full ${
                           supporter.status === "accepted"
                             ? "border-green-500/30 bg-green-500/10 text-green-500"
                             : "border-orange-500/30 bg-orange-500/10 text-orange-500"
                         }`}
                       >
-                        <Clock className="w-3 h-3" />
-                        <span className="max-w-[120px] truncate">{supporter.email}</span>
+                        <Clock className="w-3 h-3 shrink-0" aria-hidden="true" />
+                        <span className="min-w-0 truncate max-w-[140px] sm:max-w-[160px]">{supporter.email}</span>
                         <button
                           type="button"
                           onClick={() => handleRemoveSupporter(supporter.email)}
-                          className="ml-1 hover:opacity-70"
+                          className="ml-0.5 p-1 -m-1 rounded min-h-[28px] min-w-[28px] flex items-center justify-center active:opacity-70 touch-manipulation"
+                          aria-label={`Remove ${supporter.email}`}
                         >
                           <X className="w-3 h-3" />
                         </button>
@@ -164,17 +170,17 @@ export function LockInModal({ open, onOpenChange, challengeName, onLockIn, onSki
                 )}
 
                 {supporters.length === 0 && (
-                  <div className="text-center py-4 border border-dashed border-border/50 rounded-lg">
-                    <Users className="w-6 h-6 text-muted-foreground mx-auto mb-2 opacity-50" />
+                  <div className="text-center py-3 sm:py-4 rounded-xl border border-dashed border-white/10 bg-white/[0.02]">
+                    <Users className="w-5 h-5 sm:w-6 sm:h-6 text-muted-foreground mx-auto mb-1.5 opacity-50" aria-hidden="true" />
                     <p className="text-[10px] text-muted-foreground">No supporters added yet</p>
                   </div>
                 )}
 
-                {/* Privacy Notice */}
-                <div className="flex items-start gap-2 p-2 rounded-lg bg-muted/30">
-                  <Shield className="w-3.5 h-3.5 text-[#2bbcff] mt-0.5 flex-shrink-0" />
-                  <p className="text-[10px] text-muted-foreground leading-relaxed">
-                    Supporters see status only (not proof) unless you allow. You can change this later.
+                {/* Privacy - compact */}
+                <div className="flex items-start gap-2 p-2.5 rounded-xl bg-white/[0.04]">
+                  <Shield className="w-3.5 h-3.5 text-[#0ea5e9] mt-0.5 flex-shrink-0" aria-hidden="true" />
+                  <p className="text-[10px] sm:text-[11px] text-muted-foreground leading-relaxed">
+                    Supporters see status only unless you allow more. You can change this later.
                   </p>
                 </div>
               </div>
@@ -182,19 +188,19 @@ export function LockInModal({ open, onOpenChange, challengeName, onLockIn, onSki
           </div>
         </div>
 
-        <DialogFooter className="flex-col sm:flex-row gap-2">
+        <DialogFooter className="flex flex-col-reverse sm:flex-row gap-2 pt-1 sm:pt-2 border-t border-white/5">
           <Button
             type="button"
             variant="outline"
             onClick={handleSkip}
-            className="w-full sm:w-auto text-xs h-9 bg-transparent border-border/50 hover:bg-muted/50"
+            className="w-full min-h-[44px] h-11 text-xs font-medium bg-transparent border-white/10 rounded-xl touch-manipulation active:bg-white/[0.06]"
           >
             Skip for now
           </Button>
           <Button
             type="button"
             onClick={handleLockIn}
-            className="w-full sm:w-auto text-xs h-9 bg-gradient-to-r from-[#2bbcff] to-[#a855f7] hover:opacity-90 text-white border-0"
+            className="w-full min-h-[44px] h-11 text-xs font-medium bg-gradient-to-r from-[#ea580c] to-[#fb923c] hover:opacity-90 text-white border-0 rounded-xl touch-manipulation"
           >
             Start Challenge
           </Button>

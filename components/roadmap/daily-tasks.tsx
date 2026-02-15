@@ -35,11 +35,10 @@ export function DailyTasks({ tasks }: DailyTasksProps) {
   const completedCount = tasks.filter((task) => completedTasks.has(task.id)).length
 
   return (
-    <div className="glass-card rounded-2xl border border-[#2bbcff]/20 bg-gradient-to-br from-card/80 to-background backdrop-blur-md p-6 shadow-xl relative overflow-hidden">
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-48 bg-gradient-to-r from-[#2bbcff]/15 to-[#a855f7]/15 blur-[80px] rounded-full -z-10" aria-hidden="true" />
-      <div className="flex items-center gap-3 mb-6">
-        <div className="w-10 h-10 rounded-xl bg-[#2bbcff]/10 flex items-center justify-center flex-shrink-0" aria-hidden="true">
-          <ListTodo className="w-5 h-5 text-[#2bbcff]" />
+    <div className="rounded-xl bg-white/[0.04] p-4 sm:p-6 relative overflow-hidden">
+      <div className="flex items-center gap-3 mb-4 sm:mb-6">
+        <div className="w-10 h-10 rounded-xl bg-[#0ea5e9]/10 flex items-center justify-center flex-shrink-0" aria-hidden="true">
+          <ListTodo className="w-5 h-5 text-[#0ea5e9]" />
         </div>
         <div>
           <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Today • Tasks</div>
@@ -58,10 +57,10 @@ export function DailyTasks({ tasks }: DailyTasksProps) {
               tabIndex={0}
               onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && toggleTask(task.id)}
               aria-label={isCompleted ? `Mark ${task.title} incomplete` : `Mark ${task.title} complete`}
-              className={`glass-card rounded-xl border p-3 transition-all cursor-pointer ${
+              className={`rounded-xl p-3 transition-all cursor-pointer touch-manipulation min-h-[44px] ${
                 isCompleted
-                  ? "border-green-500/20 bg-green-500/5"
-                  : "border-white/5 bg-card/30 backdrop-blur-sm hover:border-[#2bbcff]/30"
+                  ? "bg-green-500/10"
+                  : "bg-white/[0.04] hover:bg-white/[0.06]"
               }`}
             >
               <div className="flex items-start gap-3">
@@ -91,7 +90,7 @@ export function DailyTasks({ tasks }: DailyTasksProps) {
         })}
       </div>
 
-      <Button className="w-full bg-gradient-to-r from-[#2bbcff] to-[#a855f7] hover:opacity-90 text-white border-0 text-[10px] h-9 font-bold uppercase tracking-wider">
+      <Button className="w-full min-h-[44px] bg-gradient-to-r from-[#ea580c] to-[#fb923c] hover:opacity-90 text-white border-0 text-[10px] font-bold uppercase tracking-wider touch-manipulation">
         Start challenge
       </Button>
     </div>

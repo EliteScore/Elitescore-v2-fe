@@ -326,20 +326,21 @@ export default function ChallengesPage() {
   }
 
   return (
-    <div className="min-h-[100dvh] sm:min-h-screen bg-background pb-[max(5rem,calc(5rem+env(safe-area-inset-bottom)))] pt-[env(safe-area-inset-top)] overflow-x-hidden">
-      {/* Hero - mobile-first: compact, single column */}
-      <section className="container mx-auto px-3 sm:px-4 pt-4 sm:pt-6 md:pt-8 pb-3 sm:pb-4">
-        <div className="max-w-6xl mx-auto">
-          <div className="glass-card rounded-xl sm:rounded-2xl border border-[#2bbcff]/20 bg-gradient-to-br from-card/80 to-background backdrop-blur-md p-4 sm:p-6 md:p-8 shadow-xl relative overflow-hidden">
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-48 sm:w-64 h-48 sm:h-64 bg-gradient-to-r from-[#2bbcff]/20 to-[#a855f7]/20 blur-[80px] sm:blur-[100px] rounded-full -z-10" aria-hidden="true" />
+    <div className="min-h-[100dvh] sm:min-h-screen bg-gradient-to-r from-[#0c1525] via-[#0a0a12] to-[#151008] pb-[max(5rem,calc(5rem+env(safe-area-inset-bottom)))] pt-[env(safe-area-inset-top)] overflow-x-hidden">
+      <section className="container mx-auto px-4 sm:px-4 pt-4 sm:pt-6 md:pt-8 pb-4 sm:pb-6">
+        <div className="max-w-6xl mx-auto rounded-2xl bg-gradient-to-br from-[#0c1525]/95 via-[#0a0a12]/98 to-[#151008]/95 backdrop-blur-xl shadow-2xl overflow-hidden relative">
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-64 bg-gradient-to-r from-[#ea580c]/10 via-[#fb923c]/15 to-[#facc15]/10 blur-[100px] rounded-full -z-10 pointer-events-none" aria-hidden="true" />
+
+          {/* Hero */}
+          <div className="p-4 sm:p-6 md:p-8">
             <div className="flex flex-col gap-3 sm:gap-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-[#2bbcff]/10 flex items-center justify-center flex-shrink-0" aria-hidden="true">
-                  <Target className="w-5 h-5 sm:w-6 sm:h-6 text-[#2bbcff]" />
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-[#0ea5e9]/10 flex items-center justify-center flex-shrink-0" aria-hidden="true">
+                  <Target className="w-5 h-5 sm:w-6 sm:h-6 text-[#0ea5e9]" />
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Challenges • Arena</div>
-                  <h1 className="text-lg sm:text-xl md:text-2xl font-black bg-gradient-to-r from-[#2bbcff] via-[#a855f7] to-[#2bbcff] bg-clip-text text-transparent leading-tight truncate sm:truncate-none">
+                  <h1 className="text-lg sm:text-xl md:text-2xl font-black bg-gradient-to-r from-[#ea580c] via-[#fb923c] to-[#facc15] bg-clip-text text-transparent leading-tight truncate sm:truncate-none">
                     Your commitments
                   </h1>
                 </div>
@@ -349,31 +350,29 @@ export default function ChallengesPage() {
               </p>
             </div>
           </div>
-        </div>
-      </section>
 
-      {/* Main Content - mobile: full width, touch-friendly tabs */}
-      <section className="container mx-auto px-3 sm:px-4 pb-6 sm:pb-12 md:pb-16">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="max-w-6xl mx-auto">
-          <TabsList className="grid w-full grid-cols-3 mb-4 sm:mb-6 md:mb-8 glass-card rounded-xl border border-white/10 bg-card/40 backdrop-blur-sm min-h-[44px] sm:h-11 p-1 touch-manipulation">
-            <TabsTrigger value="active" className="text-[10px] sm:text-xs font-bold uppercase tracking-wider data-[state=active]:bg-[#2bbcff]/20 data-[state=active]:text-[#2bbcff] rounded-lg min-h-[40px] sm:min-h-0 py-2.5 sm:py-0 touch-manipulation">
-              Active
-            </TabsTrigger>
-            <TabsTrigger value="library" className="text-[10px] sm:text-xs font-bold uppercase tracking-wider data-[state=active]:bg-[#a855f7]/20 data-[state=active]:text-[#a855f7] rounded-lg min-h-[40px] sm:min-h-0 py-2.5 sm:py-0 touch-manipulation">
-              Library
-            </TabsTrigger>
-            <TabsTrigger value="history" className="text-[10px] sm:text-xs font-bold uppercase tracking-wider data-[state=active]:bg-white/10 data-[state=active]:text-foreground rounded-lg min-h-[40px] sm:min-h-0 py-2.5 sm:py-0 touch-manipulation">
-              History
-            </TabsTrigger>
-          </TabsList>
+          <div className="border-t border-white/5 px-4 sm:px-6 md:px-8 pt-4 pb-2">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsList className="grid w-full grid-cols-3 rounded-xl bg-white/[0.04] min-h-[44px] p-1 gap-1 touch-manipulation">
+                <TabsTrigger value="active" className="text-[10px] sm:text-xs font-bold uppercase tracking-wider data-[state=active]:bg-[#0ea5e9]/20 data-[state=active]:text-[#0ea5e9] rounded-lg min-h-[40px] py-2.5 touch-manipulation">
+                  Active
+                </TabsTrigger>
+                <TabsTrigger value="library" className="text-[10px] sm:text-xs font-bold uppercase tracking-wider data-[state=active]:bg-[#fb923c]/20 data-[state=active]:text-[#fb923c] rounded-lg min-h-[40px] py-2.5 touch-manipulation">
+                  Library
+                </TabsTrigger>
+                <TabsTrigger value="history" className="text-[10px] sm:text-xs font-bold uppercase tracking-wider data-[state=active]:bg-white/10 data-[state=active]:text-foreground rounded-lg min-h-[40px] py-2.5 touch-manipulation">
+                  History
+                </TabsTrigger>
+              </TabsList>
 
           {/* Active Tab: Today's tasks first, then Enrolled challenges */}
-          <TabsContent value="active" className="space-y-5 sm:space-y-8 mt-0">
+          <TabsContent value="active" className="space-y-0 mt-0 px-4 sm:px-6 md:px-8 pb-6 sm:pb-8">
             {/* 1. Today's tasks / Daily assignments */}
-            <div className="glass-card rounded-xl sm:rounded-2xl border border-[#2bbcff]/20 bg-gradient-to-br from-card/80 to-background backdrop-blur-md p-4 sm:p-6 md:p-8 shadow-xl relative overflow-hidden">
+            <div className="pt-4 sm:pt-6 border-t border-white/5 first:border-t-0">
+              <div className="rounded-xl bg-white/[0.04] p-4 sm:p-6">
               <div className="flex items-center gap-3 mb-4 sm:mb-6">
-                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-[#2bbcff]/10 flex items-center justify-center flex-shrink-0" aria-hidden="true">
-                  <ListTodo className="w-4 h-4 sm:w-5 sm:h-5 text-[#2bbcff]" />
+                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-[#0ea5e9]/10 flex items-center justify-center flex-shrink-0" aria-hidden="true">
+                  <ListTodo className="w-4 h-4 sm:w-5 sm:h-5 text-[#0ea5e9]" />
                 </div>
                 <div className="min-w-0">
                   <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Today • Daily tasks</div>
@@ -391,13 +390,13 @@ export default function ChallengesPage() {
                     <Link
                       key={task.id}
                       href={`/challenges/${task.id}`}
-                      className="glass-card rounded-xl border border-white/5 bg-card/30 backdrop-blur-sm p-3.5 sm:p-4 hover:border-[#2bbcff]/30 active:scale-[0.99] transition-all flex items-start gap-3 group block min-h-[56px] touch-manipulation"
+                      className="rounded-xl bg-white/[0.04] p-3.5 sm:p-4 hover:bg-white/[0.06] active:scale-[0.99] transition-all flex items-start gap-3 group block min-h-[56px] touch-manipulation"
                     >
-                      <div className="w-8 h-8 rounded-lg bg-[#2bbcff]/10 flex items-center justify-center flex-shrink-0 group-hover:bg-[#2bbcff]/20 transition-colors" aria-hidden="true">
-                        <Check className="w-4 h-4 text-[#2bbcff]" />
+                      <div className="w-8 h-8 rounded-lg bg-[#0ea5e9]/10 flex items-center justify-center flex-shrink-0 group-hover:bg-[#0ea5e9]/20 transition-colors" aria-hidden="true">
+                        <Check className="w-4 h-4 text-[#0ea5e9]" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-bold text-foreground mb-0.5 group-hover:text-[#2bbcff] transition-colors line-clamp-2">{task.todayTask}</p>
+                        <p className="text-sm font-bold text-foreground mb-0.5 group-hover:text-[#0ea5e9] transition-colors line-clamp-2">{task.todayTask}</p>
                         <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{task.challengeName}</p>
                       </div>
                       <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-0.5" aria-hidden="true" />
@@ -407,20 +406,22 @@ export default function ChallengesPage() {
               ) : (
                 <div className="rounded-xl border border-dashed border-white/10 bg-white/5 p-4 sm:p-6 text-center">
                   <p className="text-sm text-muted-foreground">Enroll in a challenge to see daily tasks here.</p>
-                  <Button size="sm" variant="ghost" className="mt-3 min-h-[44px] text-[#2bbcff] hover:bg-[#2bbcff]/10 touch-manipulation" onClick={() => setActiveTab("library")}>
+                  <Button size="sm" variant="ghost" className="mt-3 min-h-[44px] text-[#0ea5e9] hover:bg-[#0ea5e9]/10 touch-manipulation" onClick={() => setActiveTab("library")}>
                     Browse Library
                     <ChevronRight className="ml-0.5 h-3 w-3" aria-hidden="true" />
                   </Button>
                 </div>
               )}
+              </div>
             </div>
 
             {/* 2. Enrolled challenges */}
-            <div className="glass-card rounded-xl sm:rounded-2xl border border-[#2bbcff]/20 bg-gradient-to-br from-card/80 to-background backdrop-blur-md p-4 sm:p-6 md:p-8 shadow-xl relative overflow-hidden">
+            <div className="pt-4 sm:pt-6 border-t border-white/5">
+              <div className="rounded-xl bg-white/[0.04] p-4 sm:p-6">
               <div className="flex items-center justify-between gap-2 mb-4 sm:mb-6">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-[#2bbcff]/10 flex items-center justify-center flex-shrink-0" aria-hidden="true">
-                    <Trophy className="w-5 h-5 text-[#2bbcff]" />
+                  <div className="w-10 h-10 rounded-xl bg-[#0ea5e9]/10 flex items-center justify-center flex-shrink-0" aria-hidden="true">
+                    <Trophy className="w-5 h-5 text-[#0ea5e9]" />
                   </div>
                   <div>
                     <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Enrolled • Your commitments</div>
@@ -429,7 +430,7 @@ export default function ChallengesPage() {
                 </div>
                 <Badge
                   variant="secondary"
-                  className={activeCount >= MAX_ACTIVE_CHALLENGES ? "bg-orange-500/10 text-orange-500 border-orange-500/30" : "bg-[#2bbcff]/10 text-[#2bbcff] border-[#2bbcff]/30"}
+                  className={activeCount >= MAX_ACTIVE_CHALLENGES ? "bg-orange-500/10 text-orange-500 border-orange-500/30" : "bg-[#0ea5e9]/10 text-[#0ea5e9] border-[#0ea5e9]/30"}
                   aria-label={`${activeCount} of ${MAX_ACTIVE_CHALLENGES} active challenges`}
                 >
                   {activeCount}/{MAX_ACTIVE_CHALLENGES} Active
@@ -437,7 +438,7 @@ export default function ChallengesPage() {
               </div>
 
               {activeCount >= MAX_ACTIVE_CHALLENGES && (
-                <div className="glass-card rounded-xl border border-orange-500/20 bg-orange-500/5 backdrop-blur-sm p-4 mb-6">
+                <div className="rounded-xl bg-orange-500/10 p-4 mb-6">
                   <div className="flex items-start gap-3">
                     <AlertTriangle className="w-5 h-5 text-orange-500 flex-shrink-0 mt-0.5" aria-hidden="true" />
                     <div>
@@ -455,13 +456,13 @@ export default function ChallengesPage() {
                   {activeChallenges.map((challenge) => (
                     <div
                       key={challenge.id}
-                      className="glass-card rounded-xl border border-white/5 bg-card/30 backdrop-blur-sm p-3.5 sm:p-4 hover:border-[#2bbcff]/30 transition-all"
+                      className="rounded-xl bg-white/[0.04] p-3.5 sm:p-4 hover:bg-white/[0.06] transition-all"
                     >
                       <div className="flex items-start justify-between gap-2 mb-2.5 sm:mb-3">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-0.5 flex-wrap">
                             <h3 className="text-sm font-bold text-foreground truncate">{challenge.name}</h3>
-                            <Badge variant="secondary" className="text-[10px] font-bold uppercase tracking-wider bg-[#2bbcff]/10 text-[#2bbcff] border-[#2bbcff]/30 flex-shrink-0">
+                            <Badge variant="secondary" className="text-[10px] font-bold uppercase tracking-wider bg-[#0ea5e9]/10 text-[#0ea5e9] border-[#0ea5e9]/30 flex-shrink-0">
                               Active
                             </Badge>
                           </div>
@@ -473,35 +474,35 @@ export default function ChallengesPage() {
                             Day {challenge.currentDay}/{challenge.totalDays}
                           </div>
                         </div>
-                        <Trophy className="w-5 h-5 text-[#a855f7] flex-shrink-0" aria-hidden="true" />
+                        <Trophy className="w-5 h-5 text-[#fb923c] flex-shrink-0" aria-hidden="true" />
                       </div>
 
                       <div className="space-y-2 sm:space-y-3 mb-3 sm:mb-4">
-                        <div className="glass-card rounded-lg border border-white/5 bg-white/5 p-2 sm:p-2.5">
+                        <div className="rounded-lg bg-white/[0.04] p-2 sm:p-2.5">
                           <div className="flex items-center justify-between gap-1.5 mb-1">
                             <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Progress</span>
                             <span className="text-xs font-bold text-foreground">{challenge.progress}%</span>
                           </div>
                           <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
                             <div
-                              className="h-full bg-gradient-to-r from-[#2bbcff] to-[#a855f7] rounded-full transition-all duration-500"
+                              className="h-full bg-gradient-to-r from-[#0ea5e9] to-[#fb923c] rounded-full transition-all duration-500"
                               style={{ width: `${challenge.progress}%` }}
                             />
                           </div>
                         </div>
                         <div className="flex items-center gap-2 text-[10px] text-muted-foreground uppercase tracking-wider">
-                          <Clock className="w-3 h-3 text-[#2bbcff] shrink-0" aria-hidden="true" />
+                          <Clock className="w-3 h-3 text-[#0ea5e9] shrink-0" aria-hidden="true" />
                           {challenge.daysRemaining} days left
                         </div>
                       </div>
 
-                      <div className="glass-card rounded-lg border border-[#2bbcff]/10 bg-[#2bbcff]/5 p-2.5 sm:p-3 mb-3 sm:mb-4">
-                        <div className="text-[10px] font-bold text-[#2bbcff] uppercase tracking-wider mb-0.5">Today&apos;s task</div>
+                      <div className="rounded-lg bg-[#0ea5e9]/10 p-2.5 sm:p-3 mb-3 sm:mb-4">
+                        <div className="text-[10px] font-bold text-[#0ea5e9] uppercase tracking-wider mb-0.5">Today&apos;s task</div>
                         <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">{challenge.todayTask}</p>
                       </div>
 
                       <div className="flex flex-col sm:flex-row gap-2">
-                        <Button size="sm" asChild className="flex-1 min-h-[44px] sm:h-8 bg-gradient-to-r from-[#2bbcff] to-[#a855f7] hover:opacity-90 text-white border-0 text-[10px] font-bold uppercase tracking-wider touch-manipulation">
+                        <Button size="sm" asChild className="flex-1 min-h-[44px] sm:h-8 bg-gradient-to-r from-[#0ea5e9] to-[#fb923c] hover:opacity-90 text-white border-0 text-[10px] font-bold uppercase tracking-wider touch-manipulation">
                           <Link href={`/challenges/${challenge.id}`}>View Details</Link>
                         </Button>
                         <Button
@@ -520,36 +521,38 @@ export default function ChallengesPage() {
                   ))}
                 </div>
               ) : (
-                <div className="glass-card rounded-xl border border-orange-500/20 bg-orange-500/5 backdrop-blur-sm p-5 sm:p-8 text-center">
+                <div className="rounded-xl bg-orange-500/10 p-5 sm:p-8 text-center">
                   <AlertTriangle className="w-10 h-10 sm:w-12 sm:h-12 text-orange-500 mx-auto mb-2 sm:mb-3" aria-hidden="true" />
                   <div className="text-[10px] font-bold text-orange-500 uppercase tracking-wider mb-1">No active challenges</div>
                   <h3 className="text-base sm:text-lg font-bold mb-2">Lock in a challenge</h3>
                   <p className="text-sm text-muted-foreground mb-4">
                     Your credibility grows with finished work. Browse the library and commit.
                   </p>
-                  <Button size="sm" className="min-h-[48px] sm:h-9 bg-gradient-to-r from-[#2bbcff] to-[#a855f7] hover:opacity-90 text-white border-0 text-[10px] font-bold uppercase tracking-wider touch-manipulation" onClick={() => setActiveTab("library")}>
+                  <Button size="sm" className="min-h-[48px] sm:h-9 bg-gradient-to-r from-[#0ea5e9] to-[#fb923c] hover:opacity-90 text-white border-0 text-[10px] font-bold uppercase tracking-wider touch-manipulation" onClick={() => setActiveTab("library")}>
                     Browse Library
                     <ArrowRight className="ml-2 h-3 w-3" aria-hidden="true" />
                   </Button>
                 </div>
               )}
+              </div>
             </div>
           </TabsContent>
 
           {/* Challenge Library Tab */}
-          <TabsContent value="library" className="space-y-5 sm:space-y-8 mt-0">
-            <div className="glass-card rounded-xl sm:rounded-2xl border border-[#a855f7]/20 bg-gradient-to-br from-card/80 to-background backdrop-blur-md p-4 sm:p-6 md:p-8 shadow-xl relative overflow-hidden">
+          <TabsContent value="library" className="mt-0 px-4 sm:px-6 md:px-8 pb-6 sm:pb-8">
+            <div className="pt-4 sm:pt-6 border-t border-white/5">
+              <div className="rounded-xl bg-white/[0.04] p-4 sm:p-6">
               <div className="flex items-center justify-between gap-2 mb-4 sm:mb-6">
                 <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-                  <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-[#a855f7]/10 flex items-center justify-center flex-shrink-0" aria-hidden="true">
-                    <BookOpen className="w-4 h-4 sm:w-5 sm:h-5 text-[#a855f7]" />
+                  <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-[#fb923c]/10 flex items-center justify-center flex-shrink-0" aria-hidden="true">
+                    <BookOpen className="w-4 h-4 sm:w-5 sm:h-5 text-[#fb923c]" />
                   </div>
                   <div className="min-w-0">
                     <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Library • Browse</div>
                     <div className="text-sm sm:text-base font-bold text-foreground truncate">Lock in your next commitment</div>
                   </div>
                 </div>
-                <Button size="sm" variant="ghost" className="text-[10px] min-h-[40px] h-8 font-bold uppercase tracking-wider text-[#a855f7] hover:bg-[#a855f7]/10 px-2.5 sm:px-3 shrink-0 touch-manipulation">
+                <Button size="sm" variant="ghost" className="text-[10px] min-h-[40px] h-8 font-bold uppercase tracking-wider text-[#fb923c] hover:bg-[#fb923c]/10 px-2.5 sm:px-3 shrink-0 touch-manipulation">
                   Filter
                 </Button>
               </div>
@@ -558,18 +561,18 @@ export default function ChallengesPage() {
                 {challengeLibrary.map((challenge) => (
                   <div
                     key={challenge.id}
-                    className="glass-card rounded-xl border border-white/5 bg-card/30 backdrop-blur-sm p-3.5 sm:p-4 hover:border-[#a855f7]/30 active:scale-[0.99] transition-all cursor-pointer group touch-manipulation"
+                    className="rounded-xl bg-white/[0.04] p-3.5 sm:p-4 hover:bg-white/[0.06] active:scale-[0.99] transition-all cursor-pointer group touch-manipulation"
                     onClick={() => setSelectedChallenge(challenge.id)}
                   >
                     <div className="flex items-start gap-2 sm:gap-3 mb-2 sm:mb-3">
-                      <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-[#a855f7]/10 flex items-center justify-center flex-shrink-0 group-hover:bg-[#a855f7]/20 transition-colors" aria-hidden="true">
-                        <Lock className="w-4 h-4 sm:w-5 sm:h-5 text-[#a855f7]" />
+                      <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-[#fb923c]/10 flex items-center justify-center flex-shrink-0 group-hover:bg-[#fb923c]/20 transition-colors" aria-hidden="true">
+                        <Lock className="w-4 h-4 sm:w-5 sm:h-5 text-[#fb923c]" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h3 className="text-sm font-bold text-foreground mb-0.5 group-hover:text-[#a855f7] transition-colors line-clamp-2">
+                        <h3 className="text-sm font-bold text-foreground mb-0.5 group-hover:text-[#fb923c] transition-colors line-clamp-2">
                           {challenge.name}
                         </h3>
-                        <Badge variant="outline" className="text-[10px] font-bold uppercase tracking-wider border-[#a855f7]/30 text-[#a855f7]">
+                        <Badge variant="outline" className="text-[10px] font-bold uppercase tracking-wider border-[#fb923c]/30 text-[#fb923c]">
                           {challenge.track}
                         </Badge>
                       </div>
@@ -587,10 +590,10 @@ export default function ChallengesPage() {
                       {challenge.description}
                     </p>
 
-                    <div className="glass-card rounded-lg border border-white/5 bg-white/5 p-2 sm:p-2.5 mb-3 sm:mb-4">
+                    <div className="rounded-lg bg-white/[0.04] p-2 sm:p-2.5 mb-3 sm:mb-4">
                       <div className="flex items-center justify-between text-[10px]">
                         <span className="text-muted-foreground uppercase tracking-wider">Reward</span>
-                        <span className="font-bold text-[#a855f7]">+{challenge.reward}</span>
+                        <span className="font-bold text-[#fb923c]">+{challenge.reward}</span>
                       </div>
                       <div className="flex items-center justify-between text-[10px] mt-0.5">
                         <span className="text-muted-foreground uppercase tracking-wider">Completion</span>
@@ -600,7 +603,7 @@ export default function ChallengesPage() {
 
                     <Button
                       size="sm"
-                      className="w-full min-h-[44px] sm:h-8 bg-gradient-to-r from-[#a855f7] to-[#2bbcff] hover:opacity-90 text-white border-0 text-[10px] font-bold uppercase tracking-wider disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation"
+                      className="w-full min-h-[44px] sm:h-8 bg-gradient-to-r from-[#fb923c] to-[#0ea5e9] hover:opacity-90 text-white border-0 text-[10px] font-bold uppercase tracking-wider disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation"
                       onClick={(e) => {
                         e.stopPropagation()
                         setSelectedChallenge(challenge.id)
@@ -619,15 +622,17 @@ export default function ChallengesPage() {
                   </div>
                 ))}
               </div>
+              </div>
             </div>
           </TabsContent>
 
           {/* Challenge History Tab */}
-          <TabsContent value="history" className="space-y-5 sm:space-y-8 mt-0">
-            <div className="glass-card rounded-xl sm:rounded-2xl border border-[#2bbcff]/20 bg-gradient-to-br from-card/80 to-background backdrop-blur-md p-4 sm:p-6 md:p-8 shadow-xl relative overflow-hidden">
+          <TabsContent value="history" className="mt-0 px-4 sm:px-6 md:px-8 pb-6 sm:pb-8">
+            <div className="pt-4 sm:pt-6 border-t border-white/5">
+              <div className="rounded-xl bg-white/[0.04] p-4 sm:p-6">
               <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
-                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-[#2bbcff]/10 flex items-center justify-center flex-shrink-0" aria-hidden="true">
-                  <History className="w-4 h-4 sm:w-5 sm:h-5 text-[#2bbcff]" />
+                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-[#0ea5e9]/10 flex items-center justify-center flex-shrink-0" aria-hidden="true">
+                  <History className="w-4 h-4 sm:w-5 sm:h-5 text-[#0ea5e9]" />
                 </div>
                 <div className="min-w-0">
                   <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">History • Completed & Failed</div>
@@ -639,7 +644,7 @@ export default function ChallengesPage() {
                 {historyChallenges.map((challenge) => (
                   <div
                     key={challenge.id}
-                    className="glass-card rounded-xl border border-white/5 bg-card/30 backdrop-blur-sm p-3.5 sm:p-4 hover:border-white/10 transition-all"
+                    className="rounded-xl bg-white/[0.04] p-3.5 sm:p-4 hover:bg-white/[0.06] transition-all"
                   >
                     <div className="flex items-center gap-3 sm:gap-4 flex-wrap sm:flex-nowrap">
                       {challenge.status === "completed" ? (
@@ -686,7 +691,7 @@ export default function ChallengesPage() {
                           {challenge.eliteScoreImpact} EliteScore
                         </div>
                         {challenge.streakBonus !== "0" && (
-                          <div className="flex items-center justify-end gap-0.5 text-[10px] text-[#2bbcff] uppercase tracking-wider mt-0.5">
+                          <div className="flex items-center justify-end gap-0.5 text-[10px] text-[#0ea5e9] uppercase tracking-wider mt-0.5">
                             <Flame className="w-2.5 h-2.5" aria-hidden="true" />
                             {challenge.streakBonus} streak bonus
                           </div>
@@ -696,9 +701,12 @@ export default function ChallengesPage() {
                   </div>
                 ))}
               </div>
+              </div>
             </div>
           </TabsContent>
         </Tabs>
+          </div>
+        </div>
       </section>
 
       {/* Challenge Detail Modal - full screen on mobile */}
@@ -708,13 +716,13 @@ export default function ChallengesPage() {
           onClick={() => setSelectedChallenge(null)}
         >
           <div
-            className="glass-card rounded-t-2xl sm:rounded-2xl border-0 sm:border border-[#a855f7]/30 bg-card/95 backdrop-blur-xl p-4 sm:p-6 max-w-2xl w-full max-h-[92dvh] sm:max-h-[85vh] overflow-y-auto overscroll-contain touch-manipulation"
+            className="glass-card rounded-t-2xl sm:rounded-2xl border-0 sm:border border-[#fb923c]/30 bg-card/95 backdrop-blur-xl p-4 sm:p-6 max-w-2xl w-full max-h-[92dvh] sm:max-h-[85vh] overflow-y-auto overscroll-contain touch-manipulation"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-start justify-between gap-2 mb-4 pb-2 border-b border-white/10">
               <div className="flex-1 min-w-0">
                 <h2 className="text-lg sm:text-2xl font-bold mb-1 leading-tight">{selectedChallengeData?.name}</h2>
-                <Badge variant="outline" className="text-[10px] sm:text-xs border-[#a855f7]/30 text-[#a855f7]">
+                <Badge variant="outline" className="text-[10px] sm:text-xs border-[#fb923c]/30 text-[#fb923c]">
                   {selectedChallengeData?.track}
                 </Badge>
               </div>
@@ -734,7 +742,7 @@ export default function ChallengesPage() {
 
               <div>
                 <h3 className="text-sm font-bold mb-2">Daily Requirement</h3>
-                <div className="bg-[#2bbcff]/5 rounded-lg p-4 border border-[#2bbcff]/20">
+                <div className="bg-[#0ea5e9]/5 rounded-lg p-4 border border-[#0ea5e9]/20">
                   <p className="text-sm font-medium leading-relaxed">{selectedChallengeData?.description}</p>
                 </div>
               </div>
@@ -776,7 +784,7 @@ export default function ChallengesPage() {
                 </div>
                 <div className="p-2 sm:p-0">
                   <p className="text-[10px] sm:text-xs text-muted-foreground mb-0.5">Base Reward</p>
-                  <p className="text-sm font-bold text-[#a855f7]">+{selectedChallengeData?.reward}</p>
+                  <p className="text-sm font-bold text-[#fb923c]">+{selectedChallengeData?.reward}</p>
                 </div>
                 <div className="p-2 sm:p-0">
                   <p className="text-[10px] sm:text-xs text-muted-foreground mb-0.5">Completion</p>
@@ -786,7 +794,7 @@ export default function ChallengesPage() {
 
               <Button
                 size="lg"
-                className="w-full min-h-[48px] sm:h-11 bg-gradient-to-r from-[#a855f7] to-[#2bbcff] hover:opacity-90 text-white border-0 text-sm font-bold disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation"
+                className="w-full min-h-[48px] sm:h-11 bg-gradient-to-r from-[#fb923c] to-[#0ea5e9] hover:opacity-90 text-white border-0 text-sm font-bold disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation"
                 onClick={handleLockInStart}
                 disabled={!canJoinChallenge || isAlreadyEnrolled}
               >
@@ -817,14 +825,14 @@ export default function ChallengesPage() {
             onClick={(e) => e.stopPropagation()}
           >
             {/* Animated Background Glow */}
-            <div className="absolute -top-20 -left-20 w-40 h-40 bg-[#a855f7]/30 rounded-full blur-[80px] animate-pulse pointer-events-none" aria-hidden="true" />
-            <div className="absolute -bottom-20 -right-20 w-40 h-40 bg-[#2bbcff]/30 rounded-full blur-[80px] animate-pulse pointer-events-none" aria-hidden="true" />
+            <div className="absolute -top-20 -left-20 w-40 h-40 bg-[#fb923c]/30 rounded-full blur-[80px] animate-pulse pointer-events-none" aria-hidden="true" />
+            <div className="absolute -bottom-20 -right-20 w-40 h-40 bg-[#0ea5e9]/30 rounded-full blur-[80px] animate-pulse pointer-events-none" aria-hidden="true" />
             
             <div className="relative glass-card rounded-t-2xl sm:rounded-3xl border-0 sm:border border-white/10 bg-card/95 backdrop-blur-2xl overflow-hidden flex flex-col max-h-[96dvh] sm:max-h-[90vh]">
               {/* Progress Bar */}
               <div className="h-1 bg-white/5 shrink-0" aria-hidden="true">
                 <div 
-                  className="h-full bg-gradient-to-r from-[#a855f7] to-[#2bbcff] transition-all duration-500"
+                  className="h-full bg-gradient-to-r from-[#fb923c] to-[#0ea5e9] transition-all duration-500"
                   style={{ width: lockInStep === "invite" ? "33%" : lockInStep === "confirm" ? "66%" : "100%" }}
                 />
               </div>
@@ -837,8 +845,8 @@ export default function ChallengesPage() {
                     <div className="flex items-start justify-between">
                       <div className="space-y-1">
                         <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#a855f7]/20 to-[#2bbcff]/20 flex items-center justify-center">
-                            <Users className="w-4 h-4 text-[#a855f7]" />
+                          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#fb923c]/20 to-[#0ea5e9]/20 flex items-center justify-center">
+                            <Users className="w-4 h-4 text-[#fb923c]" />
                           </div>
                           <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Step 1 of 2</span>
                         </div>
@@ -856,18 +864,18 @@ export default function ChallengesPage() {
                     </div>
 
                     {/* Challenge Preview Card */}
-                    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#a855f7]/10 to-[#2bbcff]/10 border border-white/10 p-4">
-                      <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-[#a855f7]/20 to-transparent rounded-full blur-2xl -mr-16 -mt-16" />
+                    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#fb923c]/10 to-[#0ea5e9]/10 border border-white/10 p-4">
+                      <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-[#fb923c]/20 to-transparent rounded-full blur-2xl -mr-16 -mt-16" />
                       <div className="relative flex items-center justify-between">
                         <div>
                           <p className="text-xs text-muted-foreground mb-1">You're locking in</p>
                           <h3 className="font-bold">{selectedChallengeData?.name}</h3>
                           <div className="flex items-center gap-3 mt-2">
                             <span className="text-xs text-muted-foreground">{selectedChallengeData?.duration} days</span>
-                            <span className="text-xs text-[#a855f7] font-medium">+{selectedChallengeData?.reward} pts</span>
+                            <span className="text-xs text-[#fb923c] font-medium">+{selectedChallengeData?.reward} pts</span>
                           </div>
                         </div>
-                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#a855f7] to-[#2bbcff] flex items-center justify-center">
+                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#fb923c] to-[#0ea5e9] flex items-center justify-center">
                           <Trophy className="w-6 h-6 text-white" />
                         </div>
                       </div>
@@ -875,7 +883,7 @@ export default function ChallengesPage() {
 
                     {/* Why Supporters Matter */}
                     <div className="flex items-start gap-3 p-4 rounded-xl bg-white/5 border border-white/5">
-                      <div className="w-10 h-10 rounded-full bg-[#2bbcff]/10 flex items-center justify-center flex-shrink-0">
+                      <div className="w-10 h-10 rounded-full bg-[#0ea5e9]/10 flex items-center justify-center flex-shrink-0">
                         <span className="text-lg">💪</span>
                       </div>
                       <div>
@@ -901,14 +909,14 @@ export default function ChallengesPage() {
                             }}
                             onKeyDown={(e) => e.key === "Enter" && addSupporter()}
                             placeholder="friend@email.com"
-                            className="w-full pl-11 pr-4 py-3 text-sm rounded-xl border border-white/10 bg-white/5 focus:outline-none focus:ring-2 focus:ring-[#a855f7]/50 focus:bg-white/10 transition-all"
+                            className="w-full pl-11 pr-4 py-3 text-sm rounded-xl border border-white/10 bg-white/5 focus:outline-none focus:ring-2 focus:ring-[#fb923c]/50 focus:bg-white/10 transition-all"
                           />
                         </div>
                         <Button
                           size="sm"
                           onClick={addSupporter}
                           disabled={supporters.length >= 3}
-                          className="h-12 px-4 bg-gradient-to-r from-[#a855f7] to-[#2bbcff] hover:opacity-90 text-white border-0 rounded-xl"
+                          className="h-12 px-4 bg-gradient-to-r from-[#fb923c] to-[#0ea5e9] hover:opacity-90 text-white border-0 rounded-xl"
                         >
                           <UserPlus className="w-4 h-4" />
                         </Button>
@@ -935,8 +943,8 @@ export default function ChallengesPage() {
                               className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors group"
                             >
                               <div className="flex items-center gap-3">
-                                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#a855f7]/20 to-[#2bbcff]/20 flex items-center justify-center">
-                                  <span className="text-sm font-bold bg-gradient-to-r from-[#a855f7] to-[#2bbcff] bg-clip-text text-transparent">
+                                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#fb923c]/20 to-[#0ea5e9]/20 flex items-center justify-center">
+                                  <span className="text-sm font-bold bg-gradient-to-r from-[#fb923c] to-[#0ea5e9] bg-clip-text text-transparent">
                                     {supporter.email.charAt(0).toUpperCase()}
                                   </span>
                                 </div>
@@ -983,7 +991,7 @@ export default function ChallengesPage() {
                         size="lg"
                         onClick={handleSendInvites}
                         disabled={supporters.length === 0}
-                        className="flex-1 h-12 min-h-[48px] bg-gradient-to-r from-[#2bbcff] to-[#a855f7] hover:opacity-95 text-white border-0 rounded-xl font-bold text-sm shadow-lg shadow-[#2bbcff]/25 disabled:opacity-50 disabled:shadow-none"
+                        className="flex-1 h-12 min-h-[48px] bg-gradient-to-r from-[#0ea5e9] to-[#fb923c] hover:opacity-95 text-white border-0 rounded-xl font-bold text-sm shadow-lg shadow-[#0ea5e9]/25 disabled:opacity-50 disabled:shadow-none"
                         aria-label="Continue to confirmation"
                       >
                         <Send className="w-4 h-4 mr-2" aria-hidden="true" />
@@ -1045,7 +1053,7 @@ export default function ChallengesPage() {
                       <div className="flex flex-wrap gap-2">
                         {supporters.map((supporter) => (
                           <div key={supporter.id} className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10">
-                            <div className="w-5 h-5 rounded-full bg-gradient-to-br from-[#a855f7]/20 to-[#2bbcff]/20 flex items-center justify-center">
+                            <div className="w-5 h-5 rounded-full bg-gradient-to-br from-[#fb923c]/20 to-[#0ea5e9]/20 flex items-center justify-center">
                               <span className="text-[10px] font-bold">{supporter.email.charAt(0).toUpperCase()}</span>
                             </div>
                             <span className="text-xs">{supporter.email.split("@")[0]}</span>
@@ -1072,9 +1080,9 @@ export default function ChallengesPage() {
                           <p className="text-xs text-muted-foreground mb-1">Duration</p>
                           <p className="text-sm font-medium">{selectedChallengeData?.duration} days</p>
                         </div>
-                        <div className="p-3 rounded-xl bg-gradient-to-br from-[#a855f7]/10 to-[#2bbcff]/10 border border-[#a855f7]/20">
+                        <div className="p-3 rounded-xl bg-gradient-to-br from-[#fb923c]/10 to-[#0ea5e9]/10 border border-[#fb923c]/20">
                           <p className="text-xs text-muted-foreground mb-1">Reward</p>
-                          <p className="text-sm font-bold text-[#a855f7]">+{selectedChallengeData?.reward} pts</p>
+                          <p className="text-sm font-bold text-[#fb923c]">+{selectedChallengeData?.reward} pts</p>
                         </div>
                       </div>
                     </div>
@@ -1093,7 +1101,7 @@ export default function ChallengesPage() {
                       <Button
                         size="lg"
                         onClick={handleConfirmLockIn}
-                        className="flex-1 h-12 min-h-[48px] bg-gradient-to-r from-[#2bbcff] to-[#a855f7] hover:opacity-95 text-white border-0 rounded-xl font-bold text-sm shadow-lg shadow-[#2bbcff]/25"
+                        className="flex-1 h-12 min-h-[48px] bg-gradient-to-r from-[#0ea5e9] to-[#fb923c] hover:opacity-95 text-white border-0 rounded-xl font-bold text-sm shadow-lg shadow-[#0ea5e9]/25"
                         aria-label="Lock in challenge now"
                       >
                         I&apos;m committed — Lock In
@@ -1123,7 +1131,7 @@ export default function ChallengesPage() {
                     </div>
 
                     <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10">
-                      <Users className="w-4 h-4 text-[#a855f7]" />
+                      <Users className="w-4 h-4 text-[#fb923c]" />
                       <span className="text-sm">{supporters.length} supporter{supporters.length > 1 ? "s" : ""} watching</span>
                     </div>
 
@@ -1152,7 +1160,7 @@ export default function ChallengesPage() {
           onClick={() => setShowProofModal(false)}
         >
           <div
-            className="glass-card rounded-t-2xl sm:rounded-2xl border-0 sm:border border-[#2bbcff]/30 bg-card/95 backdrop-blur-xl p-4 sm:p-6 max-w-lg w-full max-h-[90dvh] sm:max-h-[85vh] overflow-y-auto overscroll-contain"
+            className="glass-card rounded-t-2xl sm:rounded-2xl border-0 sm:border border-[#0ea5e9]/30 bg-card/95 backdrop-blur-xl p-4 sm:p-6 max-w-lg w-full max-h-[90dvh] sm:max-h-[85vh] overflow-y-auto overscroll-contain"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="space-y-4 pb-[env(safe-area-inset-bottom)]">
@@ -1180,7 +1188,7 @@ export default function ChallengesPage() {
 
               <div>
                 <label className="text-sm font-medium mb-2 block">Upload Proof</label>
-                <div className="border-2 border-dashed border-border rounded-xl p-6 sm:p-8 text-center hover:border-[#2bbcff]/50 transition-colors cursor-pointer min-h-[120px] flex flex-col items-center justify-center touch-manipulation">
+                <div className="border-2 border-dashed border-border rounded-xl p-6 sm:p-8 text-center hover:border-[#0ea5e9]/50 transition-colors cursor-pointer min-h-[120px] flex flex-col items-center justify-center touch-manipulation">
                   <Upload className="w-8 h-8 text-muted-foreground mb-2 shrink-0" aria-hidden="true" />
                   <p className="text-sm font-medium mb-1">Tap to upload</p>
                   <p className="text-xs text-muted-foreground">PNG, JPG, PDF up to 10MB</p>
@@ -1190,7 +1198,7 @@ export default function ChallengesPage() {
               <div>
                 <label className="text-sm font-medium mb-2 block">Notes (Optional)</label>
                 <textarea
-                  className="w-full px-3 py-2.5 text-sm rounded-xl border border-border bg-background focus:outline-none focus:ring-2 focus:ring-[#2bbcff]/50 resize-none min-h-[80px]"
+                  className="w-full px-3 py-2.5 text-sm rounded-xl border border-border bg-background focus:outline-none focus:ring-2 focus:ring-[#0ea5e9]/50 resize-none min-h-[80px]"
                   rows={3}
                   placeholder="Add any additional context..."
                 />
@@ -1207,7 +1215,7 @@ export default function ChallengesPage() {
                 </Button>
                 <Button
                   size="lg"
-                  className="flex-1 min-h-[48px] sm:h-10 bg-gradient-to-r from-[#2bbcff] to-[#a855f7] hover:opacity-90 text-white border-0 text-sm touch-manipulation"
+                  className="flex-1 min-h-[48px] sm:h-10 bg-gradient-to-r from-[#0ea5e9] to-[#fb923c] hover:opacity-90 text-white border-0 text-sm touch-manipulation"
                   onClick={() => setShowProofModal(false)}
                 >
                   Submit Proof

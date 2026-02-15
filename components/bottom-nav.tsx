@@ -5,7 +5,7 @@ import { User, Trophy, Target, Home } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const navItems = [
-  { name: "Home", href: "/", icon: Home },
+  { name: "Home", href: "/home", icon: Home },
   { name: "Challenges", href: "/challenges", icon: Target },
   { name: "Leaderboard", href: "/leaderboard", icon: Trophy },
   { name: "Profile", href: "/profile", icon: User },
@@ -20,7 +20,7 @@ export function BottomNav() {
   }
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-xl border-t border-white/10 pb-safe">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-r from-[#0c1525]/95 via-[#0a0a12]/95 to-[#151008]/95 backdrop-blur-xl border-t border-white/5 pb-safe">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-around h-16 max-w-lg mx-auto">
           {navItems.map((item) => {
@@ -31,7 +31,7 @@ export function BottomNav() {
                 href={item.href}
                 className={cn(
                   "flex flex-col items-center justify-center flex-1 gap-1 transition-all duration-200 py-2",
-                  isActive ? "text-[#2bbcff]" : "text-foreground/70 hover:text-foreground",
+                  isActive ? "text-[#fb923c]" : "text-foreground/70 hover:text-foreground",
                 )}
                 aria-label={item.name}
               >
@@ -41,7 +41,7 @@ export function BottomNav() {
                 />
                 <span className="text-[10px] font-bold uppercase tracking-widest">{item.name}</span>
                 {isActive && (
-                  <div className="absolute top-0 w-8 h-0.5 bg-gradient-to-r from-[#2bbcff] to-[#a855f7] rounded-full" />
+                  <div className="absolute top-0 w-8 h-0.5 bg-gradient-to-r from-[#ea580c] via-[#fb923c] to-[#facc15] rounded-full" />
                 )}
               </Link>
             )

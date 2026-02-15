@@ -19,12 +19,12 @@ interface MilestoneCardProps {
 export function MilestoneCard({ title, description, tasks, status, progress }: MilestoneCardProps) {
   return (
     <div
-      className={`glass-card rounded-xl border backdrop-blur-sm p-5 transition-all ${
+      className={`rounded-xl p-4 sm:p-5 transition-all ${
         status === "active"
-          ? "border-[#2bbcff]/30 bg-gradient-to-br from-[#2bbcff]/5 to-card/50"
+          ? "bg-[#0ea5e9]/10 border border-[#0ea5e9]/20"
           : status === "completed"
-            ? "border-green-500/20 bg-card/30"
-            : "border-white/5 bg-card/30 opacity-60"
+            ? "bg-green-500/5 border border-green-500/20"
+            : "bg-white/[0.04] border border-white/5 opacity-60"
       }`}
     >
       <div className="flex items-start justify-between mb-4">
@@ -32,7 +32,7 @@ export function MilestoneCard({ title, description, tasks, status, progress }: M
           <div className="flex items-center gap-2 mb-2 flex-wrap">
             <h3 className="text-base font-bold text-foreground leading-tight">{title}</h3>
             {status === "active" && (
-              <Badge variant="secondary" className="bg-[#2bbcff]/10 text-[#2bbcff] border-[#2bbcff]/30 text-[10px] font-bold uppercase tracking-wider">
+              <Badge variant="secondary" className="bg-[#0ea5e9]/10 text-[#0ea5e9] border-[#0ea5e9]/30 text-[10px] font-bold uppercase tracking-wider">
                 Active
               </Badge>
             )}
@@ -54,8 +54,8 @@ export function MilestoneCard({ title, description, tasks, status, progress }: M
               <Lock className="w-5 h-5 text-muted-foreground" />
             </div>
           ) : (
-            <div className="w-10 h-10 rounded-full bg-[#2bbcff]/10 flex items-center justify-center">
-              <Circle className="w-5 h-5 text-[#2bbcff]" />
+            <div className="w-10 h-10 rounded-full bg-[#0ea5e9]/10 flex items-center justify-center">
+              <Circle className="w-5 h-5 text-[#0ea5e9]" />
             </div>
           )}
         </div>
@@ -71,7 +71,7 @@ export function MilestoneCard({ title, description, tasks, status, progress }: M
           <div className="h-2 bg-white/10 rounded-full overflow-hidden">
             <div
               className={`h-full rounded-full transition-all duration-500 ${
-                status === "completed" ? "bg-green-500" : "bg-gradient-to-r from-[#2bbcff] to-[#a855f7]"
+                status === "completed" ? "bg-green-500" : "bg-gradient-to-r from-[#0ea5e9] to-[#fb923c]"
               }`}
               style={{ width: `${progress}%` }}
             />
@@ -83,7 +83,7 @@ export function MilestoneCard({ title, description, tasks, status, progress }: M
       {status !== "locked" && (
         <div className="space-y-2">
           {tasks.map((task, index) => (
-            <div key={index} className="flex items-center gap-3 p-2.5 rounded-lg bg-white/5 border border-white/5">
+            <div key={index} className="flex items-center gap-3 p-2.5 rounded-lg bg-white/[0.04]">
               <div
                 className={`w-5 h-5 rounded flex items-center justify-center flex-shrink-0 ${
                   task.completed ? "bg-green-500/20 border border-green-500/30" : "bg-white/5 border border-white/10"

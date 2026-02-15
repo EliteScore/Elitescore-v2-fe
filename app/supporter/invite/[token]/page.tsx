@@ -62,7 +62,7 @@ const getInviteStateContent = (
             : "This invite link is invalid or has already been used."}
         </p>
         <Button
-          onClick={() => router.push("/")}
+          onClick={() => router.push("/home")}
           className="w-full min-h-[48px] sm:h-10 bg-gradient-to-r from-[#2bbcff] to-[#a855f7] hover:opacity-90 text-white border-0 text-xs sm:text-[10px] font-bold uppercase tracking-wider touch-manipulation"
           aria-label="Go to EliteScore home"
         >
@@ -122,7 +122,7 @@ const getInviteStateContent = (
           You've declined to be a supporter. {inviterName} won't be notified of your decision.
         </p>
         <Button
-          onClick={() => router.push("/")}
+          onClick={() => router.push("/home")}
           variant="outline"
           className="w-full min-h-[48px] sm:h-10 text-xs sm:text-[10px] font-bold uppercase tracking-wider bg-transparent border-white/20 touch-manipulation"
           aria-label="Go to EliteScore home"
@@ -197,7 +197,7 @@ export default function SupporterInvitePage() {
       <div className="w-full max-w-md flex flex-col flex-1 py-4">
         <div className="flex justify-center mb-6">
           <Image
-            src="/images/logo.png"
+            src="/gemini%20logo.png"
             alt="EliteScore"
             width={120}
             height={40}

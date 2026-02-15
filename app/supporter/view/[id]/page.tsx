@@ -151,7 +151,7 @@ export default function SupporterViewPage() {
       <div className="w-full max-w-md flex flex-col py-4">
         <div className="flex justify-center mb-4 sm:mb-6 shrink-0">
           <Image
-            src="/images/logo.png"
+            src="/gemini%20logo.png"
             alt="EliteScore"
             width={120}
             height={40}
