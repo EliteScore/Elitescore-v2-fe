@@ -190,6 +190,7 @@ export default function SupporterViewPage() {
                 statusInfo.bgColor,
                 statusInfo.borderColor
               )}
+            >
               <StatusIcon className={cn("w-5 h-5", statusInfo.color)} aria-hidden="true" />
               <span className={cn("text-sm font-bold uppercase tracking-wider", statusInfo.color)}>
                 {statusInfo.label}
