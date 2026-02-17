@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import React, { useState } from "react"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import {
@@ -122,7 +122,6 @@ export default function SupporterViewPage() {
   } = mockChallengeData
 
   const statusInfo = statusConfig[status]
-  const StatusIcon = statusInfo.icon
   const progress = (currentDay / challengeDuration) * 100
 
   const handleOpenNudgeModal = () => setShowNudgeModal(true)
@@ -191,7 +190,10 @@ export default function SupporterViewPage() {
                 statusInfo.borderColor
               )}
             >
-              <StatusIcon className={cn("w-5 h-5", statusInfo.color)} aria-hidden="true" />
+              {React.createElement(statusInfo.icon, {
+                className: cn("w-5 h-5", statusInfo.color),
+                "aria-hidden": "true",
+              })}
               <span className={cn("text-sm font-bold uppercase tracking-wider", statusInfo.color)}>
                 {statusInfo.label}
               </span>
