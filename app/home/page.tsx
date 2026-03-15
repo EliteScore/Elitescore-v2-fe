@@ -1,369 +1,609 @@
 "use client"
 
+import React, { useState } from "react"
 import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Trophy, Target, Clock, TrendingUp, Flame, ChevronRight, Calendar, Zap, Award, Sparkles, BookOpen } from "lucide-react"
-import { TodaysTasks } from "@/components/todays-tasks"
+import { Clock, Flame, TrendingUp, Trophy, ArrowUpRight, CheckCircle2, Upload } from "lucide-react"
 
-const userData = {
-  eliteScore: 8247,
-  scoreChange: 35,
-  rank: 148,
-  totalUsers: 15234,
-  percentile: 15,
-  streak: 12,
-  weeklyConsistency: 6,
-  isActive: true,
-  leaderboardMovement: 23,
+const APP_GRADIENT = "linear-gradient(135deg, #db2777 0%, #ea580c 35%, #2563eb 70%, #7c3aed 100%)"
+const CARD_BASE = "rounded-2xl border border-slate-200/80 bg-white shadow-sm"
+
+const ACTIVE_CHALLENGES = [
+  {
+    id: "python-mastery",
+    title: "30-Day Python Mastery",
+    tag: "Harvard",
+    accentFrom: "#db2777",
+    accentTo: "#ea580c",
+    difficulty: 4,
+    progress: 40,
+    daysLeft: 18,
+    deadline: "Tonight 11:59 PM",
+    deadlineUrgent: true,
+    weekLabel: "Week 2 · Build",
+    todayTask: "Complete 3 LeetCode medium problems using Python.",
+  },
+  {
+    id: "linkedin-growth",
+    title: "14-Day LinkedIn Growth",
+    tag: "Career",
+    accentFrom: "#2563eb",
+    accentTo: "#7c3aed",
+    difficulty: 2,
+    progress: 50,
+    daysLeft: 7,
+    deadline: "Tomorrow 11:59 PM",
+    deadlineUrgent: false,
+    weekLabel: "Week 1 · Foundation",
+    todayTask: "Post a career insight and engage with 5 posts in your industry.",
+  },
+]
+
+const LEADERBOARD_TOP5 = [
+  { rank: 1, name: "Jordan_Dev", score: 8322, avatar: "J" },
+  { rank: 2, name: "AvaCodes", score: 8305, avatar: "A" },
+  { rank: 3, name: "RyanW", score: 8247, avatar: "R", isMe: true },
+  { rank: 4, name: "Maria_K", score: 8219, avatar: "M" },
+  { rank: 5, name: "NoahBuilder", score: 8208, avatar: "N" },
+]
+
+const CHALLENGE_CATEGORIES = ["Top", "AI", "Tech", "Career"]
+
+const RECOMMENDED = [
+  {
+    title: "7-Day SQL Bootcamp",
+    category: "Tech",
+    points: 75,
+    members: "16.5k",
+    gradientClass: "from-blue-500/90 to-indigo-500/90",
+  },
+  {
+    title: "Prompt Engineering Sprint",
+    category: "AI",
+    points: 90,
+    members: "11.2k",
+    gradientClass: "from-violet-500/90 to-purple-500/90",
+  },
+  {
+    title: "Portfolio Rebuild Challenge",
+    category: "Career",
+    points: 60,
+    members: "8.3k",
+    gradientClass: "from-pink-500/90 to-rose-500/90",
+  },
+  {
+    title: "Google Data Analytics",
+    category: "Tech",
+    points: 80,
+    members: "22k",
+    gradientClass: "from-amber-500/90 to-orange-500/90",
+  },
+]
+
+const LEADERBOARD_TABS = ["Global", "Friends", "Brintts"]
+
+const MEDAL: Record<number, string> = { 1: "🥇", 2: "🥈", 3: "🥉" }
+
+function DifficultyDots({ level, max = 5 }: { level: number; max?: number }) {
+  return (
+    <div className="mt-2 flex gap-1" aria-label={`Difficulty ${level} of ${max}`}>
+      {Array.from({ length: max }).map((_, i) => (
+        <span
+          key={i}
+          className="h-1.5 w-5 rounded-full"
+          style={
+            i < level
+              ? { background: APP_GRADIENT }
+              : { background: "#e2e8f0" }
+          }
+        />
+      ))}
+    </div>
+  )
 }
 
-const activeChallenges = [
-  {
-    id: 1,
-    name: "30-Day Python Mastery",
-    difficulty: "Difficulty: 4/5",
-    progress: 40,
-    daysRemaining: 18,
-    todayTask: "Complete 3 LeetCode medium problems using Python",
-  },
-  {
-    id: 2,
-    name: "14-Day LinkedIn Growth",
-    difficulty: "Difficulty: 2/5",
-    progress: 50,
-    daysRemaining: 7,
-    todayTask: "Post a career insight and engage with 5 posts in your industry",
-  },
-]
-
-const leaderboardPreview = [
-  { rank: 147, name: "Jordan_Dev", score: 8289, isCurrentUser: false },
-  { rank: 148, name: "You", score: 8247, isCurrentUser: true },
-  { rank: 149, name: "Maria_K", score: 8201, isCurrentUser: false },
-]
-
-const recommendedChallenges = [
-  { id: 3, name: "7-Day SQL Bootcamp", difficulty: "Difficulty: 3/5", participants: "234 students" },
-  { id: 4, name: "21-Day Morning Routine", difficulty: "Difficulty: 2/5", participants: "567 students" },
-  { id: 5, name: "14-Day Portfolio Builder", difficulty: "Difficulty: 4/5", participants: "189 students" },
-]
-
-const todaysTasks = [
-  {
-    id: "task1",
-    title: "Complete 3 LeetCode medium problems",
-    duration: "30 min",
-    category: "Skills",
-    challengeName: "30-Day Python Mastery",
-  },
-  {
-    id: "task2",
-    title: "Post career insight on LinkedIn",
-    duration: "15 min",
-    category: "Career",
-    challengeName: "14-Day LinkedIn Growth",
-  },
-  {
-    id: "task3",
-    title: "Update portfolio with new project",
-    duration: "20 min",
-    category: "Projects",
-  },
-]
-
 export default function HomePage() {
+  const [activeCategory, setActiveCategory] = useState("Top")
+  const [leaderboardTab, setLeaderboardTab] = useState("Global")
+
+  const filteredRecommendations =
+    activeCategory === "Top"
+      ? RECOMMENDED
+      : RECOMMENDED.filter((c) => c.category === activeCategory)
+
+  const handleCategoryClick = (cat: string) => setActiveCategory(cat)
+  const handleLeaderboardTabClick = (tab: string) => setLeaderboardTab(tab)
+
   return (
-    <div className="min-h-screen bg-gradient-to-r from-[#0c1525] via-[#0a0a12] to-[#151008] pb-20">
-      <section className="container mx-auto px-4 py-6 md:py-8">
-        <div className="max-w-6xl mx-auto rounded-2xl bg-gradient-to-br from-[#0c1525]/95 via-[#0a0a12]/98 to-[#151008]/95 backdrop-blur-xl shadow-2xl overflow-hidden relative">
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-96 h-96 bg-gradient-to-r from-[#ea580c]/10 via-[#fb923c]/15 to-[#facc15]/10 blur-[120px] rounded-full -z-10 pointer-events-none" aria-hidden="true" />
+    <div className="mx-auto max-w-5xl space-y-6 px-4 pb-10 pt-2 sm:px-6">
 
-          {/* Hero: EliteScore + Streak + Stats */}
-          <div className="p-6 md:p-8">
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-6 md:gap-8">
-              <div className="md:col-span-6 flex flex-col items-center md:items-start justify-center text-center md:text-left">
-                <div className="text-[10px] md:text-xs font-bold text-muted-foreground uppercase tracking-[0.2em] mb-2">
-                  EliteScore • Credibility
-                </div>
-                <div className="text-5xl sm:text-6xl md:text-7xl font-black bg-gradient-to-r from-[#ea580c] via-[#fb923c] to-[#facc15] bg-clip-text text-transparent animate-gradient-x py-1 drop-shadow-sm">
-                  {userData.eliteScore}
-                </div>
-                <Badge
-                  variant="secondary"
-                  className="mt-3 bg-white/5 text-white border-white/10 px-4 py-1 text-xs backdrop-blur-md"
-                  aria-label={`World rank ${userData.rank}`}
-                >
-                  World Rank #{userData.rank}
-                </Badge>
-                <p className="text-xs text-muted-foreground max-w-sm mt-3 leading-relaxed">
-                  Your credibility is earned through finished work. Maintain your standing by completing your active
-                  challenges.
-                </p>
-              </div>
-              <div className="md:col-span-6 flex flex-col gap-4">
-                <div className="rounded-xl bg-orange-500/5 backdrop-blur-sm p-4 flex flex-row items-center gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-orange-500/10 flex items-center justify-center flex-shrink-0" aria-hidden="true">
-                    <Flame className="w-6 h-6 text-orange-500 animate-pulse" />
-                  </div>
-                  <div>
-                    <div className="text-2xl font-black text-orange-500">{userData.streak} Days</div>
-                    <div className="text-[10px] text-muted-foreground uppercase tracking-widest">Consistency Streak</div>
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="rounded-xl bg-white/[0.04] backdrop-blur-sm p-3">
-                    <div className="flex items-center gap-1.5 mb-0.5">
-                      <TrendingUp className="w-3 h-3 text-green-500" aria-hidden="true" />
-                      <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-tight">Score Gain</span>
-                    </div>
-                    <div className="text-lg font-bold text-green-500">+{userData.scoreChange}</div>
-                  </div>
-                  <div className="rounded-xl bg-white/[0.04] backdrop-blur-sm p-3">
-                    <div className="flex items-center gap-1.5 mb-0.5">
-                      <Calendar className="w-3 h-3 text-[#0ea5e9]" aria-hidden="true" />
-                      <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-tight">Active Days</span>
-                    </div>
-                    <div className="text-lg font-bold text-foreground">{userData.weeklyConsistency}/7</div>
-                  </div>
-                  <div className="rounded-xl bg-white/[0.04] backdrop-blur-sm p-3">
-                    <div className="flex items-center gap-1.5 mb-0.5">
-                      <Trophy className="w-3 h-3 text-[#fb923c]" aria-hidden="true" />
-                      <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-tight">Movement</span>
-                    </div>
-                    <div className="text-lg font-bold text-[#fb923c]">↑ {userData.leaderboardMovement}</div>
-                  </div>
-                  <div className="rounded-xl bg-white/[0.04] backdrop-blur-sm p-3">
-                    <div className="flex items-center gap-1.5 mb-0.5">
-                      <Target className="w-3 h-3 text-[#0ea5e9]" aria-hidden="true" />
-                      <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-tight">Percentile</span>
-                    </div>
-                    <div className="text-lg font-bold text-foreground">Top {userData.percentile}%</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+      {/* ── Hero banner ── */}
+      <section
+        className="relative overflow-hidden rounded-2xl px-6 py-8 sm:px-10 sm:py-10"
+        style={{ background: APP_GRADIENT }}
+        aria-labelledby="hero-heading"
+      >
+        {/* Decorative blobs */}
+        <span className="pointer-events-none absolute -right-12 -top-12 h-52 w-52 rounded-full bg-white/10 blur-3xl" aria-hidden />
+        <span className="pointer-events-none absolute bottom-0 left-1/3 h-36 w-36 rounded-full bg-white/10 blur-2xl" aria-hidden />
 
-          <div className="border-t border-white/5" />
-
-          {/* Today's Tasks */}
-          <div className="px-6 md:px-8">
-            <TodaysTasks tasks={todaysTasks} embedded />
-          </div>
-
-          <div className="border-t border-white/5" />
-
-          {/* Week at a glance */}
-          <div className="p-4 md:p-6 flex flex-wrap items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-[#0ea5e9]/10 flex items-center justify-center flex-shrink-0" aria-hidden="true">
-                <Zap className="w-5 h-5 text-[#0ea5e9]" />
-              </div>
-              <div>
-                <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Week at a glance</div>
-                <div className="text-sm font-bold text-foreground">
-                  <span className="text-[#0ea5e9]">{activeChallenges.length}</span> active challenges
-                  <span className="mx-1.5 text-muted-foreground">•</span>
-                  <span className="text-[#fb923c]">{todaysTasks.length}</span> tasks today
-                </div>
-              </div>
-            </div>
-            <Button
-              size="sm"
-              variant="ghost"
-              className="text-[10px] h-8 font-bold uppercase tracking-wider text-[#fb923c] hover:text-[#fff] hover:bg-[#fb923c]/20 px-3"
-              asChild
+        <div className="relative z-10 flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-widest text-white/70">Good morning</p>
+            <h1
+              id="hero-heading"
+              className="mt-1 text-2xl font-extrabold leading-tight text-white sm:text-3xl"
             >
-              <Link href="/challenges">
-                View challenges
-                <ChevronRight className="ml-0.5 h-3 w-3" aria-hidden="true" />
-              </Link>
-            </Button>
-          </div>
-
-          <div className="border-t border-white/5" />
-
-          {/* Active Challenges */}
-          <div className="p-6 md:p-8">
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-[#0ea5e9]/10 flex items-center justify-center flex-shrink-0" aria-hidden="true">
-                  <Target className="w-5 h-5 text-[#0ea5e9]" />
-                </div>
-                <div>
-                  <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Active Challenges • Your commitments</div>
-                  <div className="text-base font-bold text-foreground">{activeChallenges.length} in progress</div>
-                </div>
-              </div>
-              <Button
-                size="sm"
-                variant="ghost"
-                className="text-[10px] h-8 font-bold uppercase tracking-wider text-[#fb923c] hover:bg-[#fb923c]/20 px-3"
-                asChild
+              Ryan Wong
+            </h1>
+            <p className="mt-1.5 text-sm text-white/80">
+              You&apos;re ranked{" "}
+              <strong className="font-bold text-white">#125 globally</strong> —
+              keep climbing.
+            </p>
+            <div className="mt-5 flex flex-wrap gap-3">
+              <Link
+                href="/challenges"
+                className="inline-flex items-center gap-2 rounded-xl bg-white px-5 py-2.5 text-sm font-bold text-slate-800 shadow-lg transition-transform hover:scale-[1.02]"
+                aria-label="Resume your last challenge"
               >
-                <Link href="/challenges">
-                  View All
-                  <ChevronRight className="ml-0.5 h-3 w-3" aria-hidden="true" />
-                </Link>
-              </Button>
-            </div>
-            <div className="grid sm:grid-cols-1 md:grid-cols-2 gap-4">
-              {activeChallenges.map((challenge) => (
-                <div key={challenge.id} className="rounded-xl bg-white/[0.04] backdrop-blur-sm p-4 transition-all">
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-0.5">
-                        <h3 className="text-sm font-bold text-foreground truncate">{challenge.name}</h3>
-                        <Badge variant="secondary" className="text-[10px] font-bold uppercase tracking-wider bg-[#0ea5e9]/10 text-[#0ea5e9] border-[#0ea5e9]/30 flex-shrink-0">
-                          Active
-                        </Badge>
-                      </div>
-                      <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground uppercase tracking-wider">
-                        <Target className="w-2.5 h-2.5" aria-hidden="true" />
-                        {challenge.difficulty}
-                      </div>
-                    </div>
-                    <Trophy className="w-5 h-5 text-[#fb923c] flex-shrink-0" aria-hidden="true" />
-                  </div>
-                  <div className="space-y-3 mb-4">
-                    <div className="rounded-lg bg-white/[0.04] p-2.5">
-                      <div className="flex items-center justify-between gap-1.5 mb-1">
-                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Progress</span>
-                        <span className="text-xs font-bold text-foreground">{challenge.progress}%</span>
-                      </div>
-                      <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-gradient-to-r from-[#ea580c] via-[#fb923c] to-[#facc15] rounded-full transition-all duration-500"
-                          style={{ width: `${challenge.progress}%` }}
-                        />
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 text-[10px] text-muted-foreground uppercase tracking-wider">
-                      <Clock className="w-3 h-3 text-[#0ea5e9]" aria-hidden="true" />
-                      {challenge.daysRemaining} days remaining
-                    </div>
-                  </div>
-                  <div className="rounded-lg bg-white/[0.04] p-3 mb-4">
-                    <div className="text-[10px] font-bold text-[#0ea5e9] uppercase tracking-wider mb-1">Today&apos;s task</div>
-                    <p className="text-xs text-muted-foreground leading-relaxed">{challenge.todayTask}</p>
-                  </div>
-                  <Button size="sm" asChild className="w-full bg-gradient-to-r from-[#ea580c] via-[#fb923c] to-[#facc15] hover:opacity-90 text-white border-0 text-[10px] h-8 font-bold uppercase tracking-wider">
-                    <Link href={`/challenges/${challenge.id}`}>View Challenge</Link>
-                  </Button>
-                </div>
-              ))}
+                Resume Challenge
+                <ArrowUpRight className="h-4 w-4" aria-hidden />
+              </Link>
+              <Link
+                href="/challenges"
+                className="inline-flex items-center gap-2 rounded-xl border border-white/30 bg-white/10 px-5 py-2.5 text-sm font-semibold text-white backdrop-blur-sm transition-transform hover:scale-[1.02]"
+                aria-label="Browse all challenges"
+              >
+                Browse Challenges
+              </Link>
             </div>
           </div>
 
-          <div className="border-t border-white/5" />
-
-          {/* Leaderboard Preview */}
-          <div className="p-6 md:p-8">
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-[#0ea5e9]/10 flex items-center justify-center flex-shrink-0" aria-hidden="true">
-                  <Award className="w-5 h-5 text-[#0ea5e9]" />
-                </div>
-                <div>
-                  <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Leaderboard • Preview</div>
-                  <div className="text-base font-bold text-foreground">Your rank and nearby peers</div>
-                </div>
-              </div>
-              <Button size="sm" variant="ghost" className="text-[10px] h-8 font-bold uppercase tracking-wider text-[#fb923c] hover:bg-[#fb923c]/20 px-3" asChild>
-                <Link href="/leaderboard">
-                  View Full
-                  <ChevronRight className="ml-0.5 h-3 w-3" aria-hidden="true" />
-                </Link>
-              </Button>
-            </div>
-            <div className="rounded-xl bg-white/[0.04] overflow-hidden">
-              {leaderboardPreview.map((user) => (
-                <div
-                  key={user.rank}
-                  className={`p-4 flex items-center gap-4 transition-colors ${
-                    user.isCurrentUser
-                      ? "bg-gradient-to-r from-[#0ea5e9]/10 via-[#fb923c]/10 to-[#f97316]/10"
-                      : "border-b border-white/5 last:border-b-0"
-                  }`}
-                >
-                  <div className="text-lg font-bold text-muted-foreground w-8 tabular-nums">#{user.rank}</div>
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#0ea5e9]/20 via-[#fb923c]/20 to-[#f97316]/20 flex items-center justify-center flex-shrink-0" aria-hidden="true">
-                    <span className="text-sm font-bold">{user.name.charAt(0)}</span>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm font-bold text-foreground">{user.name}</div>
-                    {user.isCurrentUser && (
-                      <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Keep pushing to the top!</div>
-                    )}
-                  </div>
-                  <div className="text-right">
-                    <div className="text-lg font-bold text-foreground tabular-nums">{user.score}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="border-t border-white/5" />
-
-          {/* Today's Insight */}
-          <div className="p-5 md:p-6 flex items-start gap-4">
-            <div className="w-10 h-10 rounded-xl bg-[#0ea5e9]/10 flex items-center justify-center flex-shrink-0" aria-hidden="true">
-              <Sparkles className="w-5 h-5 text-[#fb923c]" />
-            </div>
-            <div>
-              <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] mb-0.5">Today&apos;s Insight</div>
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                You&apos;re on track to reach the top 10% this week. Complete 2 more challenges to boost your score by 150+ points.
-              </p>
-            </div>
-          </div>
-
-          <div className="border-t border-white/5" />
-
-          {/* Recommended Challenges */}
-          <div className="p-6 md:p-8">
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-[#0ea5e9]/10 flex items-center justify-center flex-shrink-0" aria-hidden="true">
-                  <BookOpen className="w-5 h-5 text-[#0ea5e9]" />
-                </div>
-                <div>
-                  <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Recommended Challenges • For you</div>
-                  <div className="text-base font-bold text-foreground">Pick your next commitment</div>
-                </div>
-              </div>
-              <Button size="sm" variant="ghost" className="text-[10px] h-8 font-bold uppercase tracking-wider text-[#fb923c] hover:bg-[#fb923c]/20 px-3" asChild>
-                <Link href="/challenges">
-                  Browse All
-                  <ChevronRight className="ml-0.5 h-3 w-3" aria-hidden="true" />
-                </Link>
-              </Button>
-            </div>
-            <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-3">
-              {recommendedChallenges.map((challenge) => (
-                <Link key={challenge.id} href="/challenges" className="rounded-xl bg-white/[0.04] p-4 transition-all group block hover:bg-white/[0.06]">
-                  <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-[#0ea5e9]/10 flex items-center justify-center flex-shrink-0 group-hover:bg-[#0ea5e9]/20 transition-colors" aria-hidden="true">
-                      <Target className="w-4 h-4 text-[#0ea5e9]" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-sm font-bold text-foreground mb-1.5 group-hover:text-[#fb923c] transition-colors truncate">
-                        {challenge.name}
-                      </h3>
-                      <div className="flex items-center justify-between gap-2 text-[10px]">
-                        <span className="text-muted-foreground uppercase tracking-wider">{challenge.difficulty}</span>
-                        <span className="font-bold text-[#fb923c] flex-shrink-0">{challenge.participants}</span>
-                      </div>
-                    </div>
-                  </div>
-                </Link>
-              ))}
+          {/* Score badge */}
+          <div className="shrink-0 rounded-2xl border border-white/20 bg-white/10 px-6 py-5 text-center backdrop-blur-sm">
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-white/70">
+              EliteScore
+            </p>
+            <p className="mt-0.5 text-4xl font-black text-white">8,247</p>
+            <p className="mt-1 text-xs text-white/70">World Rank #148</p>
+            <div className="mt-2 flex items-center justify-center gap-1 text-xs text-white/80">
+              <Flame className="h-3.5 w-3.5 text-orange-300" aria-hidden />
+              <span>12-day streak</span>
             </div>
           </div>
         </div>
       </section>
+
+      {/* ── Stats row ── */}
+      <section aria-label="Key performance stats" className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+
+        {/* EliteScore ring */}
+        <article className={`${CARD_BASE} flex flex-col items-center gap-2 p-4 text-center`}>
+          <div
+            className="relative flex h-16 w-16 items-center justify-center"
+            role="progressbar"
+            aria-valuenow={72}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-label="72% toward next tier"
+          >
+            <svg className="h-16 w-16 -rotate-90" viewBox="0 0 36 36" aria-hidden>
+              <defs>
+                <linearGradient id="ring-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stopColor="#db2777" />
+                  <stop offset="50%" stopColor="#ea580c" />
+                  <stop offset="100%" stopColor="#7c3aed" />
+                </linearGradient>
+              </defs>
+              <circle cx="18" cy="18" r="14" fill="none" stroke="#e2e8f0" strokeWidth="3" />
+              <circle
+                cx="18" cy="18" r="14" fill="none"
+                stroke="url(#ring-grad)"
+                strokeWidth="3"
+                strokeDasharray="72 100"
+                strokeLinecap="round"
+              />
+            </svg>
+            <span className="absolute inset-0 flex items-center justify-center">
+              <strong className="text-sm font-bold text-slate-800">72%</strong>
+            </span>
+          </div>
+          <div>
+            <p className="text-base font-bold text-slate-800">8,247</p>
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">EliteScore</p>
+          </div>
+        </article>
+
+        {/* Global Rank */}
+        <article className={`${CARD_BASE} flex flex-col items-center justify-center gap-1 p-4 text-center`}>
+          <Trophy className="h-5 w-5 text-amber-500" aria-hidden />
+          <p className="text-2xl font-bold text-slate-800">#125</p>
+          <p className="text-xs font-semibold text-emerald-600">↑ +23 positions</p>
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Global Rank</p>
+        </article>
+
+        {/* Score this week */}
+        <article className={`${CARD_BASE} flex flex-col items-center gap-2 p-4 text-center`}>
+          <TrendingUp className="h-5 w-5 text-pink-500" aria-hidden />
+          <p className="text-2xl font-bold text-slate-800">+420</p>
+          <div
+            className="h-1.5 w-full overflow-hidden rounded-full bg-slate-100"
+            role="progressbar"
+            aria-valuenow={84}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-label="84% of weekly score goal"
+          >
+            <div
+              className="h-full rounded-full transition-all"
+              style={{ width: "84%", background: APP_GRADIENT }}
+            />
+          </div>
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+            Score This Week
+          </p>
+        </article>
+
+        {/* Day Streak */}
+        <article className={`${CARD_BASE} flex flex-col items-center justify-center gap-1 p-4 text-center`}>
+          <Flame className="h-6 w-6 text-orange-500" aria-hidden />
+          <p className="text-2xl font-bold text-slate-800">12</p>
+          <p className="text-xs text-slate-500">consecutive days</p>
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Day Streak</p>
+        </article>
+      </section>
+
+      {/* ── Main grid ── */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+
+        {/* Left column */}
+        <div className="space-y-6 lg:col-span-8">
+
+          {/* Active Challenges */}
+          <section className={`${CARD_BASE} p-6`} aria-labelledby="active-title">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-500">
+                  In Progress
+                </p>
+                <h2
+                  id="active-title"
+                  className="mt-0.5 text-lg font-bold text-slate-800"
+                >
+                  Active Challenges
+                </h2>
+              </div>
+              <Link
+                href="/challenges"
+                className="flex items-center gap-1 text-xs font-semibold text-pink-600 hover:underline"
+              >
+                View all <ArrowUpRight className="h-3.5 w-3.5" aria-hidden />
+              </Link>
+            </div>
+
+            <div className="mt-5 grid gap-4 sm:grid-cols-2">
+              {ACTIVE_CHALLENGES.map((challenge) => (
+                <article
+                  key={challenge.id}
+                  className="overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-sm transition-shadow hover:shadow-md"
+                >
+                  {/* Gradient accent top strip */}
+                  <div
+                    className="h-1.5 w-full"
+                    style={{
+                      background: `linear-gradient(to right, ${challenge.accentFrom}, ${challenge.accentTo})`,
+                    }}
+                    aria-hidden
+                  />
+
+                  <div className="p-4">
+                    <div className="flex items-start justify-between gap-2">
+                      <h3 className="font-semibold leading-snug text-slate-800">
+                        {challenge.title}
+                      </h3>
+                      <span className="shrink-0 rounded-lg bg-pink-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-pink-600">
+                        Active
+                      </span>
+                    </div>
+
+                    <p className="mt-1 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+                      {challenge.weekLabel}
+                    </p>
+
+                    <DifficultyDots level={challenge.difficulty} />
+
+                    {/* Progress */}
+                    <div className="mt-3">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-slate-500">Progress</span>
+                        <span className="font-semibold text-slate-700">{challenge.progress}%</span>
+                      </div>
+                      <div
+                        className="mt-1 h-1.5 overflow-hidden rounded-full bg-slate-100"
+                        role="progressbar"
+                        aria-valuenow={challenge.progress}
+                        aria-valuemin={0}
+                        aria-valuemax={100}
+                      >
+                        <div
+                          className="h-full rounded-full transition-all duration-500"
+                          style={{ width: `${challenge.progress}%`, background: APP_GRADIENT }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Deadline */}
+                    <p
+                      className={`mt-2 flex items-center gap-1.5 text-xs ${
+                        challenge.deadlineUrgent
+                          ? "font-semibold text-orange-600"
+                          : "text-slate-500"
+                      }`}
+                    >
+                      <Clock className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                      Deadline: {challenge.deadline}
+                    </p>
+
+                    {/* Today's task */}
+                    <div className="mt-3 rounded-xl border border-slate-200/80 bg-slate-50/70 p-3">
+                      <p className="text-[10px] font-semibold uppercase tracking-wide text-pink-600">
+                        Today&apos;s task
+                      </p>
+                      <p className="mt-0.5 text-xs leading-relaxed text-slate-700">
+                        {challenge.todayTask}
+                      </p>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="mt-3 grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        className="flex items-center justify-center gap-1.5 rounded-xl py-2.5 text-xs font-bold text-white transition-transform hover:scale-[1.02]"
+                        style={{ background: APP_GRADIENT }}
+                        aria-label={`Submit proof for ${challenge.title}`}
+                      >
+                        <Upload className="h-3.5 w-3.5" aria-hidden />
+                        Submit Proof
+                      </button>
+                      <Link
+                        href={`/challenges/${challenge.id}`}
+                        className="flex items-center justify-center rounded-xl border border-slate-200 bg-white py-2.5 text-xs font-semibold text-slate-600 transition-colors hover:bg-slate-50"
+                        aria-label={`View details for ${challenge.title}`}
+                      >
+                        View Details
+                      </Link>
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </section>
+
+          {/* Recommended Challenges */}
+          <section className={`${CARD_BASE} p-6`} aria-labelledby="recommended-title">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-500">
+                  Suggestions
+                </p>
+                <h2
+                  id="recommended-title"
+                  className="mt-0.5 text-lg font-bold text-slate-800"
+                >
+                  Recommended For You
+                </h2>
+              </div>
+              <Link
+                href="/challenges"
+                className="flex items-center gap-1 text-xs font-semibold text-pink-600 hover:underline"
+              >
+                Browse all <ArrowUpRight className="h-3.5 w-3.5" aria-hidden />
+              </Link>
+            </div>
+
+            {/* Category tabs */}
+            <div className="mt-4 flex flex-wrap gap-2">
+              {CHALLENGE_CATEGORIES.map((cat) => (
+                <button
+                  key={cat}
+                  type="button"
+                  onClick={() => handleCategoryClick(cat)}
+                  className={`rounded-xl px-4 py-1.5 text-xs font-semibold transition-colors ${
+                    activeCategory === cat
+                      ? "text-white"
+                      : "border border-slate-200/80 bg-white text-slate-500 shadow-sm hover:bg-slate-50"
+                  }`}
+                  style={activeCategory === cat ? { background: APP_GRADIENT } : undefined}
+                  aria-pressed={activeCategory === cat}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
+
+            {/* Cards — styled like landing challenge cards */}
+            <div className="mt-4 grid gap-4 sm:grid-cols-2">
+              {filteredRecommendations.map((item) => (
+                <article
+                  key={item.title}
+                  className="group overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-sm transition-shadow hover:shadow-md"
+                >
+                  <div
+                    className={`relative flex h-20 items-center justify-center bg-gradient-to-br ${item.gradientClass}`}
+                  >
+                    <span className="absolute bottom-2 left-2 rounded-lg bg-white/90 px-2 py-0.5 text-[10px] font-semibold text-slate-700">
+                      {item.category}
+                    </span>
+                  </div>
+                  <div className="p-4">
+                    <h3 className="font-semibold text-slate-800 transition-colors group-hover:text-pink-600">
+                      {item.title}
+                    </h3>
+                    <p className="mt-0.5 text-xs text-slate-500">
+                      {item.points} pts · {item.members} members
+                    </p>
+                    <Link
+                      href="/challenges"
+                      className="mt-3 flex w-full items-center justify-center rounded-xl py-2.5 text-xs font-bold text-white transition-transform hover:scale-[1.02]"
+                      style={{ background: APP_GRADIENT }}
+                    >
+                      Join Challenge
+                    </Link>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </section>
+        </div>
+
+        {/* Right Sidebar */}
+        <aside className="space-y-6 lg:col-span-4">
+
+          {/* Leaderboard preview */}
+          <section className={`${CARD_BASE} p-6`} aria-labelledby="leaderboard-title">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-500">
+                  Rankings
+                </p>
+                <h2
+                  id="leaderboard-title"
+                  className="mt-0.5 text-base font-bold text-slate-800"
+                >
+                  Leaderboard
+                </h2>
+              </div>
+              <Link
+                href="/leaderboard"
+                className="flex items-center gap-1 text-xs font-semibold text-pink-600 hover:underline"
+              >
+                Full board <ArrowUpRight className="h-3.5 w-3.5" aria-hidden />
+              </Link>
+            </div>
+
+            {/* Tabs */}
+            <div className="mt-3 flex gap-1.5">
+              {LEADERBOARD_TABS.map((tab) => (
+                <button
+                  key={tab}
+                  type="button"
+                  onClick={() => handleLeaderboardTabClick(tab)}
+                  className={`rounded-lg px-3 py-1 text-xs font-semibold transition-colors ${
+                    leaderboardTab === tab
+                      ? "text-white"
+                      : "border border-slate-200 bg-white text-slate-500 hover:bg-slate-50"
+                  }`}
+                  style={leaderboardTab === tab ? { background: APP_GRADIENT } : undefined}
+                  aria-pressed={leaderboardTab === tab}
+                >
+                  {tab}
+                </button>
+              ))}
+            </div>
+
+            {/* Top 5 */}
+            <ul className="mt-4 space-y-2">
+              {LEADERBOARD_TOP5.map((user) => (
+                <li
+                  key={user.rank}
+                  className={`flex items-center gap-3 rounded-xl p-2.5 transition-colors ${
+                    user.isMe
+                      ? "border border-pink-200/60 bg-pink-50/70"
+                      : "hover:bg-slate-50/70"
+                  }`}
+                >
+                  <div
+                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold"
+                    style={
+                      user.rank <= 3
+                        ? { background: APP_GRADIENT, color: "white" }
+                        : { background: "#e2e8f0", color: "#64748b" }
+                    }
+                    aria-hidden
+                  >
+                    {user.rank <= 3 ? user.rank : user.avatar}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p
+                      className={`truncate text-sm font-semibold ${
+                        user.isMe ? "text-pink-700" : "text-slate-800"
+                      }`}
+                    >
+                      {user.name}
+                      {user.isMe && (
+                        <span className="ml-1.5 rounded bg-pink-100 px-1 text-[10px] font-bold text-pink-600">
+                          you
+                        </span>
+                      )}
+                    </p>
+                    <p className="text-xs text-slate-500">
+                      {user.score.toLocaleString()} pts
+                    </p>
+                  </div>
+                  {MEDAL[user.rank] && (
+                    <span className="text-base" aria-label={`Rank ${user.rank}`}>
+                      {MEDAL[user.rank]}
+                    </span>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </section>
+
+          {/* Progress snapshot */}
+          <section className={`${CARD_BASE} p-6`} aria-labelledby="snapshot-title">
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-500">
+              Your Credentials
+            </p>
+            <h2
+              id="snapshot-title"
+              className="mt-0.5 text-base font-bold text-slate-800"
+            >
+              Progress Snapshot
+            </h2>
+            <dl className="mt-4 space-y-3">
+              {[
+                { label: "Consistency rate", value: "94%" },
+                { label: "Challenges completed", value: "7" },
+                { label: "Active days this week", value: "6 / 7" },
+                { label: "Score movement", value: "↑ Top 15%" },
+              ].map((item) => (
+                <div key={item.label} className="flex items-center justify-between">
+                  <dt className="text-xs text-slate-500">{item.label}</dt>
+                  <dd className="flex items-center gap-1 text-xs font-semibold text-slate-800">
+                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" aria-hidden />
+                    {item.value}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          </section>
+
+          {/* Stay Consistent — gradient card like landing hero */}
+          <section
+            className="rounded-2xl p-5 text-center"
+            style={{ background: APP_GRADIENT }}
+            aria-labelledby="streak-cta-title"
+          >
+            <Flame className="mx-auto h-7 w-7 text-white/90" aria-hidden />
+            <h2
+              id="streak-cta-title"
+              className="mt-2 text-base font-bold text-white"
+            >
+              12-Day Streak!
+            </h2>
+            <p className="mt-1 text-xs text-white/80">
+              Check in today to keep it alive. Don&apos;t break the chain.
+            </p>
+            <Link
+              href="/challenges"
+              className="mt-4 inline-flex w-full items-center justify-center rounded-xl bg-white px-4 py-2.5 text-xs font-bold text-slate-800 shadow-lg transition-transform hover:scale-[1.02]"
+            >
+              Complete Today&apos;s Task
+            </Link>
+          </section>
+        </aside>
+      </div>
     </div>
   )
 }

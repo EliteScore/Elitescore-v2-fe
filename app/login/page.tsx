@@ -3,49 +3,17 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { motion } from "framer-motion"
-import { Eye, EyeOff, ArrowRight, Lock } from "lucide-react"
+import { Eye, EyeOff } from "lucide-react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Form, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.1,
-    },
-  },
-}
-
-const itemVariants = {
-  hidden: { y: 20, opacity: 0 },
-  visible: {
-    y: 0,
-    opacity: 1,
-    transition: {
-      type: "spring" as const,
-      stiffness: 300,
-      damping: 24,
-    },
-  },
-}
+import "../auth.css"
+import "./login.css"
 
 const loginSchema = z.object({
-  email: z.string().email({
-    message: "Please enter a valid email address.",
-  }),
-  password: z.string().min(1, {
-    message: "Password is required.",
-  }),
+  email: z.string().email({ message: "Please enter a valid email address." }),
+  password: z.string().min(1, { message: "Password is required." }),
   remember: z.boolean().default(false),
 })
 
@@ -59,21 +27,15 @@ export default function LoginPage() {
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
-    defaultValues: {
-      email: "",
-      password: "",
-      remember: false,
-    },
+    defaultValues: { email: "", password: "", remember: false },
   })
 
   async function onSubmit(formData: LoginFormValues) {
     setIsLoading(true)
     setLoginError(null)
-
-    // Simulate login (frontend only)
     setTimeout(() => {
       localStorage.setItem("elitescore_logged_in", "true")
-      localStorage.setItem("elitescore_email", formData.email)
+      localStorage.setItem("elitescore_email", formData.email.trim().toLowerCase())
       router.push("/home")
     }, 1000)
   }
@@ -81,7 +43,6 @@ export default function LoginPage() {
   const handleGoogleSignIn = () => {
     setIsLoading(true)
     setLoginError(null)
-    // Simulate Google sign in (frontend only)
     setTimeout(() => {
       localStorage.setItem("elitescore_logged_in", "true")
       router.push("/home")
@@ -89,193 +50,108 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-[100dvh] sm:min-h-screen flex flex-col items-center justify-center bg-gradient-to-r from-[#0c1525] via-[#0a0a12] to-[#151008] p-4 pt-[max(1.5rem,env(safe-area-inset-top))] pb-[max(1.5rem,env(safe-area-inset-bottom))] pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] overflow-x-hidden">
-      <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
-        <div className="absolute left-1/2 top-0 -translate-x-1/2 w-80 h-80 rounded-full bg-gradient-to-r from-[#ea580c]/10 via-[#fb923c]/15 to-[#facc15]/10 blur-[100px]" />
-      </div>
+    <div className="auth-page login-page">
+      <main className="auth-main">
+        <div className="login-split-card">
+          <div className="login-split-left">
+            <p className="login-split-label">Back to the board.</p>
+            <h2 className="login-split-headline">Log in.</h2>
+            <p className="login-split-copy">Your streak, rank, and receipts are waiting.</p>
+          </div>
+          <div className="login-split-right">
+            <h1 className="auth-title login-form-title">Welcome back</h1>
+            <p className="auth-sub login-form-sub">Enter your email and password to access your account</p>
 
-      <div className="w-full flex justify-center pt-2 sm:pt-6 pb-3 sm:pb-4">
-        <span className="text-lg sm:text-xl font-extrabold tracking-widest uppercase bg-gradient-to-r from-[#ea580c] via-[#fb923c] to-[#facc15] bg-clip-text text-transparent">
-          ELITESCORE
-        </span>
-      </div>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="auth-form login-form">
+              {loginError && <p className="auth-error login-form-error" role="alert">{loginError}</p>}
 
-      <motion.div
-        className="w-full max-w-sm space-y-4 sm:space-y-6 relative z-10"
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-      >
-        <motion.div className="text-center" variants={itemVariants}>
-          <h1 className="text-lg sm:text-xl font-extrabold tracking-widest uppercase bg-gradient-to-r from-[#ea580c] via-[#fb923c] to-[#facc15] bg-clip-text text-transparent">
-            Sign In
-          </h1>
-          <p className="mt-1.5 text-muted-foreground text-xs sm:text-sm">Sign in to continue your journey</p>
-        </motion.div>
+              <div className="auth-field">
+                <label htmlFor="login-email" className="auth-label">Email</label>
+                <input
+                  id="login-email"
+                  type="email"
+                  placeholder="Enter your email"
+                  autoComplete="email"
+                  className="auth-input"
+                  {...form.register("email")}
+                />
+                {form.formState.errors.email && (
+                  <span className="auth-error">{form.formState.errors.email.message}</span>
+                )}
+              </div>
 
-        <motion.div variants={itemVariants} className="w-full">
-          <Card className="rounded-2xl border-0 bg-gradient-to-br from-[#0c1525]/95 via-[#0a0a12]/98 to-[#151008]/95 backdrop-blur-xl shadow-2xl overflow-hidden">
-            <CardHeader className="p-4 sm:p-5 pb-2">
-              <CardTitle className="text-sm sm:text-base font-extrabold tracking-widest uppercase bg-gradient-to-r from-[#0ea5e9] to-[#fb923c] bg-clip-text text-transparent">
-                Welcome back
-              </CardTitle>
-              <CardDescription className="text-muted-foreground text-xs sm:text-sm">
-                Enter your credentials to access your account
-              </CardDescription>
-            </CardHeader>
-
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-0">
-                <CardContent className="space-y-3 sm:space-y-4 p-4 sm:p-5 pt-0">
-                  {loginError && (
-                    <Alert variant="destructive" className="animate-shake text-xs">
-                      <AlertDescription>{loginError}</AlertDescription>
-                    </Alert>
-                  )}
-
-                  <FormField
-                    control={form.control}
-                    name="email"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-foreground text-xs sm:text-sm">Email</FormLabel>
-                        <Input
-                          className="min-h-[44px] h-11 py-2.5 text-sm rounded-xl border border-white/10 bg-white/[0.04] text-foreground focus:ring-2 focus:ring-[#0ea5e9]/50 focus:border-[#0ea5e9]/50 transition-all lowercase touch-manipulation"
-                          placeholder="john@example.com"
-                          type="email"
-                          autoComplete="email"
-                          {...field}
-                          onChange={(event) => {
-                            field.onChange(event.target.value.trim().toLowerCase())
-                          }}
-                        />
-                        <FormMessage className="text-xs" />
-                      </FormItem>
-                    )}
+              <div className="auth-field">
+                <div className="auth-field-row">
+                  <label htmlFor="login-password" className="auth-label">Password</label>
+                  <Link href="/forgot-password" className="auth-link login-form-link">Forgot password?</Link>
+                </div>
+                <div className="auth-input-wrap">
+                  <input
+                    id="login-password"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Enter your password"
+                    autoComplete="current-password"
+                    className="auth-input"
+                    {...form.register("password")}
                   />
-
-                  <FormField
-                    control={form.control}
-                    name="password"
-                    render={({ field }) => (
-                      <FormItem>
-                        <div className="flex items-center justify-between gap-2">
-                          <FormLabel className="text-foreground text-xs sm:text-sm">Password</FormLabel>
-                          <Link
-                            href="/forgot-password"
-                            className="text-[10px] sm:text-xs text-muted-foreground hover:text-[#0ea5e9] transition-colors min-h-[44px] flex items-center touch-manipulation"
-                            aria-label="Forgot password?"
-                          >
-                            Forgot?
-                          </Link>
-                        </div>
-                        <div className="relative">
-                          <Input
-                            className="min-h-[44px] h-11 py-2.5 text-sm rounded-xl border border-white/10 bg-white/[0.04] text-foreground focus:ring-2 focus:ring-[#0ea5e9]/50 focus:border-[#0ea5e9]/50 transition-all pr-12 touch-manipulation"
-                            placeholder="Enter your password"
-                            type={showPassword ? "text" : "password"}
-                            autoComplete="current-password"
-                            {...field}
-                          />
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            className="absolute right-0 top-0 h-full min-w-[44px] min-h-[44px] px-3 text-muted-foreground hover:text-[#0ea5e9] transition-colors touch-manipulation rounded-r-xl"
-                            onClick={() => setShowPassword(!showPassword)}
-                            aria-label={showPassword ? "Hide password" : "Show password"}
-                          >
-                            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                          </Button>
-                        </div>
-                        <FormMessage className="text-xs" />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="remember"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-row items-center space-x-2 space-y-0">
-                        <Checkbox
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                          className="rounded border-white/20 focus:ring-[#0ea5e9]"
-                        />
-                        <FormLabel className="text-foreground text-[11px] sm:text-xs cursor-pointer">Remember me for 30 days</FormLabel>
-                      </FormItem>
-                    )}
-                  />
-                </CardContent>
-
-                <CardFooter className="flex flex-col space-y-3 p-4 sm:p-5 pt-0">
-                  <Button
-                    type="submit"
-                    className="w-full min-h-[44px] h-11 py-2.5 rounded-xl font-bold bg-gradient-to-r from-[#ea580c] via-[#fb923c] to-[#facc15] text-white hover:opacity-90 transition-opacity touch-manipulation text-xs sm:text-sm"
-                    disabled={isLoading}
-                    aria-label={isLoading ? "Signing in" : "Sign in"}
-                  >
-                    {isLoading ? (
-                      <>
-                        <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" aria-hidden="true" />
-                        Signing in...
-                      </>
-                    ) : (
-                      <>
-                        Sign in <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
-                      </>
-                    )}
-                  </Button>
-
-                  <div className="relative w-full flex items-center my-1">
-                    <div className="flex-grow border-t border-white/10" />
-                    <span className="mx-2 px-2 text-[10px] sm:text-xs text-muted-foreground">OR</span>
-                    <div className="flex-grow border-t border-white/10" />
-                  </div>
-
-                  <Button
+                  <button
                     type="button"
-                    variant="outline"
-                    className="w-full min-h-[44px] h-11 rounded-xl border-white/10 text-foreground hover:bg-white/[0.06] bg-transparent touch-manipulation text-xs sm:text-sm"
-                    onClick={handleGoogleSignIn}
-                    disabled={isLoading}
-                    aria-label="Sign in with Google"
+                    className="auth-toggle-password"
+                    onClick={() => setShowPassword(!showPassword)}
+                    aria-label={showPassword ? "Hide password" : "Show password"}
                   >
-                    <svg className="mr-2 h-4 w-4 shrink-0" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                      <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
-                      <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
-                      <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
-                      <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
-                      <path d="M1 1h22v22H1z" fill="none" />
-                    </svg>
-                    Sign in with Google
-                  </Button>
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+                {form.formState.errors.password && (
+                  <span className="auth-error">{form.formState.errors.password.message}</span>
+                )}
+              </div>
 
-                  <p className="text-center text-[10px] sm:text-xs text-muted-foreground">
-                    Don&apos;t have an account?{" "}
-                    <Link href="/signup" className="text-[#0ea5e9] hover:text-[#fb923c] transition-colors font-medium touch-manipulation" aria-label="Go to sign up">
-                      Sign up
-                    </Link>
-                  </p>
-                </CardFooter>
-              </form>
-            </Form>
-          </Card>
-        </motion.div>
+              <label className="auth-checkbox-wrap">
+                <input type="checkbox" className="auth-checkbox" {...form.register("remember")} />
+                <span className="auth-checkbox-label">Remember me</span>
+              </label>
 
-        <motion.div
-          className="flex items-center justify-center text-[10px] sm:text-xs text-muted-foreground"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.6 }}
-          role="status"
-          aria-label="Secure login"
-        >
-          <Lock className="h-3 w-3 mr-1 shrink-0" aria-hidden="true" />
-          <span>Secure login · 256-bit encryption</span>
-        </motion.div>
-      </motion.div>
+              <button
+                type="submit"
+                className="auth-btn auth-btn-primary login-btn-primary"
+                disabled={isLoading}
+                aria-label={isLoading ? "Signing in" : "Sign in"}
+              >
+                {isLoading ? (
+                  <> <span className="login-spinner" aria-hidden /> Signing in... </>
+                ) : (
+                  "Sign in"
+                )}
+              </button>
+
+              <div className="auth-divider login-form-divider">
+                <span>OR</span>
+              </div>
+
+              <button
+                type="button"
+                className="auth-btn login-btn-ghost"
+                onClick={handleGoogleSignIn}
+                disabled={isLoading}
+                aria-label="Sign in with Google"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" style={{ marginRight: "0.4rem" }} aria-hidden>
+                  <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
+                  <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
+                  <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
+                  <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
+                </svg>
+                Sign in with Google
+              </button>
+            </form>
+            <p className="auth-footer-text login-form-footer">
+              No account yet? <Link href="/signup" scroll={false}>Sign up</Link>
+            </p>
+          </div>
+        </div>
+      </main>
     </div>
   )
 }

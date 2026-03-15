@@ -2,28 +2,55 @@
 
 import { useState } from "react"
 import { useParams, useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
+import Link from "next/link"
 import {
   ArrowLeft,
-  Clock,
-  Trophy,
-  Target,
+  ChevronDown,
+  ChevronUp,
   Check,
-  Circle,
   Lock,
   Upload,
-  Calendar,
-  Star,
-  AlertCircle,
-  ListTodo,
-  Map,
-  FileCheck,
+  Heart,
+  MessageCircle,
+  Bookmark,
+  Bell,
+  Play,
+  Target,
+  Flame,
 } from "lucide-react"
-import Link from "next/link"
+
+const APP_GRADIENT = "linear-gradient(135deg, #db2777 0%, #ea580c 35%, #2563eb 70%, #7c3aed 100%)"
+const CARD_BASE = "rounded-2xl border border-slate-200/80 bg-white shadow-sm"
 
 // Mock data
-const challengeData = {
+const challengeData: Record<
+  number,
+  {
+    id: number
+    name: string
+    description: string
+    difficulty: number
+    duration: number
+    currentDay: number
+    daysRemaining: number
+    progress: number
+    reward: number
+    requirements: string[]
+    roadmap: {
+      id: number
+      title: string
+      status: "completed" | "in_progress" | "locked"
+      tasks: { id: number; title: string; completed: boolean; day: number | string }[]
+    }[]
+    todayTask: {
+      day: number
+      title: string
+      description: string
+      requirements: string[]
+      xp: number
+    }
+  }
+> = {
   1: {
     id: 1,
     name: "30-Day Python Mastery",
@@ -38,13 +65,13 @@ const challengeData = {
       "Complete 3 LeetCode problems daily",
       "Build 1 project per week",
       "Submit code screenshots as proof",
-      "Follow Python best practices"
+      "Follow Python best practices",
     ],
     roadmap: [
       {
         id: 1,
         title: "Week 1: Python Fundamentals",
-        status: "completed" as const,
+        status: "completed",
         tasks: [
           { id: 1, title: "Variables & Data Types", completed: true, day: 1 },
           { id: 2, title: "Control Flow (if/else, loops)", completed: true, day: 2 },
@@ -58,7 +85,7 @@ const challengeData = {
       {
         id: 2,
         title: "Week 2: Data Structures & Algorithms",
-        status: "in_progress" as const,
+        status: "in_progress",
         tasks: [
           { id: 8, title: "Arrays & Strings", completed: true, day: 8 },
           { id: 9, title: "Stacks & Queues", completed: true, day: 9 },
@@ -72,7 +99,7 @@ const challengeData = {
       {
         id: 3,
         title: "Week 3: OOP & Design Patterns",
-        status: "locked" as const,
+        status: "locked",
         tasks: [
           { id: 15, title: "Classes & Objects", completed: false, day: 15 },
           { id: 16, title: "Inheritance & Polymorphism", completed: false, day: 16 },
@@ -86,7 +113,7 @@ const challengeData = {
       {
         id: 4,
         title: "Week 4: Real-World Application",
-        status: "locked" as const,
+        status: "locked",
         tasks: [
           { id: 22, title: "API Development with Flask", completed: false, day: 22 },
           { id: 23, title: "Database Integration", completed: false, day: 23 },
@@ -101,12 +128,13 @@ const challengeData = {
     todayTask: {
       day: 12,
       title: "Sorting Algorithms",
-      description: "Implement and analyze QuickSort, MergeSort, and HeapSort",
+      description:
+        "Implement and analyze QuickSort, MergeSort, and HeapSort. Code all three sorting algorithms, write time complexity analysis, and create a comparison benchmark. Upload a code screenshot as proof of completion.",
       requirements: [
         "Code all three sorting algorithms",
         "Write time complexity analysis",
         "Create comparison benchmark",
-        "Upload code screenshot"
+        "Upload code screenshot",
       ],
       xp: 50,
     },
@@ -125,13 +153,13 @@ const challengeData = {
       "Post valuable content daily",
       "Engage with 5+ posts per day",
       "Connect with 3 professionals weekly",
-      "Share screenshots of activity"
+      "Share screenshots of activity",
     ],
     roadmap: [
       {
         id: 1,
         title: "Week 1: Profile & Content Foundation",
-        status: "in_progress" as const,
+        status: "in_progress",
         tasks: [
           { id: 1, title: "Optimize profile photo & headline", completed: true, day: 1 },
           { id: 2, title: "Write compelling about section", completed: true, day: 2 },
@@ -145,7 +173,7 @@ const challengeData = {
       {
         id: 2,
         title: "Week 2: Growth & Engagement",
-        status: "locked" as const,
+        status: "locked",
         tasks: [
           { id: 8, title: "Post about learning journey", completed: false, day: 8 },
           { id: 9, title: "Share a success story", completed: false, day: 9 },
@@ -160,12 +188,13 @@ const challengeData = {
     todayTask: {
       day: 7,
       title: "Connect with 5 professionals",
-      description: "Reach out to professionals in your industry with personalized messages",
+      description:
+        "Reach out to professionals in your industry with personalized messages. Find 5 relevant connections, write personalized connection requests, and upload a screenshot of sent requests as proof.",
       requirements: [
         "Find 5 relevant connections",
         "Write personalized connection requests",
         "Screenshot sent requests",
-        "Upload proof"
+        "Upload proof",
       ],
       xp: 30,
     },
@@ -177,283 +206,450 @@ export default function ChallengeDetailPage() {
   const router = useRouter()
   const challengeId = parseInt(params.id as string)
   const challenge = challengeData[challengeId as keyof typeof challengeData]
+
+  const [expandedWeeks, setExpandedWeeks] = useState<Set<number>>(new Set([1, 2]))
   const [showUploadProof, setShowUploadProof] = useState(false)
+  const [liked, setLiked] = useState(false)
+  const [saved, setSaved] = useState(false)
+
+  const handleToggleWeek = (weekId: number) => {
+    setExpandedWeeks((prev) => {
+      const next = new Set(prev)
+      if (next.has(weekId)) next.delete(weekId)
+      else next.add(weekId)
+      return next
+    })
+  }
 
   if (!challenge) {
     return (
-      <div className="min-h-screen bg-gradient-to-r from-[#0c1525] via-[#0a0a12] to-[#151008] flex items-center justify-center pb-20 px-4">
-        <div className="text-center p-4">
-          <h1 className="text-xl font-bold mb-3">Challenge not found</h1>
-          <Button size="sm" asChild>
-            <Link href="/challenges">Back to Challenges</Link>
-          </Button>
+      <div className="flex min-h-screen items-center justify-center bg-[#f5f5f6] px-4">
+        <div className="text-center">
+          <h1 className="text-xl font-bold text-slate-800">Challenge not found</h1>
+          <Link
+            href="/challenges"
+            className="mt-4 inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white"
+            style={{ background: APP_GRADIENT }}
+          >
+            <ArrowLeft className="h-4 w-4" aria-hidden /> Back to Challenges
+          </Link>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-r from-[#0c1525] via-[#0a0a12] to-[#151008] pb-20">
-      <section className="container mx-auto px-4 pt-4 sm:pt-6 md:pt-8 pb-4 sm:pb-6">
-        <div className="max-w-4xl mx-auto rounded-2xl bg-gradient-to-br from-[#0c1525]/95 via-[#0a0a12]/98 to-[#151008]/95 backdrop-blur-xl shadow-2xl overflow-hidden relative">
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-64 bg-gradient-to-r from-[#ea580c]/10 via-[#fb923c]/15 to-[#facc15]/10 blur-[100px] rounded-full -z-10 pointer-events-none" aria-hidden="true" />
+    <div className="min-h-screen bg-[#f5f5f6] font-sans text-slate-800 antialiased">
+      {/* Gradient header — matches landing page header style */}
+      <header
+        className="sticky top-0 z-30 border-b border-white/10"
+        style={{ background: APP_GRADIENT }}
+      >
+        <div className="mx-auto flex h-14 max-w-7xl items-center gap-3 px-4 sm:px-6">
+          <Link
+            href="/challenges"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/20 text-white transition-colors hover:bg-white/30"
+            aria-label="Back to challenges"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Link>
 
-          {/* Hero */}
-          <div className="p-4 sm:p-6 flex items-start gap-3">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => router.back()}
-              className="h-10 w-10 p-0 rounded-xl shrink-0 touch-manipulation min-h-[44px] min-w-[44px]"
-              aria-label="Back to challenges"
+          {/* Challenge name — truncates on mobile */}
+          <p className="min-w-0 flex-1 truncate text-sm font-semibold text-white">
+            {challenge.name}
+          </p>
+
+          <div className="flex shrink-0 items-center gap-2">
+            <button
+              type="button"
+              className="flex h-9 w-9 items-center justify-center rounded-xl text-white/90 transition-colors hover:bg-white/20"
+              aria-label="Notifications"
             >
-              <ArrowLeft className="w-4 h-4" />
-            </Button>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 text-[10px] text-muted-foreground uppercase tracking-[0.2em] mb-1">
-                <Link href="/challenges" className="hover:text-foreground transition-colors">
-                  Challenges
-                </Link>
-                <span>/</span>
-                <span className="text-foreground truncate">{challenge.name}</span>
+              <Bell className="h-5 w-5" />
+            </button>
+
+            {/* Day + XP pill — hidden on tiny screens */}
+            <div className="hidden items-center gap-2 rounded-xl bg-white/20 px-3 py-1.5 sm:flex">
+              <div
+                className="flex h-7 w-7 items-center justify-center rounded-full bg-white/30 text-xs font-bold text-white"
+                aria-hidden
+              >
+                R
               </div>
-              <h1 className="text-xl md:text-2xl font-black bg-gradient-to-r from-[#ea580c] via-[#fb923c] to-[#facc15] bg-clip-text text-transparent truncate">
-                {challenge.name}
-              </h1>
-              <div className="flex items-center gap-2 flex-wrap mt-2">
-                <Badge variant="secondary" className="bg-[#0ea5e9]/10 text-[#0ea5e9] border-[#0ea5e9]/30 text-[10px] font-bold uppercase tracking-wider">
+              <div>
+                <p className="text-xs font-semibold leading-none text-white">
                   Day {challenge.currentDay}/{challenge.duration}
-                </Badge>
-                <Badge variant="secondary" className="bg-[#fb923c]/10 text-[#fb923c] border-[#fb923c]/30 text-[10px] font-bold uppercase tracking-wider">
-                  <Trophy className="w-2.5 h-2.5 mr-0.5" aria-hidden="true" />
-                  Difficulty {challenge.difficulty}/5
-                </Badge>
+                </p>
+                <p className="mt-0.5 text-[10px] leading-none text-white/70">
+                  {challenge.reward} XP reward
+                </p>
               </div>
-            </div>
-          </div>
-
-          {/* Today's Task */}
-          <div className="border-t border-white/5 p-4 sm:p-6">
-            <div className="rounded-xl bg-white/[0.04] p-4 sm:p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-xl bg-[#0ea5e9]/10 flex items-center justify-center flex-shrink-0" aria-hidden="true">
-                <Star className="w-5 h-5 text-[#0ea5e9]" />
-              </div>
-              <div>
-                <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">
-                  Today&apos;s task • Day {challenge.todayTask.day}
-                </div>
-                <h2 className="text-base font-bold text-foreground leading-tight">{challenge.todayTask.title}</h2>
-              </div>
-            </div>
-            <p className="text-sm text-muted-foreground leading-relaxed mb-4">
-              {challenge.todayTask.description}
-            </p>
-            <div className="rounded-xl bg-white/[0.04] p-4 mb-4">
-              <div className="text-[10px] font-bold text-[#0ea5e9] uppercase tracking-wider mb-2">Requirements</div>
-              <ul className="space-y-2">
-                {challenge.todayTask.requirements.map((req, i) => (
-                  <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground leading-relaxed">
-                    <Circle className="w-3 h-3 text-[#0ea5e9] mt-0.5 flex-shrink-0" aria-hidden="true" />
-                    <span>{req}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <Button
-              size="sm"
-              onClick={() => setShowUploadProof(true)}
-              className="w-full min-h-[44px] bg-gradient-to-r from-[#ea580c] via-[#fb923c] to-[#facc15] hover:opacity-90 text-white border-0 text-[10px] font-bold uppercase tracking-wider touch-manipulation"
-            >
-              <Upload className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" />
-              Submit proof for today
-            </Button>
-            </div>
-          </div>
-
-          {/* Progress Overview */}
-          <div className="border-t border-white/5 p-4 sm:p-6">
-            <div className="rounded-xl bg-white/[0.04] p-4 sm:p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-xl bg-[#0ea5e9]/10 flex items-center justify-center flex-shrink-0" aria-hidden="true">
-                <Target className="w-5 h-5 text-[#0ea5e9]" />
-              </div>
-              <div>
-                <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Progress • Overview</div>
-                <div className="text-base font-bold text-foreground">{challenge.progress}% complete</div>
-              </div>
-            </div>
-            <div className="rounded-xl bg-white/[0.04] p-3 mb-4">
-              <div className="flex items-center justify-between gap-2 mb-1.5">
-                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Progress</span>
-                <span className="text-sm font-bold text-[#0ea5e9]">{challenge.progress}%</span>
-              </div>
-              <div className="h-2 bg-white/10 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-gradient-to-r from-[#0ea5e9] to-[#fb923c] rounded-full transition-all duration-500"
-                  style={{ width: `${challenge.progress}%` }}
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="rounded-xl bg-white/[0.04] p-3">
-                <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-0.5">Days left</div>
-                <div className="text-lg font-bold text-foreground">{challenge.daysRemaining}</div>
-              </div>
-              <div className="rounded-xl bg-[#fb923c]/10 p-3">
-                <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-0.5">Reward</div>
-                <div className="text-lg font-bold text-[#fb923c]">+{challenge.reward} EliteScore</div>
-              </div>
-            </div>
-            </div>
-          </div>
-
-          {/* Roadmap */}
-          <div className="border-t border-white/5 p-4 sm:p-6">
-            <div className="rounded-xl bg-white/[0.04] p-4 sm:p-6">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 rounded-xl bg-[#0ea5e9]/10 flex items-center justify-center flex-shrink-0" aria-hidden="true">
-                <Map className="w-5 h-5 text-[#0ea5e9]" />
-              </div>
-              <div>
-                <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Challenge roadmap</div>
-                <div className="text-base font-bold text-foreground">Week-by-week plan</div>
-              </div>
-            </div>
-            <div className="space-y-3">
-              {challenge.roadmap.map((week, index) => (
-                <div key={week.id} className="rounded-xl bg-white/[0.04] overflow-hidden">
-                  <div
-                    className={`p-4 ${
-                      week.status === "in_progress"
-                        ? "bg-[#0ea5e9]/5 border-b border-[#0ea5e9]/20"
-                        : week.status === "completed"
-                          ? "bg-green-500/5 border-b border-green-500/20"
-                          : "border-b border-white/5"
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div
-                          className={`w-8 h-8 rounded-xl flex items-center justify-center text-sm font-bold ${
-                            week.status === "in_progress"
-                              ? "bg-[#0ea5e9]/20 text-[#0ea5e9]"
-                              : week.status === "completed"
-                                ? "bg-green-500/20 text-green-500"
-                                : "bg-white/5 text-muted-foreground"
-                          }`}
-                          aria-hidden="true"
-                        >
-                          {week.status === "completed" ? <Check className="w-4 h-4" /> : index + 1}
-                        </div>
-                        <div>
-                          <h4 className="text-sm font-bold text-foreground">{week.title}</h4>
-                          <p className="text-[10px] text-muted-foreground uppercase tracking-wider">
-                            {week.tasks.filter((t) => t.completed).length}/{week.tasks.length} tasks completed
-                          </p>
-                        </div>
-                      </div>
-                      {week.status === "locked" && <Lock className="w-4 h-4 text-muted-foreground" aria-hidden="true" />}
-                    </div>
-                  </div>
-                  {week.status !== "locked" && (
-                    <div className="p-3 space-y-2">
-                      {week.tasks.map((task) => (
-                        <div
-                          key={task.id}
-                          className={`flex items-center gap-3 p-2.5 rounded-lg ${
-                            task.completed ? "bg-green-500/5 border border-green-500/10" : "bg-white/5 border border-white/5"
-                          }`}
-                        >
-                          <div
-                            className={`w-5 h-5 rounded flex items-center justify-center flex-shrink-0 ${
-                              task.completed ? "bg-green-500/20 border border-green-500/30" : "bg-white/5 border border-white/10"
-                            }`}
-                            aria-hidden="true"
-                          >
-                            {task.completed && <Check className="w-3 h-3 text-green-500" />}
-                          </div>
-                          <span
-                            className={`text-sm flex-1 leading-snug ${
-                              task.completed ? "line-through text-muted-foreground" : "text-foreground font-medium"
-                            }`}
-                          >
-                            Day {task.day}: {task.title}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-            </div>
-          </div>
-
-          {/* Requirements */}
-          <div className="border-t border-white/5 p-4 sm:p-6">
-            <div className="rounded-xl bg-white/[0.04] p-4 sm:p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-xl bg-[#0ea5e9]/10 flex items-center justify-center flex-shrink-0" aria-hidden="true">
-                <FileCheck className="w-5 h-5 text-[#0ea5e9]" />
-              </div>
-              <div>
-                <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Challenge requirements</div>
-                <div className="text-base font-bold text-foreground">What you need to follow</div>
-              </div>
-            </div>
-            <ul className="space-y-3">
-              {challenge.requirements.map((req, i) => (
-                <li key={i} className="flex items-start gap-3 p-3 rounded-xl bg-white/[0.04]">
-                  <AlertCircle className="w-4 h-4 text-[#0ea5e9] mt-0.5 flex-shrink-0" aria-hidden="true" />
-                  <span className="text-sm text-muted-foreground leading-relaxed">{req}</span>
-                </li>
-              ))}
-            </ul>
             </div>
           </div>
         </div>
-      </section>
+      </header>
 
-      {/* Upload Proof Modal - home UI style */}
+      {/* Progress bar just below header */}
+      <div className="h-1 w-full bg-slate-200/80">
+        <div
+          className="h-full transition-all duration-500"
+          style={{ width: `${challenge.progress}%`, background: APP_GRADIENT }}
+          role="progressbar"
+          aria-valuenow={challenge.progress}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-label={`${challenge.progress}% complete`}
+        />
+      </div>
+
+      <div className="mx-auto flex max-w-7xl">
+        {/* ── Left sidebar: Course outline (desktop only) ── */}
+        <aside className="hidden w-72 shrink-0 border-r border-slate-200/80 bg-white lg:block">
+          <div className="sticky top-[3.625rem] h-[calc(100vh-3.625rem)] overflow-y-auto">
+            <div className="border-b border-slate-100 px-5 py-4">
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-500">
+                Course outline
+              </p>
+              <p className="mt-0.5 text-sm font-semibold text-slate-800 leading-snug">
+                {challenge.name}
+              </p>
+            </div>
+
+            {challenge.roadmap.map((week) => {
+              const isExpanded = expandedWeeks.has(week.id)
+              const isLocked = week.status === "locked"
+              const completedCount = week.tasks.filter((t) => t.completed).length
+
+              return (
+                <div key={week.id} className="border-b border-slate-100">
+                  <button
+                    type="button"
+                    className={`flex w-full items-center justify-between gap-2 px-5 py-3 text-left transition-colors ${
+                      isLocked
+                        ? "cursor-default text-slate-400"
+                        : "text-slate-700 hover:bg-slate-50"
+                    }`}
+                    onClick={() => !isLocked && handleToggleWeek(week.id)}
+                    aria-expanded={isExpanded}
+                    disabled={isLocked}
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold">{week.title}</p>
+                      <p className="mt-0.5 text-[10px] text-slate-400">
+                        {completedCount}/{week.tasks.length} completed
+                      </p>
+                    </div>
+                    {isLocked ? (
+                      <Lock className="h-4 w-4 shrink-0 text-slate-300" aria-hidden />
+                    ) : isExpanded ? (
+                      <ChevronUp className="h-4 w-4 shrink-0 text-slate-400" aria-hidden />
+                    ) : (
+                      <ChevronDown className="h-4 w-4 shrink-0 text-slate-400" aria-hidden />
+                    )}
+                  </button>
+
+                  {isExpanded && !isLocked && (
+                    <ul className="pb-2 pl-5 pr-3">
+                      {week.tasks.map((task) => {
+                        const isCurrent =
+                          task.day === challenge.todayTask.day ||
+                          (typeof task.day === "number" && task.day === challenge.currentDay)
+                        return (
+                          <li key={task.id}>
+                            <div
+                              className={`flex items-center gap-2.5 rounded-xl px-2 py-2 text-sm transition-colors ${
+                                isCurrent
+                                  ? "bg-pink-50 font-semibold text-pink-700"
+                                  : "text-slate-600 hover:bg-slate-50"
+                              }`}
+                            >
+                              <span
+                                className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] ${
+                                  task.completed
+                                    ? "bg-emerald-500 text-white"
+                                    : isCurrent
+                                      ? "border-2 border-pink-500 bg-white"
+                                      : "border border-slate-200 bg-white"
+                                }`}
+                                aria-hidden
+                              >
+                                {task.completed && <Check className="h-3 w-3" />}
+                              </span>
+                              <span className="min-w-0 truncate">
+                                Day {task.day}: {task.title}
+                              </span>
+                            </div>
+                          </li>
+                        )
+                      })}
+                    </ul>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        </aside>
+
+        {/* ── Main content ── */}
+        <main className="min-w-0 flex-1 px-4 py-6 sm:px-6">
+          <div className="mx-auto max-w-3xl space-y-6">
+
+            {/* Mobile course outline accordion */}
+            <div className={`${CARD_BASE} overflow-hidden lg:hidden`}>
+              <button
+                type="button"
+                className="flex w-full items-center justify-between px-5 py-4 text-left"
+                onClick={() => {
+                  setExpandedWeeks((prev) => {
+                    const next = new Set(prev)
+                    if (next.has(-1)) next.delete(-1)
+                    else next.add(-1)
+                    return next
+                  })
+                }}
+                aria-expanded={expandedWeeks.has(-1)}
+              >
+                <span className="text-sm font-semibold text-slate-800">Course outline</span>
+                {expandedWeeks.has(-1) ? (
+                  <ChevronUp className="h-4 w-4 text-slate-400" aria-hidden />
+                ) : (
+                  <ChevronDown className="h-4 w-4 text-slate-400" aria-hidden />
+                )}
+              </button>
+              {expandedWeeks.has(-1) && (
+                <ul className="border-t border-slate-100 px-5 pb-4 pt-3 space-y-1">
+                  {challenge.roadmap.flatMap((week) =>
+                    week.tasks.map((task) => {
+                      const isCurrent = task.day === challenge.todayTask.day
+                      return (
+                        <li key={task.id} className={`flex items-center gap-2.5 rounded-xl px-2 py-1.5 text-sm ${isCurrent ? "bg-pink-50 font-semibold text-pink-700" : "text-slate-600"}`}>
+                          <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full ${task.completed ? "bg-emerald-500 text-white" : "border border-slate-200 bg-white"}`} aria-hidden>
+                            {task.completed && <Check className="h-3 w-3" />}
+                          </span>
+                          <span className="truncate">{task.title}</span>
+                        </li>
+                      )
+                    })
+                  )}
+                </ul>
+              )}
+            </div>
+
+            {/* Lesson title + Next */}
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-500">
+                  Day {challenge.todayTask.day} · {challenge.todayTask.xp} XP
+                </p>
+                <h1 className="mt-0.5 text-xl font-bold leading-tight text-slate-800 sm:text-2xl">
+                  {challenge.todayTask.title}
+                </h1>
+              </div>
+              <button
+                type="button"
+                className="flex shrink-0 items-center gap-1.5 rounded-xl border-2 border-pink-500/40 bg-white px-4 py-2 text-sm font-semibold text-pink-600 transition-all hover:border-pink-500 hover:bg-pink-50 hover:scale-[1.02]"
+              >
+                Next →
+              </button>
+            </div>
+
+            {/* Video block — landing-style card */}
+            <div className="overflow-hidden rounded-2xl border border-slate-200/80 shadow-lg">
+              <div className="relative flex aspect-video items-center justify-center bg-gradient-to-br from-slate-800 to-slate-900">
+                <button
+                  type="button"
+                  className="flex h-16 w-16 items-center justify-center rounded-full bg-white/90 text-slate-800 shadow-xl transition-transform hover:scale-105 active:scale-95"
+                  aria-label="Play video"
+                >
+                  <Play className="h-8 w-8 pl-1" fill="currentColor" />
+                </button>
+                {/* Mini stats overlay */}
+                <div className="absolute inset-x-0 bottom-0 flex items-center justify-between bg-gradient-to-t from-black/60 to-transparent px-4 pb-3 pt-6">
+                  <span className="text-xs font-medium text-white/90">
+                    {challenge.name}
+                  </span>
+                  <div className="flex items-center gap-1.5 rounded-full bg-white/20 px-2.5 py-1 text-xs font-semibold text-white backdrop-blur-sm">
+                    <Flame className="h-3.5 w-3.5 text-orange-300" aria-hidden />
+                    {challenge.progress}% done
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Action bar */}
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200/80 pb-5">
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => setLiked(!liked)}
+                  className={`flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-medium transition-colors ${
+                    liked ? "bg-pink-50 text-pink-600" : "text-slate-500 hover:bg-slate-100 hover:text-slate-700"
+                  }`}
+                  aria-pressed={liked}
+                >
+                  <Heart className={`h-4 w-4 ${liked ? "fill-current" : ""}`} aria-hidden />
+                  Like
+                </button>
+                <button
+                  type="button"
+                  className="flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-medium text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700"
+                >
+                  <MessageCircle className="h-4 w-4" aria-hidden />
+                  Comment
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSaved(!saved)}
+                  className={`flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-medium transition-colors ${
+                    saved ? "bg-pink-50 text-pink-600" : "text-slate-500 hover:bg-slate-100 hover:text-slate-700"
+                  }`}
+                  aria-pressed={saved}
+                >
+                  <Bookmark className={`h-4 w-4 ${saved ? "fill-current" : ""}`} aria-hidden />
+                  Save
+                </button>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowUploadProof(true)}
+                className="flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold text-white shadow-md transition-transform hover:scale-[1.02]"
+                style={{ background: APP_GRADIENT }}
+              >
+                <Check className="h-4 w-4" aria-hidden />
+                Submit &amp; Complete
+              </button>
+            </div>
+
+            {/* Challenge description card — landing style */}
+            <section className={`${CARD_BASE} p-5 sm:p-6`} aria-labelledby="challenge-desc-heading">
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-500">
+                Challenge · Day {challenge.todayTask.day}
+              </p>
+              <h2 id="challenge-desc-heading" className="mt-1 text-lg font-bold text-slate-800">
+                {challenge.todayTask.title}
+              </h2>
+              <p className="mt-3 text-sm leading-relaxed text-slate-600">
+                {challenge.todayTask.description}
+              </p>
+            </section>
+
+            {/* What to submit card */}
+            <section className={`${CARD_BASE} p-5 sm:p-6`} aria-labelledby="submit-heading">
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-500">
+                Submission
+              </p>
+              <h2 id="submit-heading" className="mt-1 text-lg font-bold text-slate-800">
+                What to submit
+              </h2>
+              <ul className="mt-4 space-y-3">
+                {challenge.todayTask.requirements.map((req, i) => (
+                  <li
+                    key={i}
+                    className="flex items-start gap-3 rounded-xl border border-slate-200/80 bg-slate-50/50 px-4 py-3"
+                  >
+                    <span
+                      className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white"
+                      style={{ background: APP_GRADIENT }}
+                      aria-hidden
+                    >
+                      {i + 1}
+                    </span>
+                    <span className="text-sm leading-relaxed text-slate-700">{req}</span>
+                  </li>
+                ))}
+              </ul>
+              <button
+                type="button"
+                onClick={() => setShowUploadProof(true)}
+                className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold text-white transition-transform hover:scale-[1.02]"
+                style={{ background: APP_GRADIENT }}
+              >
+                <Upload className="h-4 w-4" aria-hidden />
+                Upload Proof
+              </button>
+            </section>
+
+            {/* Progress stats row */}
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+              {[
+                { label: "Day", value: `${challenge.currentDay} / ${challenge.duration}`, icon: Target },
+                { label: "Days left", value: `${challenge.daysRemaining}`, icon: Flame },
+                { label: "Reward", value: `+${challenge.reward} XP`, icon: Check, accent: true },
+              ].map(({ label, value, icon: Icon, accent }) => (
+                <article
+                  key={label}
+                  className={`${CARD_BASE} flex flex-col items-center py-5 px-4 text-center`}
+                >
+                  <Icon
+                    className={`h-5 w-5 ${accent ? "text-pink-500" : "text-slate-400"}`}
+                    aria-hidden
+                  />
+                  <p className={`mt-2 text-xl font-bold ${accent ? "text-pink-600" : "text-slate-800"}`}>
+                    {value}
+                  </p>
+                  <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+                    {label}
+                  </p>
+                </article>
+              ))}
+            </div>
+          </div>
+        </main>
+      </div>
+
+      {/* Upload Proof Modal - light theme */}
       {showUploadProof && (
         <div
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 backdrop-blur-sm sm:items-center"
           onClick={() => setShowUploadProof(false)}
         >
           <div
-            className="rounded-t-2xl sm:rounded-2xl border-0 sm:border border-[#0ea5e9]/20 bg-[#0c1525]/95 backdrop-blur-xl p-6 max-w-md w-full shadow-2xl"
+            className="w-full max-w-md overflow-hidden rounded-2xl bg-white p-6 shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] mb-0.5">Submit proof</div>
-            <h3 className="text-lg font-bold text-foreground mb-4">Upload your completion proof</h3>
-            <div className="space-y-3">
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-500">
+              Submit proof
+            </p>
+            <h3 className="mt-0.5 text-lg font-bold text-slate-800">Upload your completion proof</h3>
+            <div className="mt-4 space-y-4">
               <div>
-                <label className="text-[10px] text-muted-foreground mb-1 block">Upload Screenshot/Photo</label>
+                <label htmlFor="proof-file" className="mb-1 block text-xs font-medium text-slate-700">
+                  Screenshot / Photo
+                </label>
                 <input
+                  id="proof-file"
                   type="file"
-                  className="w-full text-[10px] text-foreground file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-[10px] file:font-medium file:bg-[#0ea5e9]/10 file:text-[#0ea5e9] hover:file:bg-[#0ea5e9]/20"
+                  accept="image/*,.pdf"
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-2 text-sm text-slate-800 file:mr-2 file:rounded-lg file:border-0 file:bg-pink-50 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-pink-600 hover:file:bg-pink-100"
                 />
               </div>
               <div>
-                <label className="text-[10px] text-muted-foreground mb-1 block">Description</label>
+                <label htmlFor="proof-desc" className="mb-1 block text-xs font-medium text-slate-700">
+                  Description
+                </label>
                 <textarea
+                  id="proof-desc"
                   placeholder="Describe what you completed..."
-                  className="w-full p-2 rounded-lg bg-background/50 border border-border/50 text-xs text-foreground placeholder:text-muted-foreground resize-none focus:border-[#0ea5e9]/50 focus:outline-none"
+                  className="w-full resize-none rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 focus:border-pink-500/50 focus:outline-none focus:ring-2 focus:ring-pink-500/20"
                   rows={3}
                 />
               </div>
               <div className="flex gap-3 pt-2">
-                <Button
+                <button
+                  type="button"
                   onClick={() => setShowUploadProof(false)}
-                  variant="outline"
-                  className="flex-1 text-[10px] h-9 font-bold uppercase tracking-wider bg-transparent border-white/10"
+                  className="flex-1 rounded-xl border border-slate-200 bg-white py-3 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-50"
                 >
                   Cancel
-                </Button>
-                <Button className="flex-1 min-h-[44px] bg-gradient-to-r from-[#ea580c] to-[#fb923c] hover:opacity-90 text-white text-[10px] font-bold uppercase tracking-wider border-0 touch-manipulation">
-                  Submit
-                </Button>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowUploadProof(false)}
+                  className="flex flex-1 items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold text-white transition-transform hover:scale-[1.02]"
+                  style={{ background: APP_GRADIENT }}
+                >
+                  <Upload className="h-4 w-4" aria-hidden /> Submit
+                </button>
               </div>
             </div>
           </div>

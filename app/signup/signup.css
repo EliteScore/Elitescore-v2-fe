@@ -1,0 +1,424 @@
+/* Signup page: same split layout as login – left gradient + copy, right form */
+
+.signup-page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+  overflow: hidden;
+}
+
+.signup-page .auth-main {
+  flex: 1;
+  min-height: 0;
+  padding: 0.75rem 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.signup-page .auth-page-footer {
+  display: none;
+}
+
+/* Split card: 75% viewport width and height (desktop) */
+.signup-split-card {
+  display: flex;
+  width: 75vw;
+  height: 75vh;
+  min-height: 0;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(0, 0, 0, 0.06);
+  background: var(--white);
+}
+
+.signup-split-left {
+  flex: 1;
+  min-width: 0;
+  background: var(--auth-gradient);
+  background-size: 200% 200%;
+  animation: authGradientShift 16s ease-in-out infinite;
+  padding: 1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.signup-split-label {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.85);
+  margin: 0 0 0.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.35);
+  padding-bottom: 0.25rem;
+  width: fit-content;
+}
+
+.signup-split-headline {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 1.25rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.2;
+  color: var(--white);
+  margin: 0 0 0.375rem;
+}
+
+.signup-split-copy {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.9);
+  margin: 0;
+  line-height: 1.4;
+}
+
+.signup-split-right {
+  flex: 1;
+  min-width: 0;
+  background: var(--white);
+  padding: 1rem 1.25rem;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.signup-form-title {
+  font-size: 1.125rem;
+  font-weight: 800;
+  color: var(--dark);
+  margin: 0 0 0.125rem;
+}
+
+.signup-form-sub {
+  font-size: 0.75rem;
+  color: var(--gray);
+  margin: 0 0 0.75rem;
+}
+
+.signup-form {
+  gap: 0.5rem;
+}
+
+.signup-form .auth-field {
+  gap: 0.25rem;
+}
+
+.signup-form .auth-label {
+  font-size: 0.75rem;
+  color: var(--dark);
+}
+
+.signup-form .auth-input {
+  min-height: 40px;
+  padding: 0 1rem;
+  font-size: 0.875rem;
+  background: #f1f5f9;
+  color: var(--dark);
+  border-radius: 12px;
+}
+
+.signup-form .auth-input:focus {
+  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.25);
+}
+
+.signup-form .auth-input-wrap .auth-input {
+  padding-right: 2.5rem;
+}
+
+.signup-form .auth-toggle-password {
+  right: 0.75rem;
+}
+
+.signup-form .auth-checkbox-label {
+  font-size: 0.75rem;
+  color: var(--dark);
+}
+
+.signup-form .auth-checkbox {
+  width: 1rem;
+  height: 1rem;
+  border-color: rgba(0, 0, 0, 0.25);
+  accent-color: var(--dark);
+}
+
+.signup-btn-primary {
+  min-height: 40px;
+  font-size: 0.875rem;
+  background: var(--dark);
+  color: var(--white);
+}
+
+.signup-btn-primary:hover:not(:disabled) {
+  background: #334155;
+}
+
+.signup-form-divider::before,
+.signup-form-divider::after {
+  background: rgba(0, 0, 0, 0.12);
+}
+
+.signup-form-divider span {
+  font-size: 0.6875rem;
+  color: var(--gray);
+}
+
+.signup-btn-ghost {
+  min-height: 40px;
+  font-size: 0.8125rem;
+  background: #f1f5f9;
+  color: var(--dark);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.signup-btn-ghost:hover:not(:disabled) {
+  background: #e2e8f0;
+  border-color: rgba(0, 0, 0, 0.15);
+}
+
+.signup-form-footer {
+  margin: 0.5rem 0 0;
+  font-size: 0.6875rem;
+  color: var(--gray);
+}
+
+.signup-form-footer a {
+  color: var(--dark);
+  font-weight: 600;
+}
+
+.signup-form-link {
+  color: var(--dark);
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+.signup-form-link:hover {
+  color: var(--gray);
+}
+
+.signup-form-error {
+  color: #dc2626;
+  font-size: 0.75rem;
+}
+
+.signup-requirements {
+  padding: 0.5rem 0.75rem;
+  background: #f1f5f9;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 10px;
+  margin-top: 0.25rem;
+}
+
+.signup-requirements p {
+  font-size: 0.625rem;
+  font-weight: 600;
+  color: var(--gray);
+  margin: 0 0 0.25rem;
+}
+
+.signup-requirements li {
+  font-size: 0.6875rem;
+  color: var(--gray);
+  margin: 0.2rem 0;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.signup-requirements li.met {
+  color: #16a34a;
+}
+
+.signup-spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin-right: 0.35rem;
+  vertical-align: -0.2em;
+}
+
+/* Mobile: full width, 70% height (15% top/bottom) */
+@media (max-width: 768px) {
+  .signup-page .auth-main {
+    padding: 0;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .signup-split-card {
+    flex-direction: row;
+    width: 100%;
+    height: 70dvh;
+    min-height: 0;
+    border-radius: 16px;
+    overflow: hidden;
+  }
+
+  .signup-split-left {
+    flex: 0 0 42%;
+    min-width: 0;
+    padding: 0.75rem 0.875rem;
+    justify-content: center;
+  }
+
+  .signup-split-label {
+    font-size: 0.5rem;
+    letter-spacing: 0.08em;
+    margin-bottom: 0.25rem;
+  }
+
+  .signup-split-headline {
+    font-size: 0.9375rem;
+    margin-bottom: 0.2rem;
+  }
+
+  .signup-split-copy {
+    font-size: 0.625rem;
+    line-height: 1.35;
+    margin: 0;
+  }
+
+  .signup-split-right {
+    flex: 1;
+    min-width: 0;
+    padding: 0.625rem 0.75rem;
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .signup-form-title {
+    font-size: 0.8125rem;
+    margin-bottom: 0.0625rem;
+  }
+
+  .signup-form-sub {
+    font-size: 0.5625rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .signup-form {
+    gap: 0.25rem;
+  }
+
+  .signup-form .auth-field {
+    gap: 0.125rem;
+  }
+
+  .signup-form .auth-label {
+    font-size: 0.625rem;
+  }
+
+  .signup-form .auth-input {
+    min-height: 36px;
+    font-size: 0.75rem;
+    padding: 0 0.5rem;
+    border-radius: 10px;
+  }
+
+  .signup-form .auth-input-wrap .auth-input {
+    padding-right: 2rem;
+  }
+
+  .signup-form .auth-toggle-password {
+    right: 0.5rem;
+  }
+
+  .signup-form .auth-checkbox-label {
+    font-size: 0.625rem;
+  }
+
+  .signup-form .auth-checkbox {
+    width: 0.875rem;
+    height: 0.875rem;
+  }
+
+  .signup-btn-primary,
+  .signup-btn-ghost {
+    min-height: 36px;
+    font-size: 0.75rem;
+    border-radius: 10px;
+  }
+
+  .signup-form-divider span {
+    font-size: 0.5625rem;
+  }
+
+  .signup-form-footer {
+    margin-top: 0.25rem;
+    font-size: 0.5625rem;
+  }
+
+  .signup-requirements {
+    padding: 0.375rem 0.5rem;
+  }
+
+  .signup-requirements p {
+    font-size: 0.5625rem;
+  }
+
+  .signup-requirements li {
+    font-size: 0.625rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .signup-page .auth-main {
+    padding: 0;
+  }
+
+  .signup-split-card {
+    width: 100%;
+    height: 70dvh;
+    border-radius: 12px;
+  }
+
+  .signup-split-left {
+    flex: 0 0 40%;
+    padding: 0.5rem 0.625rem;
+  }
+
+  .signup-split-label {
+    font-size: 0.4375rem;
+  }
+
+  .signup-split-headline {
+    font-size: 0.8125rem;
+  }
+
+  .signup-split-copy {
+    font-size: 0.5625rem;
+  }
+
+  .signup-split-right {
+    padding: 0.5rem 0.625rem;
+  }
+
+  .signup-form-title {
+    font-size: 0.75rem;
+  }
+
+  .signup-form-sub {
+    font-size: 0.5rem;
+    margin-bottom: 0.375rem;
+  }
+
+  .signup-form .auth-input {
+    min-height: 32px;
+    font-size: 0.6875rem;
+  }
+
+  .signup-btn-primary,
+  .signup-btn-ghost {
+    min-height: 32px;
+    font-size: 0.6875rem;
+  }
+}

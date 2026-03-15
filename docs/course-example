@@ -1,0 +1,77 @@
+
+
+
+Introduction to Git and GitHub | Google IT Automation with Python Certificate
+https://www.youtube.com/playlist?list=PLTZYG7bZ1u6qck0rYNHO2Yfjzq5ZRRTCe
+
+Day 1 — Intro + set up your GitHub repo
+Watch: 0:00–6:08
+Link: https://youtu.be/0szcEwY-INI?si=i95A3UmJR3znFMI-&t=0
+Today is about creating your starting point and understanding why version control exists in the first place. Watch the intro section, then create or log into your GitHub account and make a public repository called git-sprint. Inside that repo, create a simple README.md file directly on GitHub with a short introduction about who you are and what this sprint is for. Keep it simple: 2–5 lines is enough. The goal today is not to build anything complex, but to make sure you have a visible project space and understand that GitHub is where your code, history, and progress can live publicly.
+What to submit:
+Submit the repository link, one screenshot clearly showing the repo and the README file, and a short explanation in your own words of what version control is and why it is useful.
+
+Day 2 — Version control basics with diff and patch
+Watch: 0:00–21:28
+Link: https://youtu.be/Ap0_1lVm76k?si=UFvXnkDyBA2sWR75&t=0
+Today is about understanding file changes before Git starts handling them for you. Create two text files called notes_v1.txt and notes_v2.txt. Write a few lines in the first file, then change, add, or remove some text in the second file so there are visible differences between them. After that, use diff -u notes_v1.txt notes_v2.txt > change.patch to generate a patch file, and use patch notes_v1.txt < change.patch to apply that change to the original version. The goal is to see how differences between file versions can be represented and transferred in a structured way.
+What to submit:
+Submit one screenshot showing the diff output, one screenshot showing the patch being applied, and the change.patch file or a screenshot of its contents. It should be obvious from your submission that you created the two versions yourself and successfully applied the patch.
+
+Day 3 — Install Git and set your identity
+Watch: 21:28–43:54
+Link: https://youtu.be/Ap0_1lVm76k?si=UFvXnkDyBA2sWR75&t=1288
+Today you move from theory into the actual Git tool. Install Git on your computer, then confirm that it is working by running git --version in your terminal. After that, configure your global Git identity using git config --global user.name "Your Name" and git config --global user.email "your@email.com". Finally, run git config --global --list to make sure the settings were saved correctly. The point of today is to prepare your machine so Git can track your work properly and attach your identity to your commits.
+What to submit:
+Submit one screenshot showing the output of git --version and one screenshot showing your Git config list with your username and email visible.
+
+Day 4 — Core Git workflow and meaningful commits
+Watch: 43:54–1:05:00
+Link: https://youtu.be/Ap0_1lVm76k?si=UFvXnkDyBA2sWR75&t=2634
+Today is where real Git usage starts. Create a local folder called git-sprint-local, open it in your terminal, and initialize it as a Git repository with git init. Inside it, create a README.md and a notes.txt file. Then make three separate commits, where each commit represents one small logical change. For example, the first commit could add the README, the second could add notes, and the third could update one of the files with extra content. Use meaningful commit messages that describe what changed. The goal is to practice the basic Git workflow: create files, stage changes, and save progress in clean steps instead of throwing everything into one chaotic commit blob.
+What to submit:
+Submit one screenshot showing git status, one screenshot showing git log --oneline, and a short explanation of what the staging area is and why Git uses it. Your log should clearly show three commits.
+
+Day 5 — Inspect changes, rename, delete, and undo before commit
+Watch: 0:00–22:56
+Link: https://youtu.be/TwVuFwyztEE?si=9eZEotGuBQ1bX2ff&t=0
+Today is about controlling changes before they become permanent. Inside your local Git repo, edit one file and inspect the change using git diff. Then rename a file using git mv, delete a file using git rm, and make one extra change that you undo before committing by using git restore. The point is to learn how Git tracks edits, renames, and deletions, and how to back out of a mistake safely before it becomes part of commit history. This is the day where Git stops being “just save points” and starts becoming a real control system.
+What to submit:
+Submit one screenshot showing the git diff output, one screenshot showing repo status after the rename and delete actions, and a short explanation of what a tracked file is and why that matters in Git.
+
+Day 6 — Fix commit history with amend and revert
+Watch: 22:56–38:39
+Link: https://youtu.be/TwVuFwyztEE?si=9eZEotGuBQ1bX2ff&t=1376
+Today is about fixing mistakes without wrecking your repository. First, make a commit with a deliberately bad or unclear commit message. Then use git commit --amend to fix that message. After that, make a small bad change to a file, commit it, and then undo that committed change properly using git revert <hash>. Use git log --oneline to find the commit hash you need. The goal today is to understand the difference between changing the most recent commit and undoing a past commit with a new commit. Those are not the same thing, and Git will absolutely humble you if you treat them like they are.
+What to submit:
+Submit one screenshot showing git log --oneline after the amend and revert steps, and a short explanation of when to use amend versus when to use revert.
+
+Day 7 — Branches, merging, and conflict resolution
+Watch: 38:39–58:04
+Link: https://youtu.be/TwVuFwyztEE?si=9eZEotGuBQ1bX2ff&t=2319
+Today is where Git starts feeling like real collaboration. Create a new branch called feature/day7 and make two commits on that branch. Then switch back to main, edit the same line in the same file, and commit that change there too. After that, merge the feature branch back into main. This should produce a merge conflict. Your job is to resolve that conflict manually by editing the file, keeping the final version you want, removing the conflict markers, and then committing the resolved merge. The goal today is not to avoid the conflict. The goal is to experience one on purpose and prove you can fix it correctly.
+What to submit:
+Submit one screenshot showing the conflict markers in the file before you resolve them, one screenshot showing git log --oneline --decorate after the merge is completed, and one short explanation of what caused the conflict.
+
+Day 8 — Connect local Git to GitHub with remotes
+Watch: 0:00–24:43
+Link: https://youtu.be/nn0Pr7U8YHc?si=pV09XdkGplr__sb4&t=0
+Today you connect your local repo to GitHub. Create a new GitHub repository or reuse your existing git-sprint repo, then add it as a remote using git remote add origin <URL>. Check that it is connected correctly using git remote -v, then push your local main branch to GitHub with git push -u origin main. After that, make one small change directly on GitHub, such as editing the README, and then return to your local machine and run git fetch so your local repo can see the remote update. The point today is to understand that local and remote repositories are linked, but they are not magically always identical.
+What to submit:
+Submit the repo link, one screenshot showing git remote -v, one screenshot showing a successful push, one screenshot showing the result of git fetch, and a short explanation of the difference between fetch and pull.
+
+Day 9 — Remote workflow with branch push and pull updates
+Watch: 24:43–45:29
+Link: https://youtu.be/nn0Pr7U8YHc?si=pV09XdkGplr__sb4&t=1483
+Today you practice a more realistic remote workflow. Create a branch called feature/day9, make one commit on it, and push that branch to GitHub. Then open a pull request for that branch, but do not merge it yet. After that, simulate teammate activity by editing main directly on GitHub, and then update your local repository using either git pull or git fetch plus merge. The goal is to see how branch-based work, remote updates, and syncing changes all fit together in a real workflow instead of the cute isolated-terminal fantasy. This is also the day to notice that GitHub workflow is not just “push and pray.”
+What to submit:
+Submit the pull request link, one screenshot showing the branch push output, one screenshot showing the pull or fetch+merge update locally, and a short explanation of what rebase means in simple English.
+
+Day 10 — Full PR workflow, squash merge, and release tag
+Watch: 0:00–25:28
+Link: https://youtu.be/6fnlj5140ac?si=sPH0owx1iebyfLaa&t=0
+Today is the capstone. You are supposed to simulate a mini real-world release workflow. Create an issue called Release v1.0, then create a branch like release/v1 from main. Make two small commits on that branch and open a pull request into main. After opening the PR, add one more update commit to the same branch so the PR gets updated. Then squash merge the PR into main, create a tag such as v1.0.0, and push that tag to GitHub. The goal today is to understand how changes move from issue to branch to PR to merged release, and how tags are used to mark a specific version in project history.
+What to submit:
+Submit the repo link, the issue link, the pull request link, one screenshot of the merged PR, one screenshot of the Tags or Releases page showing v1.0.0, and a short glossary explaining these terms in your own words: commit, branch, remote, pull request, merge, squash merge, and tag.
+
+

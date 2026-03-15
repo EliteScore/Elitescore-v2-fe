@@ -1,4 +1,5 @@
 "use client"
+
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { User, Trophy, Target, Home } from "lucide-react"
@@ -14,39 +15,52 @@ const navItems = [
 export function BottomNav() {
   const pathname = usePathname()
 
-  // Hide navbar on login and signup pages
   if (pathname === "/login" || pathname === "/signup") {
     return null
   }
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-r from-[#0c1525]/95 via-[#0a0a12]/95 to-[#151008]/95 backdrop-blur-xl border-t border-white/5 pb-safe">
-      <div className="container mx-auto px-4">
-        <div className="flex items-center justify-around h-16 max-w-lg mx-auto">
-          {navItems.map((item) => {
-            const isActive = pathname === item.href
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={cn(
-                  "flex flex-col items-center justify-center flex-1 gap-1 transition-all duration-200 py-2",
-                  isActive ? "text-[#fb923c]" : "text-foreground/70 hover:text-foreground",
-                )}
-                aria-label={item.name}
-              >
-                <item.icon
-                  className={cn("w-5 h-5 transition-transform duration-200", isActive ? "scale-110" : "scale-100")}
-                  aria-hidden="true"
+    <nav
+      className="fixed bottom-0 left-0 right-0 z-50 border-t border-slate-200 bg-white shadow-[0_-4px_20px_-4px_rgba(0,0,0,0.06)] pb-safe"
+      aria-label="Main navigation"
+    >
+      <div className="mx-auto flex h-16 max-w-lg items-center justify-around px-4">
+        {navItems.map((item) => {
+          const isActive = pathname === item.href
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={cn(
+                "relative flex flex-1 flex-col items-center justify-center gap-1 py-3 transition-all duration-200",
+                isActive ? "text-pink-600" : "text-slate-500 hover:text-slate-700",
+              )}
+              aria-label={item.name}
+              aria-current={isActive ? "page" : undefined}
+            >
+              {isActive && (
+                <span
+                  className="absolute top-0 left-1/2 h-0.5 w-8 -translate-x-1/2 rounded-full"
+                  style={{ background: "linear-gradient(90deg, #db2777, #ea580c)" }}
+                  aria-hidden
                 />
-                <span className="text-[10px] font-bold uppercase tracking-widest">{item.name}</span>
-                {isActive && (
-                  <div className="absolute top-0 w-8 h-0.5 bg-gradient-to-r from-[#ea580c] via-[#fb923c] to-[#facc15] rounded-full" />
+              )}
+              <item.icon
+                className={cn("h-5 w-5 transition-transform", isActive ? "scale-110" : "scale-100")}
+                strokeWidth={isActive ? 2.25 : 2}
+                aria-hidden
+              />
+              <span
+                className={cn(
+                  "text-[10px] font-semibold uppercase tracking-wider",
+                  isActive ? "text-pink-600" : "text-slate-500",
                 )}
-              </Link>
-            )
-          })}
-        </div>
+              >
+                {item.name}
+              </span>
+            </Link>
+          )
+        })}
       </div>
     </nav>
   )

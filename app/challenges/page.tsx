@@ -1,41 +1,21 @@
 "use client"
 
 import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import {
-  ArrowRight,
-  Trophy,
-  Target,
-  Calendar,
-  Clock,
-  Lock,
-  Upload,
-  CheckCircle2,
-  XCircle,
-  Flame,
-  AlertTriangle,
-  ChevronRight,
-  History,
-  Users,
-  Mail,
-  X,
-  Check,
-  Send,
-  UserPlus,
-  ListTodo,
-  BookOpen,
-  Award,
-} from "lucide-react"
-import { BottomNav } from "@/components/bottom-nav"
 import Link from "next/link"
+import {
+  Trophy, Target, Calendar, Clock, Lock, Upload, CheckCircle2, XCircle,
+  Flame, AlertTriangle, ChevronRight, History, Users, Mail, X, Check,
+  Send, UserPlus, ListTodo, BookOpen, ArrowUpRight,
+} from "lucide-react"
+
+// ── Types ──────────────────────────────────────────────────────────────────
 
 interface Supporter {
   id: string
   email: string
-  name?: string
   status: "pending" | "accepted" | "declined"
+  /** True when added via "Share via WhatsApp" (invite link) instead of email */
+  viaLink?: boolean
 }
 
 type ActiveChallenge = {
@@ -49,6 +29,23 @@ type ActiveChallenge = {
   progress: number
   reward: number
   track: string
+  weekLabel: string
+  accentFrom: string
+  accentTo: string
+  deadline: string
+  deadlineUrgent: boolean
+}
+
+type LibraryChallenge = {
+  id: number
+  name: string
+  track: string
+  difficulty: number
+  duration: number
+  reward: number
+  completionRate: number
+  description: string
+  gradientClass: string
 }
 
 type HistoryChallenge = {
@@ -62,7 +59,13 @@ type HistoryChallenge = {
   streakBonus: string
 }
 
-const INITIAL_ACTIVE_CHALLENGES: ActiveChallenge[] = [
+// ── Constants ──────────────────────────────────────────────────────────────
+
+const APP_GRADIENT = "linear-gradient(135deg, #db2777 0%, #ea580c 35%, #2563eb 70%, #7c3aed 100%)"
+const CARD_BASE = "rounded-2xl border border-slate-200/80 bg-white shadow-sm"
+const MAX_ACTIVE = 2
+
+const INITIAL_ACTIVE: ActiveChallenge[] = [
   {
     id: 1,
     name: "30-Day Python Mastery",
@@ -70,10 +73,15 @@ const INITIAL_ACTIVE_CHALLENGES: ActiveChallenge[] = [
     currentDay: 12,
     totalDays: 30,
     daysRemaining: 18,
-    todayTask: "Complete 3 LeetCode medium problems using Python",
+    todayTask: "Complete 3 LeetCode medium problems using Python.",
     progress: 40,
     reward: 450,
     track: "Technical Skills",
+    weekLabel: "Week 2 · Build",
+    accentFrom: "#db2777",
+    accentTo: "#ea580c",
+    deadline: "Tonight 11:59 PM",
+    deadlineUrgent: true,
   },
   {
     id: 2,
@@ -82,14 +90,19 @@ const INITIAL_ACTIVE_CHALLENGES: ActiveChallenge[] = [
     currentDay: 7,
     totalDays: 14,
     daysRemaining: 7,
-    todayTask: "Post a career insight and engage with 5 posts in your industry",
+    todayTask: "Post a career insight and engage with 5 posts in your industry.",
     progress: 50,
     reward: 140,
     track: "Career Development",
+    weekLabel: "Week 1 · Foundation",
+    accentFrom: "#2563eb",
+    accentTo: "#7c3aed",
+    deadline: "Tomorrow 11:59 PM",
+    deadlineUrgent: false,
   },
 ]
 
-const challengeLibrary = [
+const LIBRARY: LibraryChallenge[] = [
   {
     id: 3,
     name: "21-Day Morning Routine",
@@ -98,7 +111,8 @@ const challengeLibrary = [
     duration: 21,
     reward: 180,
     completionRate: 67,
-    description: "Wake up at 6 AM, exercise for 20 minutes, and journal for 10 minutes",
+    description: "Wake up at 6 AM, exercise for 20 minutes, and journal for 10 minutes.",
+    gradientClass: "from-emerald-500/90 to-teal-500/90",
   },
   {
     id: 4,
@@ -108,17 +122,19 @@ const challengeLibrary = [
     duration: 7,
     reward: 90,
     completionRate: 78,
-    description: "Master SQL fundamentals with daily practice and real-world database projects",
+    description: "Master SQL fundamentals with daily practice and real-world database projects.",
+    gradientClass: "from-blue-500/90 to-indigo-500/90",
   },
   {
     id: 5,
-    name: "30-Day Public Speaking Challenge",
+    name: "30-Day Public Speaking",
     track: "Career Development",
     difficulty: 5,
     duration: 30,
     reward: 600,
     completionRate: 42,
-    description: "Record and share a 2-minute presentation daily on professional topics",
+    description: "Record and share a 2-minute presentation daily on professional topics.",
+    gradientClass: "from-pink-500/90 to-rose-500/90",
   },
   {
     id: 6,
@@ -128,7 +144,8 @@ const challengeLibrary = [
     duration: 14,
     reward: 140,
     completionRate: 71,
-    description: "Read 30 pages daily from career or skill development books",
+    description: "Read 30 pages daily from career or skill development books.",
+    gradientClass: "from-amber-500/90 to-orange-500/90",
   },
   {
     id: 7,
@@ -138,7 +155,8 @@ const challengeLibrary = [
     duration: 21,
     reward: 280,
     completionRate: 55,
-    description: "Build and deploy one project feature daily to showcase your skills",
+    description: "Build and deploy one project feature daily to showcase your skills.",
+    gradientClass: "from-violet-500/90 to-purple-500/90",
   },
   {
     id: 8,
@@ -148,11 +166,12 @@ const challengeLibrary = [
     duration: 7,
     reward: 70,
     completionRate: 82,
-    description: "Complete 15 minutes of guided meditation every morning",
+    description: "Complete 15 minutes of guided meditation every morning.",
+    gradientClass: "from-cyan-500/90 to-blue-500/90",
   },
 ]
 
-const INITIAL_HISTORY_CHALLENGES: HistoryChallenge[] = [
+const INITIAL_HISTORY: HistoryChallenge[] = [
   {
     id: 101,
     name: "14-Day JavaScript Sprint",
@@ -170,643 +189,724 @@ const INITIAL_HISTORY_CHALLENGES: HistoryChallenge[] = [
     duration: 7,
     status: "failed",
     completedDate: "2024-12-28",
-    eliteScoreImpact: "-35",
+    eliteScoreImpact: "-60",
     streakBonus: "0",
   },
 ]
 
+const TABS = [
+  { id: "active", label: "Active", Icon: ListTodo },
+  { id: "library", label: "Library", Icon: BookOpen },
+  { id: "history", label: "History", Icon: History },
+]
+
+const TRACK_FILTERS = ["All", "Technical Skills", "Career Development", "Wellness", "Learning"]
+
+// ── Sub-components ──────────────────────────────────────────────────────────
+
+function DifficultyDots({ level, max = 5 }: { level: number; max?: number }) {
+  return (
+    <div className="mt-2 flex gap-1" aria-label={`Difficulty ${level} of ${max}`}>
+      {Array.from({ length: max }).map((_, i) => (
+        <span
+          key={i}
+          className="h-1.5 w-4 rounded-full"
+          style={i < level ? { background: APP_GRADIENT } : { background: "#e2e8f0" }}
+        />
+      ))}
+    </div>
+  )
+}
+
+// ── Page ────────────────────────────────────────────────────────────────────
+
 export default function ChallengesPage() {
-  const [activeTab, setActiveTab] = useState<string>("active")
-  const [selectedChallenge, setSelectedChallenge] = useState<number | null>(null)
-  const [showLockInModal, setShowLockInModal] = useState(false)
-  const [showProofModal, setShowProofModal] = useState(false)
-  const [showQuitConfirm, setShowQuitConfirm] = useState<number | null>(null)
+  const [activeTab, setActiveTab] = useState("active")
+  const [trackFilter, setTrackFilter] = useState("All")
+  const [selectedId, setSelectedId] = useState<number | null>(null)
+  const [showLockIn, setShowLockIn] = useState(false)
+  const [showProofFor, setShowProofFor] = useState<number | null>(null)
+  const [showQuitFor, setShowQuitFor] = useState<number | null>(null)
 
-  const [activeChallenges, setActiveChallenges] = useState<ActiveChallenge[]>(INITIAL_ACTIVE_CHALLENGES)
-  const [historyChallenges, setHistoryChallenges] = useState<HistoryChallenge[]>(INITIAL_HISTORY_CHALLENGES)
+  const [activeChallenges, setActiveChallenges] = useState<ActiveChallenge[]>(INITIAL_ACTIVE)
+  const [history, setHistory] = useState<HistoryChallenge[]>(INITIAL_HISTORY)
 
-  // Supporter lock-in flow state
   const [lockInStep, setLockInStep] = useState<"invite" | "confirm" | "success">("invite")
   const [supporters, setSupporters] = useState<Supporter[]>([])
-  const [newSupporterEmail, setNewSupporterEmail] = useState("")
+  const [supporterEmail, setSupporterEmail] = useState("")
   const [emailError, setEmailError] = useState("")
 
-  // Max 2 active challenges limit
-  const MAX_ACTIVE_CHALLENGES = 2
   const activeCount = activeChallenges.length
-  const canJoinChallenge = activeCount < MAX_ACTIVE_CHALLENGES
+  const canJoin = activeCount < MAX_ACTIVE
+  const selectedLibrary = LIBRARY.find((c) => c.id === selectedId)
+  const alreadyEnrolled = selectedId !== null && activeChallenges.some((c) => c.id === selectedId)
 
-  const selectedChallengeData = challengeLibrary.find((c) => c.id === selectedChallenge)
-  const isAlreadyEnrolled =
-    selectedChallenge !== null && activeChallenges.some((c) => c.id === selectedChallenge)
+  const filteredLibrary =
+    trackFilter === "All" ? LIBRARY : LIBRARY.filter((c) => c.track === trackFilter)
 
-  // Daily tasks / upcoming assignments from active challenges (for "Today" section)
-  const dailyTasksFromChallenges = activeChallenges.map((c) => ({
-    id: c.id,
-    challengeName: c.name,
-    todayTask: c.todayTask,
-    daysRemaining: c.daysRemaining,
-    progress: c.progress,
-  }))
+  const validateEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
 
-  const validateEmail = (email: string) => {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
-  }
-
-  const addSupporter = () => {
-    if (!newSupporterEmail.trim()) {
-      setEmailError("Email is required")
-      return
+  const handleAddSupporter = () => {
+    if (!supporterEmail.trim()) { setEmailError("Email is required"); return }
+    if (!validateEmail(supporterEmail)) { setEmailError("Please enter a valid email"); return }
+    if (supporters.length >= 3) { setEmailError("Maximum 3 supporters allowed"); return }
+    if (supporters.some((s) => !s.viaLink && s.email.toLowerCase() === supporterEmail.toLowerCase())) {
+      setEmailError("Already added"); return
     }
-    if (!validateEmail(newSupporterEmail)) {
-      setEmailError("Please enter a valid email")
-      return
-    }
-    if (supporters.length >= 3) {
-      setEmailError("Maximum 3 supporters allowed")
-      return
-    }
-    if (supporters.some(s => s.email.toLowerCase() === newSupporterEmail.toLowerCase())) {
-      setEmailError("This email is already added")
-      return
-    }
-    
-    setSupporters([...supporters, {
-      id: Date.now().toString(),
-      email: newSupporterEmail,
-      status: "pending"
-    }])
-    setNewSupporterEmail("")
+    setSupporters([...supporters, { id: Date.now().toString(), email: supporterEmail, status: "pending" }])
+    setSupporterEmail("")
     setEmailError("")
   }
 
-  const removeSupporter = (id: string) => {
-    setSupporters(supporters.filter(s => s.id !== id))
+  const hasViaLinkSupporter = supporters.some((s) => s.viaLink)
+  const inviterName =
+    typeof window !== "undefined"
+      ? (localStorage.getItem("elitescore_user_name") ?? "A friend")
+      : "A friend"
+  const inviteUrl =
+    typeof window !== "undefined"
+      ? `${window.location.origin}/spectator/join?challenge=${encodeURIComponent(selectedLibrary?.name ?? "challenge")}&from=${encodeURIComponent(inviterName)}`
+      : ""
+  const whatsappMessage = `I'm locking in a challenge on EliteScore. Be my spectator — sign up here: ${inviteUrl}`
+  const handleShareViaWhatsApp = () => {
+    if (!inviteUrl) return
+    const encoded = encodeURIComponent(whatsappMessage)
+    try {
+      navigator.clipboard.writeText(inviteUrl)
+    } catch {
+      // ignore
+    }
+    window.open(`https://wa.me/?text=${encoded}`, "_blank", "noopener,noreferrer")
+    if (!hasViaLinkSupporter) {
+      setSupporters((prev) => [...prev, { id: "via-link", email: "Via invite link", status: "pending", viaLink: true }])
+    }
   }
+
+  const handleRemoveSupporter = (id: string) =>
+    setSupporters((prev) => prev.filter((s) => s.id !== id))
 
   const handleLockInStart = () => {
-    if (!canJoinChallenge) {
-      return // Don't allow joining if at max capacity
-    }
+    if (!canJoin) return
     setLockInStep("invite")
     setSupporters([])
-    setNewSupporterEmail("")
+    setSupporterEmail("")
     setEmailError("")
-    setShowLockInModal(true)
+    setShowLockIn(true)
   }
 
-  const handleQuitChallenge = (challengeId: number) => {
-    setShowQuitConfirm(challengeId)
+  const handleSendInvites = () => {
+    if (supporters.length === 0) { setEmailError("Add at least one supporter to continue"); return }
+    setLockInStep("confirm")
   }
 
-  const confirmQuitChallenge = () => {
-    if (showQuitConfirm === null) return
-    const quitChallenge = activeChallenges.find((c) => c.id === showQuitConfirm)
-    if (quitChallenge) {
-      setActiveChallenges((prev) => prev.filter((c) => c.id !== showQuitConfirm))
-      setHistoryChallenges((prev) => [
+  const handleConfirmLockIn = () => {
+    if (!selectedLibrary || alreadyEnrolled) return
+    const newChallenge: ActiveChallenge = {
+      id: selectedLibrary.id,
+      name: selectedLibrary.name,
+      difficulty: selectedLibrary.difficulty,
+      currentDay: 1,
+      totalDays: selectedLibrary.duration,
+      daysRemaining: selectedLibrary.duration - 1,
+      todayTask: `Start your first day — ${selectedLibrary.description.slice(0, 60)}...`,
+      progress: 0,
+      reward: selectedLibrary.reward,
+      track: selectedLibrary.track,
+      weekLabel: "Week 1 · Start",
+      accentFrom: "#db2777",
+      accentTo: "#ea580c",
+      deadline: "Tonight 11:59 PM",
+      deadlineUrgent: false,
+    }
+    setActiveChallenges((prev) => [...prev, newChallenge])
+    setLockInStep("success")
+    setTimeout(() => {
+      setShowLockIn(false)
+      setSelectedId(null)
+      setLockInStep("invite")
+      setSupporters([])
+    }, 2200)
+  }
+
+  const handleCloseLockIn = () => {
+    setShowLockIn(false)
+    setLockInStep("invite")
+    setSupporters([])
+    setSupporterEmail("")
+    setEmailError("")
+  }
+
+  const handleConfirmQuit = () => {
+    if (showQuitFor === null) return
+    const quitting = activeChallenges.find((c) => c.id === showQuitFor)
+    if (quitting) {
+      setActiveChallenges((prev) => prev.filter((c) => c.id !== showQuitFor))
+      setHistory((prev) => [
         {
           id: Date.now(),
-          name: quitChallenge.name,
-          difficulty: quitChallenge.difficulty,
-          duration: quitChallenge.totalDays,
+          name: quitting.name,
+          difficulty: quitting.difficulty,
+          duration: quitting.totalDays,
           status: "failed",
           completedDate: new Date().toISOString().slice(0, 10),
-          eliteScoreImpact: "-35",
+          eliteScoreImpact: "-60",
           streakBonus: "0",
         },
         ...prev,
       ])
     }
-    setShowQuitConfirm(null)
+    setShowQuitFor(null)
   }
 
-  const handleSendInvites = () => {
-    if (supporters.length === 0) {
-      setEmailError("Add at least one supporter to continue")
-      return
-    }
-    // Simulate sending invites (frontend only)
-    setLockInStep("confirm")
-  }
-
-  const handleConfirmLockIn = () => {
-    if (!selectedChallengeData) return
-    const alreadyEnrolled = activeChallenges.some((c) => c.id === selectedChallengeData.id)
-    if (!alreadyEnrolled) {
-      const newActive: ActiveChallenge = {
-        id: selectedChallengeData.id,
-        name: selectedChallengeData.name,
-        difficulty: selectedChallengeData.difficulty,
-        currentDay: 1,
-        totalDays: selectedChallengeData.duration,
-        daysRemaining: selectedChallengeData.duration - 1,
-        todayTask: `Start your first day — ${selectedChallengeData.description.slice(0, 60)}...`,
-        progress: 0,
-        reward: selectedChallengeData.reward,
-        track: selectedChallengeData.track,
-      }
-      setActiveChallenges((prev) => [...prev, newActive])
-    }
-    setLockInStep("success")
-    setTimeout(() => {
-      setShowLockInModal(false)
-      setSelectedChallenge(null)
-      setLockInStep("invite")
-      setSupporters([])
-    }, 2000)
-  }
-
-  const handleCloseLockIn = () => {
-    setShowLockInModal(false)
-    setLockInStep("invite")
-    setSupporters([])
-    setNewSupporterEmail("")
-    setEmailError("")
-  }
+  // ── Render ────────────────────────────────────────────────────────────────
 
   return (
-    <div className="min-h-[100dvh] sm:min-h-screen bg-gradient-to-r from-[#0c1525] via-[#0a0a12] to-[#151008] pb-[max(5rem,calc(5rem+env(safe-area-inset-bottom)))] pt-[env(safe-area-inset-top)] overflow-x-hidden">
-      <section className="container mx-auto px-4 sm:px-4 pt-4 sm:pt-6 md:pt-8 pb-4 sm:pb-6">
-        <div className="max-w-6xl mx-auto rounded-2xl bg-gradient-to-br from-[#0c1525]/95 via-[#0a0a12]/98 to-[#151008]/95 backdrop-blur-xl shadow-2xl overflow-hidden relative">
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-64 bg-gradient-to-r from-[#ea580c]/10 via-[#fb923c]/15 to-[#facc15]/10 blur-[100px] rounded-full -z-10 pointer-events-none" aria-hidden="true" />
+    <div className="mx-auto max-w-5xl space-y-6 px-4 pb-10 pt-2 sm:px-6">
 
-          {/* Hero */}
-          <div className="p-4 sm:p-6 md:p-8">
-            <div className="flex flex-col gap-3 sm:gap-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-[#0ea5e9]/10 flex items-center justify-center flex-shrink-0" aria-hidden="true">
-                  <Target className="w-5 h-5 sm:w-6 sm:h-6 text-[#0ea5e9]" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Challenges • Arena</div>
-                  <h1 className="text-lg sm:text-xl md:text-2xl font-black bg-gradient-to-r from-[#ea580c] via-[#fb923c] to-[#facc15] bg-clip-text text-transparent leading-tight truncate sm:truncate-none">
-                    Your commitments
-                  </h1>
-                </div>
-              </div>
-              <p className="text-xs text-muted-foreground leading-relaxed sm:text-right">
-                Lock in. Submit proof. Every challenge brings you closer to the top.
-              </p>
+      {/* Hero banner */}
+      <section
+        className="relative overflow-hidden rounded-2xl px-6 py-8 sm:px-10"
+        style={{ background: APP_GRADIENT }}
+        aria-labelledby="challenges-heading"
+      >
+        <span className="pointer-events-none absolute -right-12 -top-12 h-52 w-52 rounded-full bg-white/10 blur-3xl" aria-hidden />
+        <div className="relative z-10">
+          <p className="text-xs font-semibold uppercase tracking-widest text-white/70">Challenges · Arena</p>
+          <h1 id="challenges-heading" className="mt-1 text-2xl font-extrabold text-white sm:text-3xl">
+            Your commitments
+          </h1>
+          <p className="mt-1.5 text-sm text-white/80">
+            Lock in. Submit proof. Every challenge brings you closer to the top.
+          </p>
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-3 py-1.5 backdrop-blur-sm">
+              <Trophy className="h-4 w-4 text-white/80" aria-hidden />
+              <span className="text-sm font-semibold text-white">{activeCount}/{MAX_ACTIVE} active</span>
             </div>
-          </div>
-
-          <div className="border-t border-white/5 px-4 sm:px-6 md:px-8 pt-4 pb-2">
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-3 rounded-xl bg-white/[0.04] min-h-[44px] p-1 gap-1 touch-manipulation">
-                <TabsTrigger value="active" className="text-[10px] sm:text-xs font-bold uppercase tracking-wider data-[state=active]:bg-[#0ea5e9]/20 data-[state=active]:text-[#0ea5e9] rounded-lg min-h-[40px] py-2.5 touch-manipulation">
-                  Active
-                </TabsTrigger>
-                <TabsTrigger value="library" className="text-[10px] sm:text-xs font-bold uppercase tracking-wider data-[state=active]:bg-[#fb923c]/20 data-[state=active]:text-[#fb923c] rounded-lg min-h-[40px] py-2.5 touch-manipulation">
-                  Library
-                </TabsTrigger>
-                <TabsTrigger value="history" className="text-[10px] sm:text-xs font-bold uppercase tracking-wider data-[state=active]:bg-white/10 data-[state=active]:text-foreground rounded-lg min-h-[40px] py-2.5 touch-manipulation">
-                  History
-                </TabsTrigger>
-              </TabsList>
-
-          {/* Active Tab: Today's tasks first, then Enrolled challenges */}
-          <TabsContent value="active" className="space-y-0 mt-0 px-4 sm:px-6 md:px-8 pb-6 sm:pb-8">
-            {/* 1. Today's tasks / Daily assignments */}
-            <div className="pt-4 sm:pt-6 border-t border-white/5 first:border-t-0">
-              <div className="rounded-xl bg-white/[0.04] p-4 sm:p-6">
-              <div className="flex items-center gap-3 mb-4 sm:mb-6">
-                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-[#0ea5e9]/10 flex items-center justify-center flex-shrink-0" aria-hidden="true">
-                  <ListTodo className="w-4 h-4 sm:w-5 sm:h-5 text-[#0ea5e9]" />
-                </div>
-                <div className="min-w-0">
-                  <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Today • Daily tasks</div>
-                  <div className="text-sm sm:text-base font-bold text-foreground">
-                    {dailyTasksFromChallenges.length > 0
-                      ? `${dailyTasksFromChallenges.length} task${dailyTasksFromChallenges.length > 1 ? "s" : ""} from your challenges`
-                      : "No tasks today"}
-                  </div>
-                </div>
-              </div>
-
-              {dailyTasksFromChallenges.length > 0 ? (
-                <div className="grid grid-cols-1 gap-2.5 sm:gap-3">
-                  {dailyTasksFromChallenges.map((task) => (
-                    <Link
-                      key={task.id}
-                      href={`/challenges/${task.id}`}
-                      className="rounded-xl bg-white/[0.04] p-3.5 sm:p-4 hover:bg-white/[0.06] active:scale-[0.99] transition-all flex items-start gap-3 group block min-h-[56px] touch-manipulation"
-                    >
-                      <div className="w-8 h-8 rounded-lg bg-[#0ea5e9]/10 flex items-center justify-center flex-shrink-0 group-hover:bg-[#0ea5e9]/20 transition-colors" aria-hidden="true">
-                        <Check className="w-4 h-4 text-[#0ea5e9]" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-bold text-foreground mb-0.5 group-hover:text-[#0ea5e9] transition-colors line-clamp-2">{task.todayTask}</p>
-                        <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{task.challengeName}</p>
-                      </div>
-                      <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-0.5" aria-hidden="true" />
-                    </Link>
-                  ))}
-                </div>
-              ) : (
-                <div className="rounded-xl border border-dashed border-white/10 bg-white/5 p-4 sm:p-6 text-center">
-                  <p className="text-sm text-muted-foreground">Enroll in a challenge to see daily tasks here.</p>
-                  <Button size="sm" variant="ghost" className="mt-3 min-h-[44px] text-[#0ea5e9] hover:bg-[#0ea5e9]/10 touch-manipulation" onClick={() => setActiveTab("library")}>
-                    Browse Library
-                    <ChevronRight className="ml-0.5 h-3 w-3" aria-hidden="true" />
-                  </Button>
-                </div>
-              )}
-              </div>
-            </div>
-
-            {/* 2. Enrolled challenges */}
-            <div className="pt-4 sm:pt-6 border-t border-white/5">
-              <div className="rounded-xl bg-white/[0.04] p-4 sm:p-6">
-              <div className="flex items-center justify-between gap-2 mb-4 sm:mb-6">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-[#0ea5e9]/10 flex items-center justify-center flex-shrink-0" aria-hidden="true">
-                    <Trophy className="w-5 h-5 text-[#0ea5e9]" />
-                  </div>
-                  <div>
-                    <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Enrolled • Your commitments</div>
-                    <div className="text-base font-bold text-foreground">{activeCount}/{MAX_ACTIVE_CHALLENGES} slots used</div>
-                  </div>
-                </div>
-                <Badge
-                  variant="secondary"
-                  className={activeCount >= MAX_ACTIVE_CHALLENGES ? "bg-orange-500/10 text-orange-500 border-orange-500/30" : "bg-[#0ea5e9]/10 text-[#0ea5e9] border-[#0ea5e9]/30"}
-                  aria-label={`${activeCount} of ${MAX_ACTIVE_CHALLENGES} active challenges`}
-                >
-                  {activeCount}/{MAX_ACTIVE_CHALLENGES} Active
-                </Badge>
-              </div>
-
-              {activeCount >= MAX_ACTIVE_CHALLENGES && (
-                <div className="rounded-xl bg-orange-500/10 p-4 mb-6">
-                  <div className="flex items-start gap-3">
-                    <AlertTriangle className="w-5 h-5 text-orange-500 flex-shrink-0 mt-0.5" aria-hidden="true" />
-                    <div>
-                      <div className="text-[10px] font-bold text-orange-500 uppercase tracking-wider mb-0.5">Maximum active challenges</div>
-                      <p className="text-xs text-muted-foreground">
-                        Complete or quit one to join another.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {activeChallenges.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
-                  {activeChallenges.map((challenge) => (
-                    <div
-                      key={challenge.id}
-                      className="rounded-xl bg-white/[0.04] p-3.5 sm:p-4 hover:bg-white/[0.06] transition-all"
-                    >
-                      <div className="flex items-start justify-between gap-2 mb-2.5 sm:mb-3">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-0.5 flex-wrap">
-                            <h3 className="text-sm font-bold text-foreground truncate">{challenge.name}</h3>
-                            <Badge variant="secondary" className="text-[10px] font-bold uppercase tracking-wider bg-[#0ea5e9]/10 text-[#0ea5e9] border-[#0ea5e9]/30 flex-shrink-0">
-                              Active
-                            </Badge>
-                          </div>
-                          <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground uppercase tracking-wider">
-                            <Target className="w-2.5 h-2.5 shrink-0" aria-hidden="true" />
-                            {challenge.difficulty}/5
-                            <span className="mx-0.5">•</span>
-                            <Calendar className="w-2.5 h-2.5 shrink-0" aria-hidden="true" />
-                            Day {challenge.currentDay}/{challenge.totalDays}
-                          </div>
-                        </div>
-                        <Trophy className="w-5 h-5 text-[#fb923c] flex-shrink-0" aria-hidden="true" />
-                      </div>
-
-                      <div className="space-y-2 sm:space-y-3 mb-3 sm:mb-4">
-                        <div className="rounded-lg bg-white/[0.04] p-2 sm:p-2.5">
-                          <div className="flex items-center justify-between gap-1.5 mb-1">
-                            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Progress</span>
-                            <span className="text-xs font-bold text-foreground">{challenge.progress}%</span>
-                          </div>
-                          <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
-                            <div
-                              className="h-full bg-gradient-to-r from-[#0ea5e9] to-[#fb923c] rounded-full transition-all duration-500"
-                              style={{ width: `${challenge.progress}%` }}
-                            />
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2 text-[10px] text-muted-foreground uppercase tracking-wider">
-                          <Clock className="w-3 h-3 text-[#0ea5e9] shrink-0" aria-hidden="true" />
-                          {challenge.daysRemaining} days left
-                        </div>
-                      </div>
-
-                      <div className="rounded-lg bg-[#0ea5e9]/10 p-2.5 sm:p-3 mb-3 sm:mb-4">
-                        <div className="text-[10px] font-bold text-[#0ea5e9] uppercase tracking-wider mb-0.5">Today&apos;s task</div>
-                        <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">{challenge.todayTask}</p>
-                      </div>
-
-                      <div className="flex flex-col sm:flex-row gap-2">
-                        <Button size="sm" asChild className="flex-1 min-h-[44px] sm:h-8 bg-gradient-to-r from-[#0ea5e9] to-[#fb923c] hover:opacity-90 text-white border-0 text-[10px] font-bold uppercase tracking-wider touch-manipulation">
-                          <Link href={`/challenges/${challenge.id}`}>View Details</Link>
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            handleQuitChallenge(challenge.id)
-                          }}
-                          className="min-h-[44px] sm:h-8 border-red-500/50 hover:bg-red-500/10 text-red-500 text-[10px] font-bold uppercase tracking-wider bg-transparent touch-manipulation"
-                        >
-                          Quit
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="rounded-xl bg-orange-500/10 p-5 sm:p-8 text-center">
-                  <AlertTriangle className="w-10 h-10 sm:w-12 sm:h-12 text-orange-500 mx-auto mb-2 sm:mb-3" aria-hidden="true" />
-                  <div className="text-[10px] font-bold text-orange-500 uppercase tracking-wider mb-1">No active challenges</div>
-                  <h3 className="text-base sm:text-lg font-bold mb-2">Lock in a challenge</h3>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    Your credibility grows with finished work. Browse the library and commit.
-                  </p>
-                  <Button size="sm" className="min-h-[48px] sm:h-9 bg-gradient-to-r from-[#0ea5e9] to-[#fb923c] hover:opacity-90 text-white border-0 text-[10px] font-bold uppercase tracking-wider touch-manipulation" onClick={() => setActiveTab("library")}>
-                    Browse Library
-                    <ArrowRight className="ml-2 h-3 w-3" aria-hidden="true" />
-                  </Button>
-                </div>
-              )}
-              </div>
-            </div>
-          </TabsContent>
-
-          {/* Challenge Library Tab */}
-          <TabsContent value="library" className="mt-0 px-4 sm:px-6 md:px-8 pb-6 sm:pb-8">
-            <div className="pt-4 sm:pt-6 border-t border-white/5">
-              <div className="rounded-xl bg-white/[0.04] p-4 sm:p-6">
-              <div className="flex items-center justify-between gap-2 mb-4 sm:mb-6">
-                <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-                  <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-[#fb923c]/10 flex items-center justify-center flex-shrink-0" aria-hidden="true">
-                    <BookOpen className="w-4 h-4 sm:w-5 sm:h-5 text-[#fb923c]" />
-                  </div>
-                  <div className="min-w-0">
-                    <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">Library • Browse</div>
-                    <div className="text-sm sm:text-base font-bold text-foreground truncate">Lock in your next commitment</div>
-                  </div>
-                </div>
-                <Button size="sm" variant="ghost" className="text-[10px] min-h-[40px] h-8 font-bold uppercase tracking-wider text-[#fb923c] hover:bg-[#fb923c]/10 px-2.5 sm:px-3 shrink-0 touch-manipulation">
-                  Filter
-                </Button>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-                {challengeLibrary.map((challenge) => (
-                  <div
-                    key={challenge.id}
-                    className="rounded-xl bg-white/[0.04] p-3.5 sm:p-4 hover:bg-white/[0.06] active:scale-[0.99] transition-all cursor-pointer group touch-manipulation"
-                    onClick={() => setSelectedChallenge(challenge.id)}
-                  >
-                    <div className="flex items-start gap-2 sm:gap-3 mb-2 sm:mb-3">
-                      <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-[#fb923c]/10 flex items-center justify-center flex-shrink-0 group-hover:bg-[#fb923c]/20 transition-colors" aria-hidden="true">
-                        <Lock className="w-4 h-4 sm:w-5 sm:h-5 text-[#fb923c]" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="text-sm font-bold text-foreground mb-0.5 group-hover:text-[#fb923c] transition-colors line-clamp-2">
-                          {challenge.name}
-                        </h3>
-                        <Badge variant="outline" className="text-[10px] font-bold uppercase tracking-wider border-[#fb923c]/30 text-[#fb923c]">
-                          {challenge.track}
-                        </Badge>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground uppercase tracking-wider mb-1.5 sm:mb-2">
-                      <Target className="w-2.5 h-2.5 shrink-0" aria-hidden="true" />
-                      {challenge.difficulty}/5
-                      <span className="mx-0.5">•</span>
-                      <Calendar className="w-2.5 h-2.5 shrink-0" aria-hidden="true" />
-                      {challenge.duration}d
-                    </div>
-
-                    <p className="text-xs text-muted-foreground mb-3 sm:mb-4 leading-relaxed line-clamp-2">
-                      {challenge.description}
-                    </p>
-
-                    <div className="rounded-lg bg-white/[0.04] p-2 sm:p-2.5 mb-3 sm:mb-4">
-                      <div className="flex items-center justify-between text-[10px]">
-                        <span className="text-muted-foreground uppercase tracking-wider">Reward</span>
-                        <span className="font-bold text-[#fb923c]">+{challenge.reward}</span>
-                      </div>
-                      <div className="flex items-center justify-between text-[10px] mt-0.5">
-                        <span className="text-muted-foreground uppercase tracking-wider">Completion</span>
-                        <span className="font-bold text-foreground">{challenge.completionRate}%</span>
-                      </div>
-                    </div>
-
-                    <Button
-                      size="sm"
-                      className="w-full min-h-[44px] sm:h-8 bg-gradient-to-r from-[#fb923c] to-[#0ea5e9] hover:opacity-90 text-white border-0 text-[10px] font-bold uppercase tracking-wider disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        setSelectedChallenge(challenge.id)
-                      }}
-                      disabled={!canJoinChallenge}
-                      title={!canJoinChallenge ? `Maximum ${MAX_ACTIVE_CHALLENGES} active challenges reached` : ""}
-                    >
-                      View Details
-                      <ChevronRight className="ml-0.5 h-3 w-3" aria-hidden="true" />
-                    </Button>
-                    {!canJoinChallenge && (
-                      <p className="text-[10px] text-center text-orange-500 mt-2 uppercase tracking-wider">
-                        Max challenges reached
-                      </p>
-                    )}
-                  </div>
-                ))}
-              </div>
-              </div>
-            </div>
-          </TabsContent>
-
-          {/* Challenge History Tab */}
-          <TabsContent value="history" className="mt-0 px-4 sm:px-6 md:px-8 pb-6 sm:pb-8">
-            <div className="pt-4 sm:pt-6 border-t border-white/5">
-              <div className="rounded-xl bg-white/[0.04] p-4 sm:p-6">
-              <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
-                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-[#0ea5e9]/10 flex items-center justify-center flex-shrink-0" aria-hidden="true">
-                  <History className="w-4 h-4 sm:w-5 sm:h-5 text-[#0ea5e9]" />
-                </div>
-                <div className="min-w-0">
-                  <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">History • Completed & Failed</div>
-                  <div className="text-sm sm:text-base font-bold text-foreground">Your past commitments</div>
-                </div>
-              </div>
-
-              <div className="space-y-2.5 sm:space-y-3">
-                {historyChallenges.map((challenge) => (
-                  <div
-                    key={challenge.id}
-                    className="rounded-xl bg-white/[0.04] p-3.5 sm:p-4 hover:bg-white/[0.06] transition-all"
-                  >
-                    <div className="flex items-center gap-3 sm:gap-4 flex-wrap sm:flex-nowrap">
-                      {challenge.status === "completed" ? (
-                        <div className="w-10 h-10 rounded-xl bg-green-500/10 flex items-center justify-center flex-shrink-0" aria-hidden="true">
-                          <CheckCircle2 className="w-5 h-5 text-green-500" />
-                        </div>
-                      ) : (
-                        <div className="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center flex-shrink-0" aria-hidden="true">
-                          <XCircle className="w-5 h-5 text-red-500" />
-                        </div>
-                      )}
-
-                      <div className="flex-1 min-w-0 order-2 sm:order-none">
-                        <div className="flex items-center gap-2 mb-0.5 flex-wrap">
-                          <h3 className="text-sm font-bold text-foreground">{challenge.name}</h3>
-                          <Badge
-                            variant="outline"
-                            className={`text-[10px] font-bold uppercase tracking-wider shrink-0 ${
-                              challenge.status === "completed"
-                                ? "border-green-500/30 text-green-500"
-                                : "border-red-500/30 text-red-500"
-                            }`}
-                          >
-                            {challenge.status === "completed" ? "Done" : "Failed"}
-                          </Badge>
-                        </div>
-                        <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground uppercase tracking-wider flex-wrap">
-                          <Target className="w-2.5 h-2.5 shrink-0" aria-hidden="true" />
-                          {challenge.difficulty}/5
-                          <span className="mx-0.5">•</span>
-                          <Calendar className="w-2.5 h-2.5 shrink-0" aria-hidden="true" />
-                          {challenge.duration}d
-                          <span className="mx-0.5">•</span>
-                          {challenge.completedDate}
-                        </div>
-                      </div>
-
-                      <div className="text-right flex-shrink-0 w-full sm:w-auto order-1 sm:order-none">
-                        <div
-                          className={`text-sm font-bold ${
-                            challenge.status === "completed" ? "text-green-500" : "text-red-500"
-                          }`}
-                        >
-                          {challenge.eliteScoreImpact} EliteScore
-                        </div>
-                        {challenge.streakBonus !== "0" && (
-                          <div className="flex items-center justify-end gap-0.5 text-[10px] text-[#0ea5e9] uppercase tracking-wider mt-0.5">
-                            <Flame className="w-2.5 h-2.5" aria-hidden="true" />
-                            {challenge.streakBonus} streak bonus
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              </div>
-            </div>
-          </TabsContent>
-        </Tabs>
+            {canJoin && (
+              <button
+                type="button"
+                onClick={() => setActiveTab("library")}
+                className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2 text-xs font-bold text-slate-800 shadow-lg transition-transform hover:scale-[1.02]"
+              >
+                Browse Library <ArrowUpRight className="h-3.5 w-3.5" aria-hidden />
+              </button>
+            )}
           </div>
         </div>
       </section>
 
-      {/* Challenge Detail Modal - full screen on mobile */}
-      {selectedChallenge && !showLockInModal && (
-        <div
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 pt-[env(safe-area-inset-top)]"
-          onClick={() => setSelectedChallenge(null)}
-        >
-          <div
-            className="glass-card rounded-t-2xl sm:rounded-2xl border-0 sm:border border-[#fb923c]/30 bg-card/95 backdrop-blur-xl p-4 sm:p-6 max-w-2xl w-full max-h-[92dvh] sm:max-h-[85vh] overflow-y-auto overscroll-contain touch-manipulation"
-            onClick={(e) => e.stopPropagation()}
+      {/* Tab nav */}
+      <div
+        className="flex gap-1 rounded-xl border border-slate-200/80 bg-white p-1 shadow-sm"
+        role="tablist"
+        aria-label="Challenge tabs"
+      >
+        {TABS.map(({ id, label, Icon }) => (
+          <button
+            key={id}
+            type="button"
+            role="tab"
+            aria-selected={activeTab === id}
+            onClick={() => setActiveTab(id)}
+            className={`flex flex-1 items-center justify-center gap-2 rounded-lg py-2.5 text-xs font-semibold uppercase tracking-wider transition-colors ${
+              activeTab === id ? "text-white" : "text-slate-500 hover:bg-slate-50 hover:text-slate-700"
+            }`}
+            style={activeTab === id ? { background: APP_GRADIENT } : undefined}
           >
-            <div className="flex items-start justify-between gap-2 mb-4 pb-2 border-b border-white/10">
-              <div className="flex-1 min-w-0">
-                <h2 className="text-lg sm:text-2xl font-bold mb-1 leading-tight">{selectedChallengeData?.name}</h2>
-                <Badge variant="outline" className="text-[10px] sm:text-xs border-[#fb923c]/30 text-[#fb923c]">
-                  {selectedChallengeData?.track}
-                </Badge>
+            <Icon className="h-3.5 w-3.5" aria-hidden />
+            {label}
+            {id === "active" && activeCount > 0 && (
+              <span
+                className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold ${
+                  activeTab === "active" ? "bg-white/20 text-white" : "bg-pink-100 text-pink-600"
+                }`}
+              >
+                {activeCount}
+              </span>
+            )}
+          </button>
+        ))}
+      </div>
+
+      {/* ── ACTIVE TAB ── */}
+      {activeTab === "active" && (
+        <div className="space-y-6">
+
+          {/* Today's tasks */}
+          <section className={`${CARD_BASE} p-6`} aria-labelledby="tasks-heading">
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-500">Today · Daily tasks</p>
+            <h2 id="tasks-heading" className="mt-0.5 text-lg font-bold text-slate-800">
+              {activeChallenges.length > 0
+                ? `${activeChallenges.length} task${activeChallenges.length > 1 ? "s" : ""} due today`
+                : "No tasks today"}
+            </h2>
+
+            {activeChallenges.length > 0 ? (
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                {activeChallenges.map((c) => (
+                  <div key={c.id} className="overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-sm">
+                    <div
+                      className="h-1.5 w-full"
+                      style={{ background: `linear-gradient(to right, ${c.accentFrom}, ${c.accentTo})` }}
+                      aria-hidden
+                    />
+                    <div className="p-4">
+                      <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">{c.name}</p>
+                      <p className="mt-1 text-sm font-semibold leading-snug text-slate-800">{c.todayTask}</p>
+                      <p
+                        className={`mt-2 flex items-center gap-1.5 text-xs ${
+                          c.deadlineUrgent ? "font-semibold text-orange-600" : "text-slate-500"
+                        }`}
+                      >
+                        <Clock className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                        Deadline: {c.deadline}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => setShowProofFor(c.id)}
+                        className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-xl py-2.5 text-xs font-bold text-white transition-transform hover:scale-[1.02]"
+                        style={{ background: APP_GRADIENT }}
+                        aria-label={`Submit proof for ${c.name}`}
+                      >
+                        <Upload className="h-3.5 w-3.5" aria-hidden /> Submit Proof
+                      </button>
+                    </div>
+                  </div>
+                ))}
               </div>
-              <Button size="sm" variant="ghost" onClick={() => setSelectedChallenge(null)} className="text-xs min-h-[44px] min-w-[44px] shrink-0 touch-manipulation" aria-label="Close">
-                Close
-              </Button>
+            ) : (
+              <div className="mt-4 rounded-xl border border-dashed border-slate-200 bg-slate-50/50 p-6 text-center">
+                <ListTodo className="mx-auto h-8 w-8 text-slate-300" aria-hidden />
+                <p className="mt-2 text-sm text-slate-500">Enroll in a challenge to see daily tasks here.</p>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("library")}
+                  className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-pink-600 hover:underline"
+                >
+                  Browse Library <ChevronRight className="h-3.5 w-3.5" aria-hidden />
+                </button>
+              </div>
+            )}
+          </section>
+
+          {/* Enrolled challenges */}
+          <section className={`${CARD_BASE} p-6`} aria-labelledby="enrolled-heading">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-500">
+                  Enrolled · Your commitments
+                </p>
+                <h2 id="enrolled-heading" className="mt-0.5 text-lg font-bold text-slate-800">
+                  {activeCount}/{MAX_ACTIVE} slots used
+                </h2>
+              </div>
+              {activeCount >= MAX_ACTIVE && (
+                <span className="rounded-xl bg-orange-100 px-3 py-1 text-xs font-semibold text-orange-700">
+                  Full
+                </span>
+              )}
             </div>
 
-            <div className="space-y-4 sm:space-y-6 pt-2">
-              <div>
-                <h3 className="text-sm font-bold mb-2">Challenge Description</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  {selectedChallengeData?.description}. This challenge will push you to develop consistency and
-                  discipline while building skills that matter.
+            {activeCount >= MAX_ACTIVE && (
+              <div className="mt-4 flex items-start gap-3 rounded-xl border border-orange-200/60 bg-orange-50/60 p-4">
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-orange-500" aria-hidden />
+                <p className="text-xs leading-relaxed text-orange-700">
+                  You&apos;ve reached the limit of {MAX_ACTIVE} active challenges. Complete or quit one to join another.
                 </p>
               </div>
+            )}
 
-              <div>
-                <h3 className="text-sm font-bold mb-2">Daily Requirement</h3>
-                <div className="bg-[#0ea5e9]/5 rounded-lg p-4 border border-[#0ea5e9]/20">
-                  <p className="text-sm font-medium leading-relaxed">{selectedChallengeData?.description}</p>
-                </div>
+            {activeChallenges.length > 0 ? (
+              <div className="mt-5 grid gap-4 sm:grid-cols-2">
+                {activeChallenges.map((challenge) => (
+                  <article
+                    key={challenge.id}
+                    className="overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-sm transition-shadow hover:shadow-md"
+                  >
+                    <div
+                      className="h-1.5 w-full"
+                      style={{ background: `linear-gradient(to right, ${challenge.accentFrom}, ${challenge.accentTo})` }}
+                      aria-hidden
+                    />
+                    <div className="p-4">
+                      <div className="flex items-start justify-between gap-2">
+                        <h3 className="font-semibold leading-snug text-slate-800">{challenge.name}</h3>
+                        <span className="shrink-0 rounded-lg bg-pink-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-pink-600">
+                          Active
+                        </span>
+                      </div>
+
+                      <p className="mt-1 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+                        {challenge.weekLabel} · Day {challenge.currentDay}/{challenge.totalDays}
+                      </p>
+                      <DifficultyDots level={challenge.difficulty} />
+
+                      {/* Progress */}
+                      <div className="mt-3">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-slate-500">Progress</span>
+                          <span className="font-semibold text-slate-700">{challenge.progress}%</span>
+                        </div>
+                        <div
+                          className="mt-1 h-1.5 overflow-hidden rounded-full bg-slate-100"
+                          role="progressbar"
+                          aria-valuenow={challenge.progress}
+                          aria-valuemin={0}
+                          aria-valuemax={100}
+                        >
+                          <div
+                            className="h-full rounded-full transition-all duration-500"
+                            style={{ width: `${challenge.progress}%`, background: APP_GRADIENT }}
+                          />
+                        </div>
+                      </div>
+
+                      <p
+                        className={`mt-2 flex items-center gap-1.5 text-xs ${
+                          challenge.deadlineUrgent ? "font-semibold text-orange-600" : "text-slate-500"
+                        }`}
+                      >
+                        <Clock className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                        Deadline: {challenge.deadline}
+                      </p>
+
+                      <div className="mt-3 rounded-xl border border-slate-200/80 bg-slate-50/70 p-3">
+                        <p className="text-[10px] font-semibold uppercase tracking-wide text-pink-600">Today&apos;s task</p>
+                        <p className="mt-0.5 text-xs leading-relaxed text-slate-700">{challenge.todayTask}</p>
+                      </div>
+
+                      <div className="mt-3 grid grid-cols-2 gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setShowProofFor(challenge.id)}
+                          className="flex items-center justify-center gap-1.5 rounded-xl py-2.5 text-xs font-bold text-white transition-transform hover:scale-[1.02]"
+                          style={{ background: APP_GRADIENT }}
+                          aria-label={`Submit proof for ${challenge.name}`}
+                        >
+                          <Upload className="h-3.5 w-3.5" aria-hidden /> Submit Proof
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setShowQuitFor(challenge.id)}
+                          className="flex items-center justify-center rounded-xl border border-red-200 bg-white py-2.5 text-xs font-semibold text-red-500 transition-colors hover:bg-red-50"
+                          aria-label={`Quit ${challenge.name}`}
+                        >
+                          Quit
+                        </button>
+                      </div>
+                    </div>
+                  </article>
+                ))}
               </div>
-
-              <div>
-                <h3 className="text-sm font-bold mb-2">Proof Type Required</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  Screenshot, photo, or link showing completion of daily task. Submissions are timestamped and
-                  immutable.
+            ) : (
+              <div className="mt-5 rounded-xl border border-dashed border-slate-200 bg-slate-50/50 p-8 text-center">
+                <AlertTriangle className="mx-auto h-10 w-10 text-slate-300" aria-hidden />
+                <h3 className="mt-3 text-base font-bold text-slate-800">No active challenges</h3>
+                <p className="mt-1 text-sm text-slate-500">
+                  Your credibility grows with finished work. Browse the library and commit.
                 </p>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("library")}
+                  className="mt-4 inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-xs font-bold text-white transition-transform hover:scale-[1.02]"
+                  style={{ background: APP_GRADIENT }}
+                >
+                  Browse Library <ChevronRight className="h-3.5 w-3.5" aria-hidden />
+                </button>
               </div>
+            )}
+          </section>
+        </div>
+      )}
 
-              <div>
-                <h3 className="text-sm font-bold mb-2">Failure Conditions</h3>
-                <ul className="space-y-1 text-sm text-muted-foreground">
-                  <li className="flex items-start gap-2">
-                    <span className="text-red-500 mt-0.5">•</span>
-                    <span>Missing a single day without proof submission</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-red-500 mt-0.5">•</span>
-                    <span>Submitting invalid or incomplete proof</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-red-500 mt-0.5">•</span>
-                    <span>Late submissions (after 11:59 PM on challenge day)</span>
-                  </li>
-                </ul>
-              </div>
+      {/* ── LIBRARY TAB ── */}
+      {activeTab === "library" && (
+        <section className={`${CARD_BASE} p-6`} aria-labelledby="library-heading">
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-500">Library · Browse</p>
+              <h2 id="library-heading" className="mt-0.5 text-lg font-bold text-slate-800">
+                Lock in your next commitment
+              </h2>
+            </div>
+          </div>
 
-              <div className="grid grid-cols-2 gap-3 sm:gap-4 pt-4 border-t border-border/50">
-                <div className="p-2 sm:p-0">
-                  <p className="text-[10px] sm:text-xs text-muted-foreground mb-0.5">Difficulty</p>
-                  <p className="text-sm font-bold">{selectedChallengeData?.difficulty}/5</p>
-                </div>
-                <div className="p-2 sm:p-0">
-                  <p className="text-[10px] sm:text-xs text-muted-foreground mb-0.5">Duration</p>
-                  <p className="text-sm font-bold">{selectedChallengeData?.duration} days</p>
-                </div>
-                <div className="p-2 sm:p-0">
-                  <p className="text-[10px] sm:text-xs text-muted-foreground mb-0.5">Base Reward</p>
-                  <p className="text-sm font-bold text-[#fb923c]">+{selectedChallengeData?.reward}</p>
-                </div>
-                <div className="p-2 sm:p-0">
-                  <p className="text-[10px] sm:text-xs text-muted-foreground mb-0.5">Completion</p>
-                  <p className="text-sm font-bold">{selectedChallengeData?.completionRate}%</p>
-                </div>
-              </div>
-
-              <Button
-                size="lg"
-                className="w-full min-h-[48px] sm:h-11 bg-gradient-to-r from-[#fb923c] to-[#0ea5e9] hover:opacity-90 text-white border-0 text-sm font-bold disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation"
-                onClick={handleLockInStart}
-                disabled={!canJoinChallenge || isAlreadyEnrolled}
+          {/* Track filter chips */}
+          <div className="mt-4 flex flex-wrap gap-2">
+            {TRACK_FILTERS.map((t) => (
+              <button
+                key={t}
+                type="button"
+                onClick={() => setTrackFilter(t)}
+                className={`rounded-xl px-4 py-1.5 text-xs font-semibold transition-colors ${
+                  trackFilter === t
+                    ? "text-white"
+                    : "border border-slate-200/80 bg-white text-slate-500 shadow-sm hover:bg-slate-50"
+                }`}
+                style={trackFilter === t ? { background: APP_GRADIENT } : undefined}
+                aria-pressed={trackFilter === t}
               >
-                {isAlreadyEnrolled
+                {t}
+              </button>
+            ))}
+          </div>
+
+          <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {filteredLibrary.map((challenge) => (
+              <article
+                key={challenge.id}
+                className="group overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-sm transition-shadow hover:shadow-md"
+              >
+                {/* Gradient thumbnail — same style as landing page challenge cards */}
+                <div
+                  className={`relative flex h-24 items-center justify-center bg-gradient-to-br ${challenge.gradientClass}`}
+                >
+                  <Lock className="h-7 w-7 text-white/50" aria-hidden />
+                  <span className="absolute bottom-2 left-2 rounded-lg bg-white/90 px-2 py-0.5 text-[10px] font-semibold text-slate-700">
+                    {challenge.track}
+                  </span>
+                </div>
+
+                <div className="p-4">
+                  <h3 className="font-semibold text-slate-800 transition-colors group-hover:text-pink-600">
+                    {challenge.name}
+                  </h3>
+
+                  <div className="mt-1.5 flex items-center gap-3 text-xs text-slate-500">
+                    <span className="flex items-center gap-1">
+                      <Calendar className="h-3 w-3" aria-hidden /> {challenge.duration}d
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Target className="h-3 w-3" aria-hidden /> {challenge.difficulty}/5
+                    </span>
+                  </div>
+
+                  <DifficultyDots level={challenge.difficulty} />
+
+                  <p className="mt-2 line-clamp-2 text-xs leading-relaxed text-slate-500">
+                    {challenge.description}
+                  </p>
+
+                  {/* Stats */}
+                  <div className="mt-3 flex items-center justify-between rounded-xl border border-slate-200/80 bg-slate-50/70 px-3 py-2.5">
+                    <div>
+                      <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Reward</p>
+                      <p className="text-sm font-bold text-pink-600">+{challenge.reward} pts</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Success rate</p>
+                      <p className="text-sm font-bold text-slate-800">{challenge.completionRate}%</p>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setSelectedId(challenge.id)}
+                    disabled={!canJoin}
+                    className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-xl py-2.5 text-xs font-bold text-white transition-transform hover:scale-[1.02] disabled:cursor-not-allowed disabled:opacity-50"
+                    style={{ background: APP_GRADIENT }}
+                    aria-label={`View details for ${challenge.name}`}
+                  >
+                    View Details <ChevronRight className="h-3.5 w-3.5" aria-hidden />
+                  </button>
+
+                  {!canJoin && (
+                    <p className="mt-1.5 text-center text-[10px] font-semibold uppercase tracking-wider text-orange-600">
+                      Max challenges reached
+                    </p>
+                  )}
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* ── HISTORY TAB ── */}
+      {activeTab === "history" && (
+        <section className={`${CARD_BASE} p-6`} aria-labelledby="history-heading">
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-500">History · Completed & Failed</p>
+          <h2 id="history-heading" className="mt-0.5 text-lg font-bold text-slate-800">
+            Your past commitments
+          </h2>
+
+          {history.length > 0 ? (
+            <ul className="mt-5 space-y-3">
+              {history.map((item) => {
+                const isDone = item.status === "completed"
+                return (
+                  <li
+                    key={item.id}
+                    className={`flex items-center gap-4 rounded-xl border p-4 ${
+                      isDone
+                        ? "border-emerald-200/60 bg-emerald-50/40"
+                        : "border-red-200/60 bg-red-50/30"
+                    }`}
+                  >
+                    <div
+                      className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
+                        isDone ? "bg-emerald-100" : "bg-red-100"
+                      }`}
+                      aria-hidden
+                    >
+                      {isDone
+                        ? <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+                        : <XCircle className="h-5 w-5 text-red-500" />}
+                    </div>
+
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h3 className="text-sm font-semibold text-slate-800">{item.name}</h3>
+                        <span
+                          className={`rounded-lg px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
+                            isDone ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700"
+                          }`}
+                        >
+                          {isDone ? "Completed" : "Failed"}
+                        </span>
+                      </div>
+                      <p className="mt-0.5 text-xs text-slate-500">
+                        {item.duration}d · Difficulty {item.difficulty}/5 · {item.completedDate}
+                      </p>
+                    </div>
+
+                    <div className="shrink-0 text-right">
+                      <p className={`text-sm font-bold ${isDone ? "text-emerald-600" : "text-red-500"}`}>
+                        {item.eliteScoreImpact} pts
+                      </p>
+                      {item.streakBonus !== "0" && (
+                        <div className="mt-0.5 flex items-center justify-end gap-1 text-[10px] text-orange-600">
+                          <Flame className="h-3 w-3" aria-hidden />
+                          <span>{item.streakBonus} streak</span>
+                        </div>
+                      )}
+                    </div>
+                  </li>
+                )
+              })}
+            </ul>
+          ) : (
+            <div className="mt-5 rounded-xl border border-dashed border-slate-200 bg-slate-50/50 p-8 text-center">
+              <History className="mx-auto h-8 w-8 text-slate-300" aria-hidden />
+              <p className="mt-2 text-sm text-slate-500">No challenge history yet.</p>
+            </div>
+          )}
+        </section>
+      )}
+
+      {/* ── Challenge Detail Modal: from top to above nav on mobile, CTA text always visible ── */}
+      {selectedId && !showLockIn && (
+        <div
+          className="fixed inset-0 z-50 flex flex-col bg-black/40 backdrop-blur-sm sm:items-center sm:justify-center sm:p-4 pt-[env(safe-area-inset-top)] pr-[env(safe-area-inset-right)] pl-[env(safe-area-inset-left)] pb-[calc(4rem+env(safe-area-inset-bottom))] sm:pb-[env(safe-area-inset-bottom)]"
+          onClick={() => setSelectedId(null)}
+        >
+          <div
+            className="flex h-full min-h-0 w-full flex-col rounded-none border-0 border-t border-slate-200/80 bg-white shadow-xl sm:h-auto sm:max-h-[85vh] sm:min-h-0 sm:w-full sm:max-w-xl sm:rounded-2xl sm:border"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header — fixed height */}
+            <div className="flex shrink-0 items-start justify-between gap-3 border-b border-slate-200/80 bg-white px-4 py-3 sm:px-6 sm:py-4">
+              <div className="min-w-0 flex-1">
+                <span className="inline-block rounded-lg bg-pink-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-pink-600">
+                  {selectedLibrary?.track}
+                </span>
+                <h2 className="mt-1 text-base font-bold leading-tight text-slate-800 sm:text-xl">{selectedLibrary?.name}</h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedId(null)}
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 text-slate-500 hover:bg-slate-50 active:bg-slate-100 min-h-[44px] min-w-[44px] touch-manipulation"
+                aria-label="Close"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Scrollable body — flex-1 min-h-0 so it fills and scrolls */}
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-3 sm:px-6 sm:py-4">
+              <div className="space-y-4 sm:space-y-5">
+                <section className="space-y-1">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 sm:text-sm sm:normal-case sm:tracking-normal">Description</h3>
+                  <p className="text-sm leading-relaxed text-slate-600">
+                    {selectedLibrary?.description} This challenge will push you to develop consistency and discipline while building skills that matter.
+                  </p>
+                </section>
+
+                <section className="space-y-1">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 sm:text-sm sm:normal-case sm:tracking-normal">Daily requirement</h3>
+                  <div className="rounded-xl border border-slate-200/80 bg-slate-50/50 p-3 shadow-sm sm:rounded-2xl sm:p-4">
+                    <p className="text-sm leading-relaxed text-slate-700">{selectedLibrary?.description}</p>
+                  </div>
+                </section>
+
+                <section className="space-y-1">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 sm:text-sm sm:normal-case sm:tracking-normal">Proof required</h3>
+                  <p className="text-sm leading-relaxed text-slate-600">
+                    Screenshot, photo, or link. Submissions are timestamped and immutable.
+                  </p>
+                </section>
+
+                <section className="space-y-1">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 sm:text-sm sm:normal-case sm:tracking-normal">Failure conditions</h3>
+                  <ul className="space-y-1.5">
+                    {[
+                      "Missing a day without proof",
+                      "Invalid or incomplete proof",
+                      "Late (after 11:59 PM)",
+                    ].map((item) => (
+                      <li key={item} className="flex items-start gap-2 text-sm leading-snug text-slate-600">
+                        <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-red-500" aria-hidden />
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+
+                <div className="space-y-2">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 sm:text-sm sm:normal-case sm:tracking-normal">Details</h3>
+                  <div className="grid grid-cols-2 gap-2">
+                    {[
+                      { label: "Difficulty", value: `${selectedLibrary?.difficulty}/5` },
+                      { label: "Duration", value: `${selectedLibrary?.duration} days` },
+                      { label: "Reward", value: `+${selectedLibrary?.reward} pts`, accent: true },
+                      { label: "Completion", value: `${selectedLibrary?.completionRate}%` },
+                    ].map((item) => (
+                      <div key={item.label} className="rounded-xl border border-slate-200/80 bg-slate-50/50 p-2.5 shadow-sm sm:rounded-2xl sm:p-3">
+                        <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">{item.label}</p>
+                        <p className={`mt-0.5 text-sm font-bold ${item.accent ? "text-pink-600" : "text-slate-800"}`}>
+                          {item.value}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Sticky footer — ends above bottom nav on mobile; button text forced visible */}
+            <div className="shrink-0 border-t border-slate-200/80 bg-white px-4 py-3 sm:px-6 sm:py-4">
+              <button
+                type="button"
+                onClick={handleLockInStart}
+                disabled={!canJoin || alreadyEnrolled}
+                className="flex w-full items-center justify-center rounded-xl py-3.5 text-sm font-bold transition-transform active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 min-h-[48px] touch-manipulation text-white [-webkit-text-fill-color:white] [text-shadow:0_1px_2px_rgba(0,0,0,0.2)]"
+                style={{ background: APP_GRADIENT, color: "white" }}
+              >
+                {alreadyEnrolled
                   ? "Already enrolled"
-                  : canJoinChallenge
-                    ? "Lock In Challenge"
-                    : `Maximum ${MAX_ACTIVE_CHALLENGES} Active Challenges Reached`}
-              </Button>
-              {!canJoinChallenge && !isAlreadyEnrolled && (
-                <p className="text-xs text-center text-orange-500 mt-3">
-                  Complete or quit an active challenge to join a new one
+                  : canJoin
+                    ? "Continue — Add spectators & lock in"
+                    : `Max ${MAX_ACTIVE} active challenges`}
+              </button>
+              {canJoin && !alreadyEnrolled && (
+                <p className="mt-2 text-center text-[11px] text-slate-500 sm:text-xs">
+                  Add at least one spectator before committing.
+                </p>
+              )}
+              {!canJoin && !alreadyEnrolled && (
+                <p className="mt-2 text-center text-[11px] text-orange-600 sm:text-xs">
+                  Complete or quit an active challenge to join a new one.
                 </p>
               )}
             </div>
@@ -814,460 +914,385 @@ export default function ChallengesPage() {
         </div>
       )}
 
-      {/* Lock-In Multi-Step Modal - full height on mobile, scrollable */}
-      {showLockInModal && selectedChallenge && (
+      {/* ── Lock-In Modal: from top to above nav on mobile, button text visible ── */}
+      {showLockIn && selectedId && (
         <div
-          className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 pt-[env(safe-area-inset-top)]"
+          className="fixed inset-0 z-50 flex flex-col bg-black/50 backdrop-blur-sm sm:items-center sm:justify-center sm:p-4 pt-[env(safe-area-inset-top)] pr-[env(safe-area-inset-right)] pl-[env(safe-area-inset-left)] pb-[calc(4rem+env(safe-area-inset-bottom))] sm:pb-[env(safe-area-inset-bottom)]"
           onClick={handleCloseLockIn}
         >
           <div
-            className="relative w-full max-w-lg max-h-[96dvh] sm:max-h-[90vh] flex flex-col overflow-hidden"
+            className={`flex h-full min-h-0 w-full flex-col overflow-hidden rounded-none border-0 border-t border-slate-200/80 bg-white shadow-xl sm:mx-auto sm:h-auto sm:max-h-[85vh] sm:min-h-0 sm:w-full sm:max-w-lg sm:rounded-2xl sm:border ${lockInStep === "success" ? "sm:max-h-[90vh]" : ""}`}
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Animated Background Glow */}
-            <div className="absolute -top-20 -left-20 w-40 h-40 bg-[#fb923c]/30 rounded-full blur-[80px] animate-pulse pointer-events-none" aria-hidden="true" />
-            <div className="absolute -bottom-20 -right-20 w-40 h-40 bg-[#0ea5e9]/30 rounded-full blur-[80px] animate-pulse pointer-events-none" aria-hidden="true" />
-            
-            <div className="relative glass-card rounded-t-2xl sm:rounded-3xl border-0 sm:border border-white/10 bg-card/95 backdrop-blur-2xl overflow-hidden flex flex-col max-h-[96dvh] sm:max-h-[90vh]">
-              {/* Progress Bar */}
-              <div className="h-1 bg-white/5 shrink-0" aria-hidden="true">
-                <div 
-                  className="h-full bg-gradient-to-r from-[#fb923c] to-[#0ea5e9] transition-all duration-500"
-                  style={{ width: lockInStep === "invite" ? "33%" : lockInStep === "confirm" ? "66%" : "100%" }}
-                />
-              </div>
+            {/* Progress strip */}
+            <div className="h-1.5 w-full shrink-0 bg-slate-100" aria-hidden>
+              <div
+                className="h-full transition-all duration-500"
+                style={{
+                  background: APP_GRADIENT,
+                  width: lockInStep === "invite" ? "33%" : lockInStep === "confirm" ? "66%" : "100%",
+                }}
+              />
+            </div>
 
-              <div className="p-4 sm:p-6 md:p-8 overflow-y-auto overscroll-contain flex-1 min-h-0">
-                {/* Step 1: Invite Supporters */}
-                {lockInStep === "invite" && (
-                  <div className="space-y-4 sm:space-y-6">
-                    {/* Header */}
-                    <div className="flex items-start justify-between">
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#fb923c]/20 to-[#0ea5e9]/20 flex items-center justify-center">
-                            <Users className="w-4 h-4 text-[#fb923c]" />
+            {/* Step 1: Add spectators — scrollable body + sticky footer */}
+            {lockInStep === "invite" && (
+              <>
+                <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+                  <div className="flex shrink-0 items-start justify-between gap-3 px-4 pt-3 pb-2 sm:px-6 sm:pt-4">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Step 1 of 2</p>
+                      <h2 className="mt-0.5 text-lg font-bold text-slate-800 sm:text-xl">Who&apos;s got your back?</h2>
+                      <p className="mt-1 text-xs text-slate-600 sm:text-sm">Add at least one spectator before you lock in.</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleCloseLockIn}
+                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 text-slate-500 hover:bg-slate-50 active:bg-slate-100 min-h-[44px] min-w-[44px] touch-manipulation"
+                      aria-label="Close"
+                    >
+                      <X className="h-5 w-5" />
+                    </button>
+                  </div>
+
+                  <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-2 sm:px-6">
+                    <div className="space-y-3 sm:space-y-4">
+                      <div className="relative overflow-hidden rounded-xl p-3 pr-12 text-white shadow-sm sm:rounded-2xl sm:p-4 sm:pr-14" style={{ background: APP_GRADIENT }}>
+                        <p className="text-[10px] font-semibold text-white/80">You&apos;re locking in</p>
+                        <h3 className="mt-0.5 text-sm font-bold leading-tight sm:text-base">{selectedLibrary?.name}</h3>
+                        <span className="mt-1 inline-block text-xs text-white/90">{selectedLibrary?.duration} days · +{selectedLibrary?.reward} pts</span>
+                        <div className="absolute right-2 top-1/2 -translate-y-1/2 flex h-8 w-8 items-center justify-center rounded-lg bg-white/20 sm:right-3 sm:h-9 sm:w-9">
+                          <Trophy className="h-4 w-4" aria-hidden />
+                        </div>
+                      </div>
+
+                      <div className="rounded-xl border border-slate-200/80 bg-slate-50/50 p-3 shadow-sm sm:rounded-2xl sm:p-4">
+                        <div className="flex items-start gap-2 sm:gap-3">
+                          <span className="text-lg sm:text-xl" aria-hidden>💪</span>
+                          <div className="min-w-0">
+                            <p className="text-xs font-bold text-slate-800 sm:text-sm">Partners increase success by 65%</p>
+                            <p className="mt-0.5 text-[11px] leading-relaxed text-slate-600 sm:text-sm">Supporters get daily updates and can send motivation.</p>
                           </div>
-                          <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Step 1 of 2</span>
                         </div>
-                        <h2 className="text-xl font-bold">Who's got your back?</h2>
-                        <p className="text-sm text-muted-foreground">Add people who'll keep you accountable</p>
                       </div>
-                      <button
-                        type="button"
-                        onClick={handleCloseLockIn}
-                        className="w-10 h-10 rounded-xl bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors border border-white/10 text-foreground"
-                        aria-label="Close"
-                      >
-                        <X className="w-5 h-5" />
-                      </button>
-                    </div>
 
-                    {/* Challenge Preview Card */}
-                    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#fb923c]/10 to-[#0ea5e9]/10 border border-white/10 p-4">
-                      <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-[#fb923c]/20 to-transparent rounded-full blur-2xl -mr-16 -mt-16" />
-                      <div className="relative flex items-center justify-between">
-                        <div>
-                          <p className="text-xs text-muted-foreground mb-1">You're locking in</p>
-                          <h3 className="font-bold">{selectedChallengeData?.name}</h3>
-                          <div className="flex items-center gap-3 mt-2">
-                            <span className="text-xs text-muted-foreground">{selectedChallengeData?.duration} days</span>
-                            <span className="text-xs text-[#fb923c] font-medium">+{selectedChallengeData?.reward} pts</span>
+                      <div className="space-y-1.5">
+                        <label htmlFor="supporter-email" className="text-xs font-semibold text-slate-800 sm:text-sm">Add spectator email</label>
+                        <div className="flex gap-2">
+                          <div className="relative flex-1 min-w-0">
+                            <Mail className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 pointer-events-none" aria-hidden />
+                            <input
+                              id="supporter-email"
+                              type="email"
+                              value={supporterEmail}
+                              onChange={(e) => { setSupporterEmail(e.target.value); setEmailError("") }}
+                              onKeyDown={(e) => e.key === "Enter" && handleAddSupporter()}
+                              placeholder="friend@email.com"
+                              className="w-full rounded-xl border border-slate-200 bg-slate-50/50 py-2.5 pl-9 pr-3 text-sm text-slate-800 placeholder:text-slate-400 focus:border-pink-500/50 focus:outline-none focus:ring-2 focus:ring-pink-500/20 min-h-[44px]"
+                              aria-label="Spectator email address"
+                            />
                           </div>
+                          <button
+                            type="button"
+                            onClick={handleAddSupporter}
+                            disabled={supporters.length >= 3}
+                            className="flex h-[44px] w-[44px] shrink-0 items-center justify-center rounded-xl text-white transition-transform active:scale-[0.98] disabled:opacity-50 touch-manipulation"
+                            style={{ background: APP_GRADIENT }}
+                            aria-label="Add spectator"
+                          >
+                            <UserPlus className="h-5 w-5" />
+                          </button>
                         </div>
-                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#fb923c] to-[#0ea5e9] flex items-center justify-center">
-                          <Trophy className="w-6 h-6 text-white" />
-                        </div>
+                        {emailError && <p className="text-xs text-red-500">{emailError}</p>}
                       </div>
-                    </div>
 
-                    {/* Why Supporters Matter */}
-                    <div className="flex items-start gap-3 p-4 rounded-xl bg-white/5 border border-white/5">
-                      <div className="w-10 h-10 rounded-full bg-[#0ea5e9]/10 flex items-center justify-center flex-shrink-0">
-                        <span className="text-lg">💪</span>
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium mb-1">Accountability partners increase success by 65%</p>
-                        <p className="text-xs text-muted-foreground leading-relaxed">
-                          Your supporters will receive daily updates and can send you motivation when you need it most.
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Email Input */}
-                    <div className="space-y-3">
-                      <label className="text-sm font-medium">Add supporter email</label>
-                      <div className="flex gap-2">
-                        <div className="relative flex-1">
-                          <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                          <input
-                            type="email"
-                            value={newSupporterEmail}
-                            onChange={(e) => {
-                              setNewSupporterEmail(e.target.value)
-                              setEmailError("")
-                            }}
-                            onKeyDown={(e) => e.key === "Enter" && addSupporter()}
-                            placeholder="friend@email.com"
-                            className="w-full pl-11 pr-4 py-3 text-sm rounded-xl border border-white/10 bg-white/5 focus:outline-none focus:ring-2 focus:ring-[#fb923c]/50 focus:bg-white/10 transition-all"
-                          />
-                        </div>
-                        <Button
-                          size="sm"
-                          onClick={addSupporter}
-                          disabled={supporters.length >= 3}
-                          className="h-12 px-4 bg-gradient-to-r from-[#fb923c] to-[#0ea5e9] hover:opacity-90 text-white border-0 rounded-xl"
+                      <div className="flex items-center gap-2 pt-1">
+                        <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 sm:text-xs">Or invite via</span>
+                        <button
+                          type="button"
+                          onClick={handleShareViaWhatsApp}
+                          className="inline-flex items-center gap-1.5 rounded-xl border border-[#25D366]/40 bg-[#25D366]/10 px-3 py-2 text-xs font-semibold text-[#128C7E] hover:bg-[#25D366]/20 active:scale-[0.98] touch-manipulation"
+                          aria-label="Share invite link via WhatsApp"
                         >
-                          <UserPlus className="w-4 h-4" />
-                        </Button>
+                          <svg className="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+                            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
+                          </svg>
+                          WhatsApp
+                        </button>
                       </div>
-                      {emailError && (
-                        <p className="text-xs text-red-500 flex items-center gap-1">
-                          <span className="w-1 h-1 rounded-full bg-red-500" />
-                          {emailError}
-                        </p>
-                      )}
-                    </div>
 
-                    {/* Supporters List */}
-                    {supporters.length > 0 && (
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-between">
-                          <label className="text-sm font-medium">Your squad</label>
-                          <span className="text-xs text-muted-foreground">{supporters.length}/3 added</span>
-                        </div>
-                        <div className="space-y-2">
-                          {supporters.map((supporter, index) => (
-                            <div
-                              key={supporter.id}
-                              className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors group"
-                            >
-                              <div className="flex items-center gap-3">
-                                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#fb923c]/20 to-[#0ea5e9]/20 flex items-center justify-center">
-                                  <span className="text-sm font-bold bg-gradient-to-r from-[#fb923c] to-[#0ea5e9] bg-clip-text text-transparent">
-                                    {supporter.email.charAt(0).toUpperCase()}
-                                  </span>
-                                </div>
-                                <div>
-                                  <span className="text-sm font-medium">{supporter.email}</span>
-                                  <p className="text-xs text-muted-foreground">Supporter #{index + 1}</p>
-                                </div>
+                      {supporters.length > 0 ? (
+                        <div className="space-y-1.5">
+                          <div className="flex items-center justify-between">
+                            <p className="text-xs font-semibold text-slate-800 sm:text-sm">Your spectators</p>
+                            <p className="text-[10px] text-slate-500">{supporters.length}/3</p>
+                          </div>
+                          {supporters.map((s) => (
+                            <div key={s.id} className="flex items-center justify-between gap-2 rounded-xl border border-slate-200/80 bg-white p-2.5 shadow-sm">
+                              <div className="flex min-w-0 items-center gap-2">
+                                {s.viaLink ? (
+                                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#25D366]/20 text-[#128C7E]" aria-hidden>
+                                    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
+                                      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
+                                    </svg>
+                                  </div>
+                                ) : (
+                                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white" style={{ background: APP_GRADIENT }} aria-hidden>
+                                    {s.email.charAt(0).toUpperCase()}
+                                  </div>
+                                )}
+                                <p className="truncate text-xs font-medium text-slate-800 sm:text-sm">{s.email}</p>
                               </div>
-                              <button
-                                onClick={() => removeSupporter(supporter.id)}
-                                className="w-8 h-8 rounded-full opacity-0 group-hover:opacity-100 bg-red-500/10 hover:bg-red-500/20 flex items-center justify-center transition-all"
-                              >
-                                <X className="w-3.5 h-3.5 text-red-500" />
+                              <button type="button" onClick={() => handleRemoveSupporter(s.id)} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-red-500 hover:bg-red-50 touch-manipulation" aria-label={`Remove ${s.email}`}>
+                                <X className="h-3.5 w-3.5" />
                               </button>
                             </div>
                           ))}
                         </div>
-                      </div>
-                    )}
-
-                    {/* Empty State */}
-                    {supporters.length === 0 && (
-                      <div className="text-center py-6 border border-dashed border-white/10 rounded-xl">
-                        <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-3">
-                          <Users className="w-5 h-5 text-muted-foreground" />
+                      ) : (
+                        <div className="rounded-xl border border-dashed border-slate-200/80 bg-slate-50/50 py-5 text-center sm:rounded-2xl sm:py-6">
+                          <Users className="mx-auto h-8 w-8 text-slate-300" aria-hidden />
+                          <p className="mt-2 text-xs font-medium text-slate-600 sm:text-sm">No spectators yet</p>
+                          <p className="mt-0.5 text-[10px] text-slate-500 sm:text-xs">Add at least one to continue</p>
                         </div>
-                        <p className="text-sm text-muted-foreground">No supporters added yet</p>
-                        <p className="text-xs text-muted-foreground mt-1">Add at least one to continue</p>
-                      </div>
-                    )}
-
-                    {/* Action Buttons */}
-                    <div className="flex gap-3 pt-4 border-t border-white/10">
-                      <Button
-                        size="lg"
-                        variant="outline"
-                        onClick={handleCloseLockIn}
-                        className="flex-1 h-12 min-h-[48px] bg-white/5 border-white/25 text-foreground hover:bg-white/15 rounded-xl font-semibold text-sm"
-                        aria-label="Cancel and close"
-                      >
-                        Cancel
-                      </Button>
-                      <Button
-                        size="lg"
-                        onClick={handleSendInvites}
-                        disabled={supporters.length === 0}
-                        className="flex-1 h-12 min-h-[48px] bg-gradient-to-r from-[#0ea5e9] to-[#fb923c] hover:opacity-95 text-white border-0 rounded-xl font-bold text-sm shadow-lg shadow-[#0ea5e9]/25 disabled:opacity-50 disabled:shadow-none"
-                        aria-label="Continue to confirmation"
-                      >
-                        <Send className="w-4 h-4 mr-2" aria-hidden="true" />
-                        Continue
-                      </Button>
+                      )}
                     </div>
                   </div>
-                )}
+                </div>
 
-                {/* Step 2: Confirm Lock-In */}
-                {lockInStep === "confirm" && (
-                  <div className="space-y-4 sm:space-y-6">
-                    {/* Header */}
-                    <div className="flex items-start justify-between">
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 rounded-xl bg-orange-500/20 flex items-center justify-center">
-                            <AlertTriangle className="w-4 h-4 text-orange-500" />
-                          </div>
-                          <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Step 2 of 2</span>
-                        </div>
-                        <h2 className="text-xl font-bold">Final confirmation</h2>
-                        <p className="text-sm text-muted-foreground">This is a serious commitment</p>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={handleCloseLockIn}
-                        className="w-10 h-10 rounded-xl bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors border border-white/10 text-foreground"
-                        aria-label="Close"
-                      >
-                        <X className="w-5 h-5" />
-                      </button>
+                <div className="shrink-0 border-t border-slate-200/80 bg-white px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-6 sm:py-4">
+                  <div className="flex gap-2 sm:gap-3">
+                    <button type="button" onClick={handleCloseLockIn} className="flex-1 rounded-xl border border-slate-200 bg-white py-3 text-sm font-semibold text-slate-600 hover:bg-slate-50 active:bg-slate-100 min-h-[48px] touch-manipulation">Cancel</button>
+                    <button type="button" onClick={handleSendInvites} disabled={supporters.length === 0} className="flex flex-1 items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold transition-transform active:scale-[0.98] disabled:opacity-50 min-h-[48px] touch-manipulation text-white [-webkit-text-fill-color:white] [text-shadow:0_1px_2px_rgba(0,0,0,0.2)]" style={{ background: APP_GRADIENT, color: "white" }}>
+                      <Send className="h-4 w-4 shrink-0" aria-hidden /> Continue
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* Step 2: Confirm — scrollable body + sticky footer */}
+            {lockInStep === "confirm" && (
+              <>
+                <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+                  <div className="flex shrink-0 items-start justify-between gap-3 px-4 pt-3 pb-2 sm:px-6 sm:pt-4">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Step 2 of 2</p>
+                      <h2 className="mt-0.5 text-lg font-bold text-slate-800 sm:text-xl">Final confirmation</h2>
+                      <p className="mt-1 text-xs text-slate-600 sm:text-sm">This is a serious commitment.</p>
                     </div>
+                    <button type="button" onClick={handleCloseLockIn} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 text-slate-500 hover:bg-slate-50 active:bg-slate-100 min-h-[44px] min-w-[44px] touch-manipulation" aria-label="Close">
+                      <X className="h-5 w-5" />
+                    </button>
+                  </div>
 
-                    {/* Warning Box */}
-                    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-orange-500/10 to-red-500/10 border border-orange-500/20 p-5">
-                      <div className="absolute top-0 right-0 w-24 h-24 bg-orange-500/20 rounded-full blur-2xl -mr-12 -mt-12" />
-                      <div className="relative space-y-3">
+                  <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-2 sm:px-6">
+                    <div className="space-y-3 sm:space-y-4">
+                      <div className="rounded-xl border border-orange-200/80 bg-orange-50/50 p-3 shadow-sm sm:rounded-2xl sm:p-4">
                         <div className="flex items-center gap-2">
-                          <Lock className="w-4 h-4 text-orange-500" />
-                          <span className="text-sm font-bold text-orange-500">Point of no return</span>
+                          <Lock className="h-4 w-4 text-orange-500" aria-hidden />
+                          <span className="text-xs font-bold text-orange-600 sm:text-sm">Point of no return</span>
                         </div>
-                        <p className="text-sm text-muted-foreground leading-relaxed">
-                          Once you lock in, there's <span className="font-bold text-foreground">no backing out</span>. 
-                          Miss a day without proof and your EliteScore takes a hit. 
-                          This is how we separate the serious from the casual.
+                        <p className="mt-1.5 text-xs leading-relaxed text-slate-600 sm:text-sm">
+                          Once you lock in, there&apos;s <strong className="text-slate-800">no backing out</strong>. Miss a day without proof and your EliteScore takes a <strong className="text-red-600">-60 hit</strong>.
                         </p>
                       </div>
-                    </div>
 
-                    {/* Supporters Confirmed */}
-                    <div className="rounded-2xl bg-green-500/5 border border-green-500/20 p-4">
-                      <div className="flex items-center gap-2 mb-3">
-                        <div className="w-6 h-6 rounded-full bg-green-500/20 flex items-center justify-center">
-                          <Check className="w-3.5 h-3.5 text-green-500" />
+                      <div className="rounded-xl border border-emerald-200/80 bg-emerald-50/50 p-3 shadow-sm sm:rounded-2xl sm:p-4">
+                        <div className="mb-2 flex items-center gap-2 sm:mb-3">
+                          <Check className="h-4 w-4 text-emerald-600" aria-hidden />
+                          <span className="text-xs font-semibold text-emerald-700 sm:text-sm">Invites queued</span>
                         </div>
-                        <span className="text-sm font-medium text-green-500">Invites queued</span>
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        {supporters.map((supporter) => (
-                          <div key={supporter.id} className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10">
-                            <div className="w-5 h-5 rounded-full bg-gradient-to-br from-[#fb923c]/20 to-[#0ea5e9]/20 flex items-center justify-center">
-                              <span className="text-[10px] font-bold">{supporter.email.charAt(0).toUpperCase()}</span>
+                        <div className="flex flex-wrap gap-1.5 sm:gap-2">
+                          {supporters.map((s) => (
+                            <div key={s.id} className="flex items-center gap-1 rounded-full border border-emerald-200/60 bg-white px-2.5 py-1 sm:px-3 sm:py-1.5">
+                              <div className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[9px] font-bold text-white sm:h-5 sm:w-5 sm:text-[10px]" style={{ background: APP_GRADIENT }} aria-hidden>{s.email.charAt(0).toUpperCase()}</div>
+                              <span className="text-[10px] text-slate-700 sm:text-xs">{s.email.split("@")[0]}</span>
                             </div>
-                            <span className="text-xs">{supporter.email.split("@")[0]}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Challenge Summary */}
-                    <div className="space-y-3">
-                      <h3 className="text-sm font-medium">Challenge details</h3>
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="p-3 rounded-xl bg-white/5 border border-white/5">
-                          <p className="text-xs text-muted-foreground mb-1">Start</p>
-                          <p className="text-sm font-medium">Today</p>
-                        </div>
-                        <div className="p-3 rounded-xl bg-white/5 border border-white/5">
-                          <p className="text-xs text-muted-foreground mb-1">End</p>
-                          <p className="text-sm font-medium">
-                            {new Date(Date.now() + (selectedChallengeData?.duration || 0) * 24 * 60 * 60 * 1000).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-                          </p>
-                        </div>
-                        <div className="p-3 rounded-xl bg-white/5 border border-white/5">
-                          <p className="text-xs text-muted-foreground mb-1">Duration</p>
-                          <p className="text-sm font-medium">{selectedChallengeData?.duration} days</p>
-                        </div>
-                        <div className="p-3 rounded-xl bg-gradient-to-br from-[#fb923c]/10 to-[#0ea5e9]/10 border border-[#fb923c]/20">
-                          <p className="text-xs text-muted-foreground mb-1">Reward</p>
-                          <p className="text-sm font-bold text-[#fb923c]">+{selectedChallengeData?.reward} pts</p>
+                          ))}
                         </div>
                       </div>
-                    </div>
 
-                    {/* Action Buttons - high contrast so they're always visible */}
-                    <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-white/10">
-                      <Button
-                        size="lg"
-                        variant="outline"
-                        onClick={() => setLockInStep("invite")}
-                        className="flex-1 h-12 min-h-[48px] bg-white/5 border-white/25 text-foreground hover:bg-white/15 hover:border-white/35 rounded-xl font-semibold text-sm"
-                        aria-label="Go back to invite step"
-                      >
-                        Back
-                      </Button>
-                      <Button
-                        size="lg"
-                        onClick={handleConfirmLockIn}
-                        className="flex-1 h-12 min-h-[48px] bg-gradient-to-r from-[#0ea5e9] to-[#fb923c] hover:opacity-95 text-white border-0 rounded-xl font-bold text-sm shadow-lg shadow-[#0ea5e9]/25"
-                        aria-label="Lock in challenge now"
-                      >
-                        I&apos;m committed — Lock In
-                      </Button>
-                    </div>
-                  </div>
-                )}
-
-                {/* Step 3: Success */}
-                {lockInStep === "success" && (
-                  <div className="text-center py-8 space-y-6">
-                    {/* Success Animation */}
-                    <div className="relative">
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="w-24 h-24 rounded-full bg-green-500/20 animate-ping" />
-                      </div>
-                      <div className="relative w-20 h-20 rounded-full bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center mx-auto shadow-lg shadow-green-500/30">
-                        <CheckCircle2 className="w-10 h-10 text-white" />
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <h2 className="text-2xl font-bold">You're locked in!</h2>
-                      <p className="text-sm text-muted-foreground max-w-xs mx-auto">
-                        Your journey starts now. Your supporters have been notified and are ready to cheer you on.
-                      </p>
-                    </div>
-
-                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10">
-                      <Users className="w-4 h-4 text-[#fb923c]" />
-                      <span className="text-sm">{supporters.length} supporter{supporters.length > 1 ? "s" : ""} watching</span>
-                    </div>
-
-                    <div className="pt-4">
-                      <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground">
-                        <span>Redirecting to your challenge</span>
-                        <span className="flex gap-0.5">
-                          <span className="w-1 h-1 rounded-full bg-muted-foreground animate-bounce" style={{ animationDelay: "0ms" }} />
-                          <span className="w-1 h-1 rounded-full bg-muted-foreground animate-bounce" style={{ animationDelay: "150ms" }} />
-                          <span className="w-1 h-1 rounded-full bg-muted-foreground animate-bounce" style={{ animationDelay: "300ms" }} />
-                        </span>
+                      <div>
+                        <h3 className="mb-2 text-xs font-bold text-slate-800 sm:text-sm sm:mb-3">Challenge details</h3>
+                        <div className="grid grid-cols-2 gap-2 sm:gap-3">
+                          {[
+                            { label: "Start", value: "Today" },
+                            { label: "End", value: new Date(Date.now() + (selectedLibrary?.duration ?? 0) * 86400000).toLocaleDateString("en-US", { month: "short", day: "numeric" }) },
+                            { label: "Duration", value: `${selectedLibrary?.duration} days` },
+                            { label: "Reward", value: `+${selectedLibrary?.reward} pts`, accent: true },
+                          ].map((item) => (
+                            <div key={item.label} className="rounded-xl border border-slate-200/80 bg-slate-50/50 p-2.5 shadow-sm sm:rounded-2xl sm:p-3">
+                              <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">{item.label}</p>
+                              <p className={`mt-0.5 text-sm font-bold ${item.accent ? "text-pink-600" : "text-slate-800"}`}>{item.value}</p>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     </div>
                   </div>
-                )}
+                </div>
+
+                <div className="shrink-0 border-t border-slate-200/80 bg-white px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-6 sm:py-4">
+                  <div className="flex gap-2 sm:gap-3">
+                    <button type="button" onClick={() => setLockInStep("invite")} className="flex-1 rounded-xl border border-slate-200 bg-white py-3 text-sm font-semibold text-slate-600 hover:bg-slate-50 active:bg-slate-100 min-h-[48px] touch-manipulation">Back</button>
+                    <button type="button" onClick={handleConfirmLockIn} className="flex flex-1 items-center justify-center rounded-xl py-3 text-sm font-bold transition-transform active:scale-[0.98] min-h-[48px] touch-manipulation text-white [-webkit-text-fill-color:white] [text-shadow:0_1px_2px_rgba(0,0,0,0.2)]" style={{ background: APP_GRADIENT, color: "white" }}>I&apos;m committed — Lock In</button>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* Step 3: Success — full viewport on mobile, centered */}
+            {lockInStep === "success" && (
+              <div className="flex min-h-0 flex-1 flex-col items-center justify-center px-4 py-8 text-center sm:py-10">
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="h-24 w-24 animate-ping rounded-full bg-emerald-500/20" aria-hidden />
+                  </div>
+                  <div className="relative flex h-20 w-20 items-center justify-center rounded-full shadow-lg" style={{ background: "linear-gradient(135deg, #10b981, #059669)" }}>
+                    <CheckCircle2 className="h-10 w-10 text-white" aria-hidden />
+                  </div>
+                </div>
+                <h2 className="mt-6 text-xl font-bold text-slate-800 sm:text-2xl">You&apos;re locked in!</h2>
+                <p className="mt-2 max-w-xs text-sm text-slate-600">Your journey starts now. Your supporters have been notified.</p>
+                <div className="mt-5 flex items-center justify-center gap-2 rounded-full border border-slate-200/80 bg-white px-4 py-2.5 shadow-sm min-h-[44px]">
+                  <Users className="h-4 w-4 shrink-0 text-pink-500" aria-hidden />
+                  <span className="text-sm text-slate-700">{supporters.length} supporter{supporters.length > 1 ? "s" : ""} watching</span>
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
       )}
 
-      {/* Proof Submission Modal - mobile friendly */}
-      {showProofModal && (
+      {/* ── Proof Submission Modal ── */}
+      {showProofFor !== null && (
         <div
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 pt-[env(safe-area-inset-top)]"
-          onClick={() => setShowProofModal(false)}
+          className="fixed inset-0 z-50 flex items-end bg-black/40 backdrop-blur-sm sm:items-center sm:p-4"
+          onClick={() => setShowProofFor(null)}
         >
           <div
-            className="glass-card rounded-t-2xl sm:rounded-2xl border-0 sm:border border-[#0ea5e9]/30 bg-card/95 backdrop-blur-xl p-4 sm:p-6 max-w-lg w-full max-h-[90dvh] sm:max-h-[85vh] overflow-y-auto overscroll-contain"
+            className="w-full max-h-[90dvh] overflow-y-auto rounded-t-2xl bg-white p-6 shadow-xl sm:mx-auto sm:max-w-lg sm:rounded-2xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="space-y-4 pb-[env(safe-area-inset-bottom)]">
+            <div className="mb-5 flex items-start justify-between">
               <div>
-                <h2 className="text-lg sm:text-xl font-bold mb-2">Submit Daily Proof</h2>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  Upload proof of today&apos;s task completion. Submissions are timestamped and immutable.
+                <h2 className="text-xl font-bold text-slate-800">Submit Daily Proof</h2>
+                <p className="mt-1 text-sm text-slate-500">
+                  Upload proof of today&apos;s task. Submissions are timestamped and immutable.
                 </p>
               </div>
+              <button
+                type="button"
+                onClick={() => setShowProofFor(null)}
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-slate-200 text-slate-500 hover:bg-slate-50"
+                aria-label="Close"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
 
+            <div className="space-y-4">
               <div>
-                <label className="text-sm font-medium mb-2 block">Proof Type</label>
-                <div className="grid grid-cols-3 gap-2 mb-4">
-                  <Button size="sm" variant="outline" className="text-xs min-h-[44px] sm:h-9 bg-transparent touch-manipulation">
-                    Image
-                  </Button>
-                  <Button size="sm" variant="outline" className="text-xs min-h-[44px] sm:h-9 bg-transparent touch-manipulation">
-                    Link
-                  </Button>
-                  <Button size="sm" variant="outline" className="text-xs min-h-[44px] sm:h-9 bg-transparent touch-manipulation">
-                    Text
-                  </Button>
+                <p className="mb-2 text-sm font-semibold text-slate-700">Proof Type</p>
+                <div className="grid grid-cols-3 gap-2">
+                  {["Image", "Link", "Text"].map((type) => (
+                    <button
+                      key={type}
+                      type="button"
+                      className="rounded-xl border border-slate-200/80 bg-white py-2.5 text-xs font-semibold text-slate-600 transition-colors hover:border-pink-500/50 hover:bg-pink-50/50 hover:text-pink-600"
+                    >
+                      {type}
+                    </button>
+                  ))}
                 </div>
               </div>
 
               <div>
-                <label className="text-sm font-medium mb-2 block">Upload Proof</label>
-                <div className="border-2 border-dashed border-border rounded-xl p-6 sm:p-8 text-center hover:border-[#0ea5e9]/50 transition-colors cursor-pointer min-h-[120px] flex flex-col items-center justify-center touch-manipulation">
-                  <Upload className="w-8 h-8 text-muted-foreground mb-2 shrink-0" aria-hidden="true" />
-                  <p className="text-sm font-medium mb-1">Tap to upload</p>
-                  <p className="text-xs text-muted-foreground">PNG, JPG, PDF up to 10MB</p>
+                <p className="mb-2 text-sm font-semibold text-slate-700">Upload Proof</p>
+                <div className="flex min-h-[120px] cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-200 bg-slate-50/50 p-6 text-center transition-colors hover:border-pink-500/40 hover:bg-pink-50/30">
+                  <Upload className="h-8 w-8 text-slate-300" aria-hidden />
+                  <p className="mt-2 text-sm font-medium text-slate-700">Tap to upload</p>
+                  <p className="text-xs text-slate-400">PNG, JPG, PDF up to 10 MB</p>
                 </div>
               </div>
 
               <div>
-                <label className="text-sm font-medium mb-2 block">Notes (Optional)</label>
+                <label htmlFor="proof-notes" className="mb-2 block text-sm font-semibold text-slate-700">
+                  Notes <span className="font-normal text-slate-400">(Optional)</span>
+                </label>
                 <textarea
-                  className="w-full px-3 py-2.5 text-sm rounded-xl border border-border bg-background focus:outline-none focus:ring-2 focus:ring-[#0ea5e9]/50 resize-none min-h-[80px]"
+                  id="proof-notes"
+                  className="w-full resize-none rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 focus:border-pink-500/50 focus:outline-none focus:ring-2 focus:ring-pink-500/20"
                   rows={3}
                   placeholder="Add any additional context..."
                 />
               </div>
 
-              <div className="flex flex-col-reverse sm:flex-row gap-2 sm:gap-3 pt-2">
-                <Button
-                  size="lg"
-                  variant="outline"
-                  onClick={() => setShowProofModal(false)}
-                  className="flex-1 min-h-[48px] sm:h-10 text-sm bg-transparent touch-manipulation"
+              <div className="flex gap-3 border-t border-slate-100 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowProofFor(null)}
+                  className="flex-1 rounded-xl border border-slate-200 bg-white py-3 text-sm font-semibold text-slate-600 hover:bg-slate-50"
                 >
                   Cancel
-                </Button>
-                <Button
-                  size="lg"
-                  className="flex-1 min-h-[48px] sm:h-10 bg-gradient-to-r from-[#0ea5e9] to-[#fb923c] hover:opacity-90 text-white border-0 text-sm touch-manipulation"
-                  onClick={() => setShowProofModal(false)}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowProofFor(null)}
+                  className="flex flex-1 items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold text-white transition-transform hover:scale-[1.02]"
+                  style={{ background: APP_GRADIENT }}
                 >
-                  Submit Proof
-                </Button>
+                  <Upload className="h-4 w-4" aria-hidden /> Submit Proof
+                </button>
               </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* Bottom Navigation */}
-      {/* Quit Challenge Confirmation Modal - mobile friendly */}
-      {showQuitConfirm && (
+      {/* ── Quit Confirmation Modal ── */}
+      {showQuitFor !== null && (
         <div
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-3 sm:p-4 pt-[env(safe-area-inset-top)] pb-[max(1rem,env(safe-area-inset-bottom))]"
-          onClick={() => setShowQuitConfirm(null)}
+          className="fixed inset-0 z-50 flex items-end bg-black/40 p-4 backdrop-blur-sm sm:items-center"
+          onClick={() => setShowQuitFor(null)}
         >
           <div
-            className="glass-card rounded-2xl border border-red-500/30 bg-card/95 backdrop-blur-xl p-4 sm:p-6 max-w-md w-full mx-0 sm:mx-auto"
+            className="w-full rounded-2xl bg-white p-6 shadow-xl sm:mx-auto sm:max-w-md"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-start gap-3 mb-4">
-              <div className="w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center flex-shrink-0" aria-hidden="true">
-                <AlertTriangle className="w-5 h-5 text-red-500" />
+            <div className="flex items-start gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-red-100" aria-hidden>
+                <AlertTriangle className="h-5 w-5 text-red-500" />
               </div>
-              <div className="min-w-0">
-                <h3 className="text-base sm:text-lg font-bold mb-1">Quit Challenge?</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  Quitting will result in a failed challenge and -35 EliteScore penalty. This action cannot be undone.
+              <div>
+                <h3 className="text-base font-bold text-slate-800">Quit Challenge?</h3>
+                <p className="mt-1 text-sm leading-relaxed text-slate-500">
+                  Quitting results in a{" "}
+                  <strong className="text-red-600">−60 EliteScore penalty</strong> and marks this as failed. This
+                  cannot be undone.
                 </p>
               </div>
             </div>
-            <div className="flex flex-col-reverse sm:flex-row gap-2 sm:gap-3">
-              <Button
-                variant="outline"
-                onClick={() => setShowQuitConfirm(null)}
-                className="flex-1 min-h-[48px] sm:h-10 border-border/50 hover:bg-muted/50 bg-transparent touch-manipulation"
+            <div className="mt-5 flex gap-3">
+              <button
+                type="button"
+                onClick={() => setShowQuitFor(null)}
+                className="flex-1 rounded-xl border border-slate-200 bg-white py-3 text-sm font-semibold text-slate-600 hover:bg-slate-50"
               >
                 Cancel
-              </Button>
-              <Button
-                onClick={confirmQuitChallenge}
-                className="flex-1 min-h-[48px] sm:h-10 bg-red-500 hover:bg-red-600 text-white border-0 touch-manipulation"
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmQuit}
+                className="flex-1 rounded-xl bg-red-500 py-3 text-sm font-bold text-white transition-colors hover:bg-red-600"
               >
                 Quit Challenge
-              </Button>
+              </button>
             </div>
           </div>
         </div>
       )}
-
-      <BottomNav />
     </div>
   )
 }

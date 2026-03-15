@@ -15,7 +15,7 @@ export function TopHeader() {
   }
 
   return (
-    <header className="sticky top-0 z-40 w-full bg-gradient-to-r from-[#0c1525]/95 via-[#0a0a12]/95 to-[#151008]/95 backdrop-blur-xl border-b border-white/5">
+    <header className="sticky top-0 z-40 w-full border-b border-slate-200/80 bg-white shadow-sm">
       <div className="container mx-auto px-4">
         <div className="flex h-14 md:h-16 items-center">
           <Link
@@ -25,12 +25,13 @@ export function TopHeader() {
           >
             <Image
               src={LOGO_PATH}
-              alt="EliteScore"
+              alt=""
               width={140}
               height={44}
               className="h-8 w-auto md:h-9"
               priority
             />
+            <span className="text-base font-bold tracking-tight text-slate-800 md:text-lg">EliteScore</span>
           </Link>
         </div>
       </div>

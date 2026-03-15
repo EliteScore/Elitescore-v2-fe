@@ -125,6 +125,13 @@
   }
 }
 
+/* Auth pages (login/signup): no scroll, no bottom padding – avoids flash when switching between them */
+html.auth-open,
+body.auth-open {
+  overflow: hidden;
+  padding-bottom: 0 !important;
+}
+
 /* Added glass morphism effect for EliteScore cards */
 .glass-card {
   background: rgba(255, 255, 255, 0.05);
