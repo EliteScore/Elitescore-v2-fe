@@ -140,17 +140,13 @@ export default function LandingPage() {
             >
               Learn from Harvard, Google & MIT. Submit proof. Climb the leaderboard. No ghosting—just receipts.
             </p>
-            <a
-              href="#waitlist"
-              onClick={(e) => {
-                e.preventDefault()
-                scrollTo("waitlist")
-              }}
+            <Link
+              href="/login"
               className={`landing-cta-btn inline-flex items-center justify-center rounded-xl bg-white px-6 py-3.5 text-base font-bold text-slate-800 shadow-lg transition-[opacity,transform] duration-500 ease-out ${heroReady ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}
               style={{ transitionDelay: "350ms" }}
             >
               Sign up for free
-            </a>
+            </Link>
           </div>
         </section>
 
