@@ -1,87 +1,138 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Clock, Flame, TrendingUp, Trophy, ArrowUpRight, CheckCircle2, Upload } from "lucide-react"
 
+const DASHBOARD_URL = "/api/dashboard"
 const APP_GRADIENT = "linear-gradient(135deg, #db2777 0%, #ea580c 35%, #2563eb 70%, #7c3aed 100%)"
 const CARD_BASE = "rounded-2xl border border-slate-200/80 bg-white shadow-sm"
 
-const ACTIVE_CHALLENGES = [
-  {
-    id: "python-mastery",
-    title: "30-Day Python Mastery",
-    tag: "Harvard",
-    accentFrom: "#db2777",
-    accentTo: "#ea580c",
-    difficulty: 4,
-    progress: 40,
-    daysLeft: 18,
-    deadline: "Tonight 11:59 PM",
-    deadlineUrgent: true,
-    weekLabel: "Week 2 · Build",
-    todayTask: "Complete 3 LeetCode medium problems using Python.",
-  },
-  {
-    id: "linkedin-growth",
-    title: "14-Day LinkedIn Growth",
-    tag: "Career",
-    accentFrom: "#2563eb",
-    accentTo: "#7c3aed",
-    difficulty: 2,
-    progress: 50,
-    daysLeft: 7,
-    deadline: "Tomorrow 11:59 PM",
-    deadlineUrgent: false,
-    weekLabel: "Week 1 · Foundation",
-    todayTask: "Post a career insight and engage with 5 posts in your industry.",
-  },
-]
+type DashboardStreaks = { streakCurrent?: number; streakLongest?: number; lastActiveAt?: string | null }
+type LeaderboardSummary = { currentRank?: number; eliteScore?: number; percentile?: number }
+type LeaderboardEntry = {
+  userId?: string
+  handle?: string
+  displayName?: string
+  name?: string
+  avatarUrl?: string | null
+  eliteScore?: number
+  score?: number
+  rank?: number
+  isCurrentUser?: boolean
+}
+type LeaderboardPreview = {
+  title?: string
+  summary?: LeaderboardSummary
+  entries?: LeaderboardEntry[]
+}
+type RecommendedTemplate = {
+  id?: string
+  name?: string
+  track?: string
+  difficulty?: number
+  durationDays?: number
+  completionBonus?: number
+  dailyRewardEliteScore?: number
+  description?: string
+}
+type DashboardResponse = {
+  eliteScore?: number
+  globalRank?: number
+  percentile?: number
+  streaks?: DashboardStreaks
+  recentScoreGains?: Array<{ eventType?: string; eliteScoreDelta?: number; createdAt?: string }>
+  leaderboardPreview?: LeaderboardPreview
+  recommendedChallenges?: RecommendedTemplate[]
+  [key: string]: unknown
+}
 
-const LEADERBOARD_TOP5 = [
-  { rank: 1, name: "Jordan_Dev", score: 8322, avatar: "J" },
-  { rank: 2, name: "AvaCodes", score: 8305, avatar: "A" },
-  { rank: 3, name: "RyanW", score: 8247, avatar: "R", isMe: true },
-  { rank: 4, name: "Maria_K", score: 8219, avatar: "M" },
-  { rank: 5, name: "NoahBuilder", score: 8208, avatar: "N" },
-]
+function parseDashboardResponse(raw: unknown): DashboardResponse | null {
+  if (!raw || typeof raw !== "object") return null
+  const d = raw as Record<string, unknown>
+  return {
+    eliteScore: typeof d.eliteScore === "number" ? d.eliteScore : undefined,
+    globalRank: typeof d.globalRank === "number" ? d.globalRank : undefined,
+    percentile: typeof d.percentile === "number" ? d.percentile : undefined,
+    streaks: d.streaks && typeof d.streaks === "object" ? {
+      streakCurrent: typeof (d.streaks as Record<string, unknown>).streakCurrent === "number" ? (d.streaks as Record<string, unknown>).streakCurrent as number : undefined,
+      streakLongest: typeof (d.streaks as Record<string, unknown>).streakLongest === "number" ? (d.streaks as Record<string, unknown>).streakLongest as number : undefined,
+      lastActiveAt: typeof (d.streaks as Record<string, unknown>).lastActiveAt === "string" ? (d.streaks as Record<string, unknown>).lastActiveAt as string : undefined,
+    } : undefined,
+    recentScoreGains: Array.isArray(d.recentScoreGains) ? d.recentScoreGains : undefined,
+    leaderboardPreview: d.leaderboardPreview && typeof d.leaderboardPreview === "object" ? (() => {
+      const lp = d.leaderboardPreview as Record<string, unknown>
+      const sum = lp.summary && typeof lp.summary === "object" ? lp.summary as LeaderboardSummary : undefined
+      return {
+        title: typeof lp.title === "string" ? lp.title : undefined,
+        summary: sum,
+        entries: Array.isArray(lp.entries) ? lp.entries as LeaderboardEntry[] : undefined,
+      }
+    })() : undefined,
+    recommendedChallenges: Array.isArray(d.recommendedChallenges) ? d.recommendedChallenges as RecommendedTemplate[] : undefined,
+  }
+}
+
+function scoreThisWeekFromGains(gains: DashboardResponse["recentScoreGains"]): number {
+  if (!Array.isArray(gains)) return 0
+  const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000
+  return gains.reduce((sum, e) => {
+    const delta = typeof (e as Record<string, unknown>)?.eliteScoreDelta === "number" ? (e as Record<string, unknown>).eliteScoreDelta as number : 0
+    const created = (e as Record<string, unknown>)?.createdAt
+    const ts = typeof created === "string" ? new Date(created).getTime() : 0
+    return ts >= oneWeekAgo ? sum + delta : sum
+  }, 0)
+}
+
+function getGreeting() {
+  const h = new Date().getHours()
+  if (h < 12) return "Good morning"
+  if (h < 17) return "Good afternoon"
+  return "Good evening"
+}
+
+function getDisplayName(): string {
+  if (typeof window === "undefined") return "there"
+  const fullName = localStorage.getItem("elitescore_full_name")
+  if (fullName?.trim()) return fullName.trim()
+  const username = localStorage.getItem("elitescore_username")
+  if (username) return username
+  const email = localStorage.getItem("elitescore_email")
+  if (email) return email.split("@")[0] || "there"
+  return "there"
+}
+
+function getInitials(name: string): string {
+  const parts = name.trim().split(/\s+/)
+  if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+  return (parts[0]?.slice(0, 2) ?? "?").toUpperCase()
+}
+
+/* Active challenges — from dashboard or empty */
+const ACTIVE_CHALLENGES: Array<{
+  id: string
+  title: string
+  tag: string
+  accentFrom: string
+  accentTo: string
+  difficulty: number
+  progress: number
+  daysLeft: number
+  deadline: string
+  deadlineUrgent: boolean
+  weekLabel: string
+  todayTask: string
+}> = []
 
 const CHALLENGE_CATEGORIES = ["Top", "AI", "Tech", "Career"]
+const GRADIENT_BY_TRACK: Record<string, string> = {
+  AI: "from-violet-500/90 to-purple-500/90",
+  Tech: "from-blue-500/90 to-indigo-500/90",
+  Career: "from-pink-500/90 to-rose-500/90",
+  default: "from-amber-500/90 to-orange-500/90",
+}
 
-const RECOMMENDED = [
-  {
-    title: "7-Day SQL Bootcamp",
-    category: "Tech",
-    points: 75,
-    members: "16.5k",
-    gradientClass: "from-blue-500/90 to-indigo-500/90",
-  },
-  {
-    title: "Prompt Engineering Sprint",
-    category: "AI",
-    points: 90,
-    members: "11.2k",
-    gradientClass: "from-violet-500/90 to-purple-500/90",
-  },
-  {
-    title: "Portfolio Rebuild Challenge",
-    category: "Career",
-    points: 60,
-    members: "8.3k",
-    gradientClass: "from-pink-500/90 to-rose-500/90",
-  },
-  {
-    title: "Google Data Analytics",
-    category: "Tech",
-    points: 80,
-    members: "22k",
-    gradientClass: "from-amber-500/90 to-orange-500/90",
-  },
-]
-
-const LEADERBOARD_TABS = ["Global", "Friends", "Brintts"]
-
-const MEDAL: Record<number, string> = { 1: "🥇", 2: "🥈", 3: "🥉" }
 
 function DifficultyDots({ level, max = 5 }: { level: number; max?: number }) {
   return (
@@ -102,19 +153,163 @@ function DifficultyDots({ level, max = 5 }: { level: number; max?: number }) {
 }
 
 export default function HomePage() {
+  const router = useRouter()
+  const [authChecked, setAuthChecked] = useState(false)
+  const [displayName, setDisplayName] = useState("there")
+  const [dashboard, setDashboard] = useState<DashboardResponse | null>(null)
+  const [dashboardLoading, setDashboardLoading] = useState(true)
   const [activeCategory, setActiveCategory] = useState("Top")
-  const [leaderboardTab, setLeaderboardTab] = useState("Global")
 
+  useEffect(() => {
+    const token = localStorage.getItem("elitescore_access_token")
+    const loggedIn = localStorage.getItem("elitescore_logged_in")
+    const isAuthorized = Boolean(token || loggedIn === "true")
+    if (!isAuthorized) {
+      router.replace("/login")
+      return
+    }
+    setDisplayName(getDisplayName())
+    setAuthChecked(true)
+  }, [router])
+
+  useEffect(() => {
+    if (!authChecked) return
+    const token = localStorage.getItem("elitescore_access_token")
+    const userId = localStorage.getItem("elitescore_user_id")
+    if (process.env.NODE_ENV === "development") {
+      console.debug("[Home Dashboard] token present:", !!token, "| userId:", userId ?? "(none)")
+      if (token) console.debug("[Home Dashboard] token preview:", token.slice(0, 20) + "..." + token.slice(-8))
+    }
+    if (!token || !userId) {
+      if (process.env.NODE_ENV === "development") {
+        console.warn("[Home Dashboard] skipping fetch — missing token or userId in localStorage")
+      }
+      setDashboardLoading(false)
+      return
+    }
+    let cancelled = false
+    setDashboardLoading(true)
+    fetch(DASHBOARD_URL, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "X-User-Id": userId,
+        "Content-Type": "application/json",
+      },
+    })
+      .then(async (res) => {
+        const data = await res.json().catch(() => null)
+        if (process.env.NODE_ENV === "development") {
+          const keys = data && typeof data === "object" && data !== null ? Object.keys(data) : []
+          console.debug("[Home Dashboard] GET /api/dashboard", "status:", res.status, "ok:", res.ok, "rawKeys:", keys)
+          console.debug("[Home Dashboard] response body (full):", JSON.stringify(data, null, 2))
+          if (res.status === 401) {
+            console.warn("[Home Dashboard] 401 Unauthorized — check token and X-User-Id. Challenges API may require valid JWT or dev X-User-Id.")
+          }
+        }
+        if (!res.ok) {
+          if (!cancelled) setDashboard(null)
+          return null
+        }
+        return data
+      })
+      .then((data) => {
+        if (cancelled) return
+        const parsed = parseDashboardResponse(data)
+        if (process.env.NODE_ENV === "development" && parsed) {
+          console.debug("[Home Dashboard] parsed", {
+            eliteScore: parsed.eliteScore,
+            globalRank: parsed.globalRank,
+            percentile: parsed.percentile,
+            streakCurrent: parsed.streaks?.streakCurrent,
+            leaderboardEntries: parsed.leaderboardPreview?.entries?.length ?? 0,
+            recommendedCount: parsed.recommendedChallenges?.length ?? 0,
+            recentScoreGainsCount: parsed.recentScoreGains?.length ?? 0,
+          })
+        }
+        setDashboard(parsed)
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          if (process.env.NODE_ENV === "development") {
+            console.debug("[Home Dashboard] fetch error", err)
+          }
+          setDashboard(null)
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setDashboardLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [authChecked])
+
+  const eliteScore = dashboard?.eliteScore ?? 0
+  const globalRank = dashboard?.globalRank
+  const percentile = dashboard?.percentile
+  const streakCurrent = dashboard?.streaks?.streakCurrent ?? 0
+  const streakLongest = dashboard?.streaks?.streakLongest ?? 0
+  const recentScoreGains = dashboard?.recentScoreGains ?? []
+  const scoreThisWeek = scoreThisWeekFromGains(recentScoreGains)
+  const rawLeaderboardEntries = dashboard?.leaderboardPreview?.entries ?? []
+  const leaderboardEntries: LeaderboardEntry[] = rawLeaderboardEntries.map((e) => ({
+    userId: e.userId,
+    displayName: e.displayName ?? e.name,
+    handle: e.handle,
+    avatarUrl: e.avatarUrl,
+    eliteScore: e.eliteScore ?? e.score,
+    rank: e.rank,
+    isCurrentUser: e.isCurrentUser,
+  }))
+  const leaderboardTitle = dashboard?.leaderboardPreview?.title ?? "Leaderboard"
+  const leaderboardSummary = dashboard?.leaderboardPreview?.summary
+  type RecommendationUi = {
+    id: string
+    title: string
+    category: string
+    points: number
+    durationDays?: number
+    difficulty?: number
+    members: string
+    gradientClass: string
+  }
+  const recommendedFromApi = dashboard?.recommendedChallenges ?? []
+  const recommendedForUi: RecommendationUi[] = recommendedFromApi.map((c) => ({
+    id: c.id ?? "",
+    title: c.name ?? "Challenge",
+    category: (c.track ?? "Top").charAt(0).toUpperCase() + (c.track ?? "").slice(1),
+    points: c.completionBonus ?? c.dailyRewardEliteScore ?? 0,
+    durationDays: c.durationDays,
+    difficulty: c.difficulty,
+    members: "",
+    gradientClass: GRADIENT_BY_TRACK[c.track ?? ""] ?? GRADIENT_BY_TRACK.default,
+  }))
   const filteredRecommendations =
     activeCategory === "Top"
-      ? RECOMMENDED
-      : RECOMMENDED.filter((c) => c.category === activeCategory)
+      ? recommendedForUi
+      : recommendedForUi.filter((c) => c.category === activeCategory)
+  const hasRecommendations = recommendedForUi.length > 0
+  const fallbackRecommendations: RecommendationUi[] = hasRecommendations ? [] : [
+    { id: "1", title: "7-Day SQL Bootcamp", category: "Tech", points: 75, members: "16.5k", gradientClass: "from-blue-500/90 to-indigo-500/90" },
+    { id: "2", title: "Prompt Engineering Sprint", category: "AI", points: 90, members: "11.2k", gradientClass: "from-violet-500/90 to-purple-500/90" },
+    { id: "3", title: "Portfolio Rebuild Challenge", category: "Career", points: 60, members: "8.3k", gradientClass: "from-pink-500/90 to-rose-500/90" },
+    { id: "4", title: "Google Data Analytics", category: "Tech", points: 80, members: "22k", gradientClass: "from-amber-500/90 to-orange-500/90" },
+  ]
+  const recommendationsToShow: RecommendationUi[] = hasRecommendations ? filteredRecommendations : fallbackRecommendations
 
   const handleCategoryClick = (cat: string) => setActiveCategory(cat)
-  const handleLeaderboardTabClick = (tab: string) => setLeaderboardTab(tab)
+
+  if (!authChecked) {
+    return (
+      <div className="flex min-h-[40vh] w-full items-center justify-center px-4">
+        <p className="text-slate-500">Loading...</p>
+      </div>
+    )
+  }
 
   return (
-    <div className="mx-auto max-w-5xl space-y-6 px-4 pb-10 pt-2 sm:px-6">
+    <div className="w-full space-y-6 px-3 pb-10 pt-2 sm:px-4 md:mx-auto md:max-w-5xl md:px-6">
 
       {/* ── Hero banner ── */}
       <section
@@ -128,17 +323,17 @@ export default function HomePage() {
 
         <div className="relative z-10 flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-widest text-white/70">Good morning</p>
+            <p className="text-xs font-semibold uppercase tracking-widest text-white/70">{getGreeting()}</p>
             <h1
               id="hero-heading"
-              className="mt-1 text-2xl font-extrabold leading-tight text-white sm:text-3xl"
+              className="mt-1 text-2xl font-extrabold leading-tight text-white capitalize sm:text-3xl"
             >
-              Ryan Wong
+              {displayName}
             </h1>
             <p className="mt-1.5 text-sm text-white/80">
               You&apos;re ranked{" "}
-              <strong className="font-bold text-white">#125 globally</strong> —
-              keep climbing.
+              <strong className="font-bold text-white">{globalRank != null ? `#${globalRank} globally` : "— globally"}</strong>
+              — keep climbing.
             </p>
             <div className="mt-5 flex flex-wrap gap-3">
               <Link
@@ -159,16 +354,16 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Score badge */}
+          {/* Score badge — from dashboard */}
           <div className="shrink-0 rounded-2xl border border-white/20 bg-white/10 px-6 py-5 text-center backdrop-blur-sm">
             <p className="text-[10px] font-semibold uppercase tracking-widest text-white/70">
               EliteScore
             </p>
-            <p className="mt-0.5 text-4xl font-black text-white">8,247</p>
-            <p className="mt-1 text-xs text-white/70">World Rank #148</p>
+            <p className="mt-0.5 text-4xl font-black text-white">{dashboardLoading ? "—" : eliteScore}</p>
+            <p className="mt-1 text-xs text-white/70">World Rank {globalRank != null ? `#${globalRank}` : "—"}</p>
             <div className="mt-2 flex items-center justify-center gap-1 text-xs text-white/80">
               <Flame className="h-3.5 w-3.5 text-orange-300" aria-hidden />
-              <span>12-day streak</span>
+              <span>{streakCurrent}-day streak</span>
             </div>
           </div>
         </div>
@@ -177,15 +372,15 @@ export default function HomePage() {
       {/* ── Stats row ── */}
       <section aria-label="Key performance stats" className="grid grid-cols-2 gap-4 lg:grid-cols-4">
 
-        {/* EliteScore ring */}
+        {/* EliteScore ring — from dashboard */}
         <article className={`${CARD_BASE} flex flex-col items-center gap-2 p-4 text-center`}>
           <div
             className="relative flex h-16 w-16 items-center justify-center"
             role="progressbar"
-            aria-valuenow={72}
+            aria-valuenow={Math.min(100, eliteScore)}
             aria-valuemin={0}
-            aria-valuemax={100}
-            aria-label="72% toward next tier"
+            aria-valuemax={1000}
+            aria-label="EliteScore progress"
           >
             <svg className="h-16 w-16 -rotate-90" viewBox="0 0 36 36" aria-hidden>
               <defs>
@@ -200,43 +395,42 @@ export default function HomePage() {
                 cx="18" cy="18" r="14" fill="none"
                 stroke="url(#ring-grad)"
                 strokeWidth="3"
-                strokeDasharray="72 100"
+                strokeDasharray={`${Math.min(100, (eliteScore / 1000) * 100)} 100`}
                 strokeLinecap="round"
               />
             </svg>
             <span className="absolute inset-0 flex items-center justify-center">
-              <strong className="text-sm font-bold text-slate-800">72%</strong>
+              <strong className="text-sm font-bold text-slate-800">{percentile != null ? `${Math.round(percentile)}%` : (dashboardLoading ? "—" : "0%")}</strong>
             </span>
           </div>
           <div>
-            <p className="text-base font-bold text-slate-800">8,247</p>
+            <p className="text-base font-bold text-slate-800">{dashboardLoading ? "—" : eliteScore}</p>
             <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">EliteScore</p>
           </div>
         </article>
 
-        {/* Global Rank */}
+        {/* Global Rank — from dashboard */}
         <article className={`${CARD_BASE} flex flex-col items-center justify-center gap-1 p-4 text-center`}>
           <Trophy className="h-5 w-5 text-amber-500" aria-hidden />
-          <p className="text-2xl font-bold text-slate-800">#125</p>
-          <p className="text-xs font-semibold text-emerald-600">↑ +23 positions</p>
+          <p className="text-2xl font-bold text-slate-800">{globalRank != null ? `#${globalRank}` : (dashboardLoading ? "—" : "—")}</p>
           <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Global Rank</p>
         </article>
 
-        {/* Score this week */}
+        {/* Score this week — from recentScoreGains */}
         <article className={`${CARD_BASE} flex flex-col items-center gap-2 p-4 text-center`}>
           <TrendingUp className="h-5 w-5 text-pink-500" aria-hidden />
-          <p className="text-2xl font-bold text-slate-800">+420</p>
+          <p className="text-2xl font-bold text-slate-800">{dashboardLoading ? "—" : (scoreThisWeek >= 0 ? `+${scoreThisWeek}` : scoreThisWeek)}</p>
           <div
             className="h-1.5 w-full overflow-hidden rounded-full bg-slate-100"
             role="progressbar"
-            aria-valuenow={84}
+            aria-valuenow={Math.min(100, Math.max(0, scoreThisWeek))}
             aria-valuemin={0}
             aria-valuemax={100}
-            aria-label="84% of weekly score goal"
+            aria-label="Score this week"
           >
             <div
               className="h-full rounded-full transition-all"
-              style={{ width: "84%", background: APP_GRADIENT }}
+              style={{ width: `${Math.min(100, Math.max(0, scoreThisWeek))}%`, background: APP_GRADIENT }}
             />
           </div>
           <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">
@@ -244,10 +438,10 @@ export default function HomePage() {
           </p>
         </article>
 
-        {/* Day Streak */}
+        {/* Day Streak — from dashboard */}
         <article className={`${CARD_BASE} flex flex-col items-center justify-center gap-1 p-4 text-center`}>
           <Flame className="h-6 w-6 text-orange-500" aria-hidden />
-          <p className="text-2xl font-bold text-slate-800">12</p>
+          <p className="text-2xl font-bold text-slate-800">{dashboardLoading ? "—" : streakCurrent}</p>
           <p className="text-xs text-slate-500">consecutive days</p>
           <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Day Streak</p>
         </article>
@@ -282,100 +476,103 @@ export default function HomePage() {
             </div>
 
             <div className="mt-5 grid gap-4 sm:grid-cols-2">
-              {ACTIVE_CHALLENGES.map((challenge) => (
-                <article
-                  key={challenge.id}
-                  className="overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-sm transition-shadow hover:shadow-md"
-                >
-                  {/* Gradient accent top strip */}
-                  <div
-                    className="h-1.5 w-full"
-                    style={{
-                      background: `linear-gradient(to right, ${challenge.accentFrom}, ${challenge.accentTo})`,
-                    }}
-                    aria-hidden
-                  />
-
-                  <div className="p-4">
-                    <div className="flex items-start justify-between gap-2">
-                      <h3 className="font-semibold leading-snug text-slate-800">
-                        {challenge.title}
-                      </h3>
-                      <span className="shrink-0 rounded-lg bg-pink-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-pink-600">
-                        Active
-                      </span>
-                    </div>
-
-                    <p className="mt-1 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
-                      {challenge.weekLabel}
-                    </p>
-
-                    <DifficultyDots level={challenge.difficulty} />
-
-                    {/* Progress */}
-                    <div className="mt-3">
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="text-slate-500">Progress</span>
-                        <span className="font-semibold text-slate-700">{challenge.progress}%</span>
+              {ACTIVE_CHALLENGES.length === 0 ? (
+                <div className="col-span-full flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-200 bg-slate-50/50 py-12 text-center">
+                  <p className="text-sm font-medium text-slate-600">No active challenges yet</p>
+                  <p className="mt-1 text-xs text-slate-500">Start one to track your progress here.</p>
+                  <Link
+                    href="/challenges"
+                    className="mt-4 inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold text-white transition-transform hover:scale-[1.02]"
+                    style={{ background: APP_GRADIENT }}
+                  >
+                    Browse Challenges
+                    <ArrowUpRight className="h-4 w-4" aria-hidden />
+                  </Link>
+                </div>
+              ) : (
+                ACTIVE_CHALLENGES.map((challenge) => (
+                  <article
+                    key={challenge.id}
+                    className="overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-sm transition-shadow hover:shadow-md"
+                  >
+                    <div
+                      className="h-1.5 w-full"
+                      style={{
+                        background: `linear-gradient(to right, ${challenge.accentFrom}, ${challenge.accentTo})`,
+                      }}
+                      aria-hidden
+                    />
+                    <div className="p-4">
+                      <div className="flex items-start justify-between gap-2">
+                        <h3 className="font-semibold leading-snug text-slate-800">
+                          {challenge.title}
+                        </h3>
+                        <span className="shrink-0 rounded-lg bg-pink-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-pink-600">
+                          Active
+                        </span>
                       </div>
-                      <div
-                        className="mt-1 h-1.5 overflow-hidden rounded-full bg-slate-100"
-                        role="progressbar"
-                        aria-valuenow={challenge.progress}
-                        aria-valuemin={0}
-                        aria-valuemax={100}
-                      >
+                      <p className="mt-1 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+                        {challenge.weekLabel}
+                      </p>
+                      <DifficultyDots level={challenge.difficulty} />
+                      <div className="mt-3">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-slate-500">Progress</span>
+                          <span className="font-semibold text-slate-700">{challenge.progress}%</span>
+                        </div>
                         <div
-                          className="h-full rounded-full transition-all duration-500"
-                          style={{ width: `${challenge.progress}%`, background: APP_GRADIENT }}
-                        />
+                          className="mt-1 h-1.5 overflow-hidden rounded-full bg-slate-100"
+                          role="progressbar"
+                          aria-valuenow={challenge.progress}
+                          aria-valuemin={0}
+                          aria-valuemax={100}
+                        >
+                          <div
+                            className="h-full rounded-full transition-all duration-500"
+                            style={{ width: `${challenge.progress}%`, background: APP_GRADIENT }}
+                          />
+                        </div>
+                      </div>
+                      <p
+                        className={`mt-2 flex items-center gap-1.5 text-xs ${
+                          challenge.deadlineUrgent
+                            ? "font-semibold text-orange-600"
+                            : "text-slate-500"
+                        }`}
+                      >
+                        <Clock className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                        Deadline: {challenge.deadline}
+                      </p>
+                      <div className="mt-3 rounded-xl border border-slate-200/80 bg-slate-50/70 p-3">
+                        <p className="text-[10px] font-semibold uppercase tracking-wide text-pink-600">
+                          Today&apos;s task
+                        </p>
+                        <p className="mt-0.5 text-xs leading-relaxed text-slate-700">
+                          {challenge.todayTask}
+                        </p>
+                      </div>
+                      <div className="mt-3 grid grid-cols-2 gap-2">
+                        <button
+                          type="button"
+                          className="flex items-center justify-center gap-1.5 rounded-xl py-2.5 text-xs font-bold text-white transition-transform hover:scale-[1.02]"
+                          style={{ background: APP_GRADIENT }}
+                          aria-label={`Submit proof for ${challenge.title}`}
+                        >
+                          <Upload className="h-3.5 w-3.5" aria-hidden />
+                          Submit Proof
+                        </button>
+                        <Link
+                          href={`/challenges/${challenge.id}`}
+                          className="flex items-center justify-center rounded-xl border border-slate-200 bg-white py-2.5 text-xs font-semibold text-slate-600 transition-colors hover:bg-slate-50"
+                          aria-label={`View details for ${challenge.title}`}
+                        >
+                          View Details
+                        </Link>
                       </div>
                     </div>
-
-                    {/* Deadline */}
-                    <p
-                      className={`mt-2 flex items-center gap-1.5 text-xs ${
-                        challenge.deadlineUrgent
-                          ? "font-semibold text-orange-600"
-                          : "text-slate-500"
-                      }`}
-                    >
-                      <Clock className="h-3.5 w-3.5 shrink-0" aria-hidden />
-                      Deadline: {challenge.deadline}
-                    </p>
-
-                    {/* Today's task */}
-                    <div className="mt-3 rounded-xl border border-slate-200/80 bg-slate-50/70 p-3">
-                      <p className="text-[10px] font-semibold uppercase tracking-wide text-pink-600">
-                        Today&apos;s task
-                      </p>
-                      <p className="mt-0.5 text-xs leading-relaxed text-slate-700">
-                        {challenge.todayTask}
-                      </p>
-                    </div>
-
-                    {/* Actions */}
-                    <div className="mt-3 grid grid-cols-2 gap-2">
-                      <button
-                        type="button"
-                        className="flex items-center justify-center gap-1.5 rounded-xl py-2.5 text-xs font-bold text-white transition-transform hover:scale-[1.02]"
-                        style={{ background: APP_GRADIENT }}
-                        aria-label={`Submit proof for ${challenge.title}`}
-                      >
-                        <Upload className="h-3.5 w-3.5" aria-hidden />
-                        Submit Proof
-                      </button>
-                      <Link
-                        href={`/challenges/${challenge.id}`}
-                        className="flex items-center justify-center rounded-xl border border-slate-200 bg-white py-2.5 text-xs font-semibold text-slate-600 transition-colors hover:bg-slate-50"
-                        aria-label={`View details for ${challenge.title}`}
-                      >
-                        View Details
-                      </Link>
-                    </div>
-                  </div>
-                </article>
-              ))}
+                  </article>
+                ))
+              )}
             </div>
           </section>
 
@@ -421,11 +618,11 @@ export default function HomePage() {
               ))}
             </div>
 
-            {/* Cards — styled like landing challenge cards */}
+            {/* Cards — from dashboard recommendedChallenges or fallback */}
             <div className="mt-4 grid gap-4 sm:grid-cols-2">
-              {filteredRecommendations.map((item) => (
+              {recommendationsToShow.map((item) => (
                 <article
-                  key={item.title}
+                  key={item.id || item.title}
                   className="group overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-sm transition-shadow hover:shadow-md"
                 >
                   <div
@@ -440,10 +637,13 @@ export default function HomePage() {
                       {item.title}
                     </h3>
                     <p className="mt-0.5 text-xs text-slate-500">
-                      {item.points} pts · {item.members} members
+                      {item.points} pts
+                      {item.durationDays != null && ` · ${item.durationDays} days`}
+                      {item.difficulty != null && ` · ${item.difficulty}/5 difficulty`}
+                      {item.members ? ` · ${item.members} members` : ""}
                     </p>
                     <Link
-                      href="/challenges"
+                      href={item.id ? `/challenges/${item.id}` : "/challenges"}
                       className="mt-3 flex w-full items-center justify-center rounded-xl py-2.5 text-xs font-bold text-white transition-transform hover:scale-[1.02]"
                       style={{ background: APP_GRADIENT }}
                     >
@@ -470,7 +670,7 @@ export default function HomePage() {
                   id="leaderboard-title"
                   className="mt-0.5 text-base font-bold text-slate-800"
                 >
-                  Leaderboard
+                  {leaderboardTitle}
                 </h2>
               </div>
               <Link
@@ -481,70 +681,57 @@ export default function HomePage() {
               </Link>
             </div>
 
-            {/* Tabs */}
-            <div className="mt-3 flex gap-1.5">
-              {LEADERBOARD_TABS.map((tab) => (
-                <button
-                  key={tab}
-                  type="button"
-                  onClick={() => handleLeaderboardTabClick(tab)}
-                  className={`rounded-lg px-3 py-1 text-xs font-semibold transition-colors ${
-                    leaderboardTab === tab
-                      ? "text-white"
-                      : "border border-slate-200 bg-white text-slate-500 hover:bg-slate-50"
-                  }`}
-                  style={leaderboardTab === tab ? { background: APP_GRADIENT } : undefined}
-                  aria-pressed={leaderboardTab === tab}
-                >
-                  {tab}
-                </button>
-              ))}
-            </div>
+            {leaderboardSummary && (leaderboardSummary.currentRank != null || leaderboardSummary.eliteScore != null) && (
+              <p className="mt-3 text-xs text-slate-600">
+                You: rank <strong>#{leaderboardSummary.currentRank ?? "—"}</strong>
+                {leaderboardSummary.eliteScore != null && ` · ${leaderboardSummary.eliteScore} pts`}
+                {leaderboardSummary.percentile != null && ` · top ${Math.round(leaderboardSummary.percentile)}%`}
+              </p>
+            )}
 
-            {/* Top 5 */}
+            {/* Leaderboard entries from dashboard or placeholders */}
             <ul className="mt-4 space-y-2">
-              {LEADERBOARD_TOP5.map((user) => (
+              {(leaderboardEntries.length > 0 ? leaderboardEntries : [
+                { displayName: "—", eliteScore: 0, rank: undefined },
+                { displayName: "—", eliteScore: 0, rank: undefined },
+                { displayName: "—", eliteScore: 0, rank: undefined },
+                { displayName: "—", eliteScore: 0, rank: undefined },
+                { displayName: "—", eliteScore: 0, rank: undefined },
+              ]).slice(0, 8).map((user, index) => (
                 <li
-                  key={user.rank}
-                  className={`flex items-center gap-3 rounded-xl p-2.5 transition-colors ${
-                    user.isMe
-                      ? "border border-pink-200/60 bg-pink-50/70"
-                      : "hover:bg-slate-50/70"
+                  key={user.userId ?? index}
+                  className={`flex items-center gap-3 rounded-xl p-2.5 transition-colors hover:bg-slate-50/70 ${
+                    user.isCurrentUser ? "ring-2 ring-pink-500/30 bg-pink-50/50" : ""
                   }`}
                 >
-                  <div
-                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold"
-                    style={
-                      user.rank <= 3
-                        ? { background: APP_GRADIENT, color: "white" }
-                        : { background: "#e2e8f0", color: "#64748b" }
-                    }
-                    aria-hidden
-                  >
-                    {user.rank <= 3 ? user.rank : user.avatar}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p
-                      className={`truncate text-sm font-semibold ${
-                        user.isMe ? "text-pink-700" : "text-slate-800"
-                      }`}
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center text-[10px] font-bold text-slate-500">
+                    #{user.rank ?? index + 1}
+                  </span>
+                  {user.avatarUrl ? (
+                    <img
+                      src={user.avatarUrl}
+                      alt=""
+                      className="h-8 w-8 shrink-0 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div
+                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold bg-slate-200 text-slate-600"
+                      aria-hidden
                     >
-                      {user.name}
-                      {user.isMe && (
-                        <span className="ml-1.5 rounded bg-pink-100 px-1 text-[10px] font-bold text-pink-600">
-                          you
-                        </span>
+                      {getInitials(String(user.displayName ?? "?"))}
+                    </div>
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold text-slate-800">
+                      {user.displayName ?? user.handle ?? "—"}
+                      {user.isCurrentUser && (
+                        <span className="ml-1 text-[10px] font-medium text-pink-600">(you)</span>
                       )}
                     </p>
                     <p className="text-xs text-slate-500">
-                      {user.score.toLocaleString()} pts
+                      {user.eliteScore != null ? `${user.eliteScore} pts` : "—"}
                     </p>
                   </div>
-                  {MEDAL[user.rank] && (
-                    <span className="text-base" aria-label={`Rank ${user.rank}`}>
-                      {MEDAL[user.rank]}
-                    </span>
-                  )}
                 </li>
               ))}
             </ul>
@@ -563,10 +750,10 @@ export default function HomePage() {
             </h2>
             <dl className="mt-4 space-y-3">
               {[
-                { label: "Consistency rate", value: "94%" },
-                { label: "Challenges completed", value: "7" },
-                { label: "Active days this week", value: "6 / 7" },
-                { label: "Score movement", value: "↑ Top 15%" },
+                { label: "Consistency rate", value: "0%" },
+                { label: "Challenges completed", value: "0" },
+                { label: "Active days this week", value: "0 / 7" },
+                { label: "Score movement", value: "—" },
               ].map((item) => (
                 <div key={item.label} className="flex items-center justify-between">
                   <dt className="text-xs text-slate-500">{item.label}</dt>
@@ -590,7 +777,7 @@ export default function HomePage() {
               id="streak-cta-title"
               className="mt-2 text-base font-bold text-white"
             >
-              12-Day Streak!
+              {streakCurrent}-Day Streak
             </h2>
             <p className="mt-1 text-xs text-white/80">
               Check in today to keep it alive. Don&apos;t break the chain.

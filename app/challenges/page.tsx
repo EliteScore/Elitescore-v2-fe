@@ -361,7 +361,7 @@ export default function ChallengesPage() {
   // ── Render ────────────────────────────────────────────────────────────────
 
   return (
-    <div className="mx-auto max-w-5xl space-y-6 px-4 pb-10 pt-2 sm:px-6">
+    <div className="w-full space-y-6 px-3 pb-10 pt-2 sm:px-4 md:mx-auto md:max-w-5xl md:px-6">
 
       {/* Hero banner */}
       <section

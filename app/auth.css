@@ -348,6 +348,22 @@
   text-decoration: none;
 }
 
+/* Pin login/signup cross-link footer so it stays visible at bottom of right column */
+.auth-form-footer-pin {
+  flex-shrink: 0;
+  margin-top: auto;
+  padding-top: 0.75rem;
+  min-height: 1.5rem;
+  opacity: 1;
+  visibility: visible;
+}
+
+.auth-cross-link {
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
 .auth-link {
   font-size: 0.8125rem;
   color: rgba(255, 255, 255, 0.95);

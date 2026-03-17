@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, usePathname } from "next/navigation"
 import Link from "next/link"
 import { Eye, EyeOff } from "lucide-react"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -11,8 +11,13 @@ import { z } from "zod"
 import "../auth.css"
 import "./login.css"
 
+const AUTH_BASE_URL = "https://elitescore-auth-jh8f8.ondigitalocean.app"
+
 const loginSchema = z.object({
-  email: z.string().email({ message: "Please enter a valid email address." }),
+  email: z
+    .string()
+    .email({ message: "Please enter a valid email address." })
+    .transform((val) => val.trim().toLowerCase()),
   password: z.string().min(1, { message: "Password is required." }),
   remember: z.boolean().default(false),
 })
@@ -21,6 +26,7 @@ type LoginFormValues = z.infer<typeof loginSchema>
 
 export default function LoginPage() {
   const router = useRouter()
+  const pathname = usePathname()
   const [isLoading, setIsLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [loginError, setLoginError] = useState<string | null>(null)
@@ -33,11 +39,48 @@ export default function LoginPage() {
   async function onSubmit(formData: LoginFormValues) {
     setIsLoading(true)
     setLoginError(null)
-    setTimeout(() => {
+    try {
+      const email = formData.email
+      const res = await fetch(`${AUTH_BASE_URL}/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email,
+          password: formData.password,
+        }),
+      })
+
+      if (!res.ok) {
+        let message = "Invalid email or password."
+        try {
+          const data = await res.json()
+          if (typeof data?.message === "string") message = data.message
+        } catch {
+          // ignore parse error
+        }
+        setLoginError(message)
+        return
+      }
+
+      const data = await res.json()
+      if (data?.access_token) {
+        localStorage.setItem("elitescore_access_token", data.access_token)
+      }
+      if (data?.refresh_token) {
+        localStorage.setItem("elitescore_refresh_token", data.refresh_token)
+      }
+      if (data?.user_id) {
+        localStorage.setItem("elitescore_user_id", String(data.user_id))
+      }
       localStorage.setItem("elitescore_logged_in", "true")
-      localStorage.setItem("elitescore_email", formData.email.trim().toLowerCase())
-      router.push("/home")
-    }, 1000)
+      localStorage.setItem("elitescore_email", email)
+      router.replace("/home")
+    } catch (error) {
+      console.error("Login error:", error)
+      setLoginError("Something went wrong. Please try again.")
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   const handleGoogleSignIn = () => {
@@ -50,7 +93,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="auth-page login-page">
+    <div key={pathname} className="auth-page login-page">
       <main className="auth-main">
         <div className="login-split-card">
           <div className="login-split-left">
@@ -146,8 +189,8 @@ export default function LoginPage() {
                 Sign in with Google
               </button>
             </form>
-            <p className="auth-footer-text login-form-footer">
-              No account yet? <Link href="/signup" scroll={false}>Sign up</Link>
+            <p className="auth-footer-text login-form-footer auth-form-footer-pin">
+              No account yet? <a href="/signup" className="auth-cross-link">Sign up</a>
             </p>
           </div>
         </div>

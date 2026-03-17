@@ -142,3 +142,8 @@ body.auth-open {
 .dark .glass-card {
   background: rgba(0, 0, 0, 0.2);
 }
+
+/* Smooth touch scrolling for mobile scroll containers */
+.scroll-touch {
+  -webkit-overflow-scrolling: touch;
+}

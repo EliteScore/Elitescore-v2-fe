@@ -1,6 +1,8 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -12,130 +14,258 @@ import {
   Award,
   TrendingUp,
   LinkIcon,
-  Share2,
   Settings,
   ExternalLink,
   Lock,
   LogOut,
   Trash2,
   ShieldCheck,
-  Zap,
-  Briefcase,
-  GraduationCap,
+  Loader2,
 } from "lucide-react"
 import { BottomNav } from "@/components/bottom-nav"
 
+const PROFILE_ME_URL = "/api/profile/me"
 const APP_GRADIENT = "linear-gradient(135deg, #db2777 0%, #ea580c 35%, #2563eb 70%, #7c3aed 100%)"
 const CARD_BASE = "rounded-2xl border border-slate-200/80 bg-white shadow-sm"
 
+type ChallengeTemplate = { name?: string; difficulty?: number; duration_days?: number }
+type ChallengeEnrollment = {
+  id: number
+  status: string
+  start_date?: string
+  end_date?: string
+  current_day?: number
+  completed_at?: string | null
+  failed_at?: string | null
+  created_at?: string
+  challenge_templates?: ChallengeTemplate | null
+}
+
+type ProfileResponse = {
+  name: string
+  level: number
+  elitescore: number
+  streak: number
+  global_rank: number | null
+  bio?: string | null
+  avatar_url?: string | null
+  linkedin_url?: string | null
+  github_url?: string | null
+  challenge_history?: ChallengeEnrollment[]
+}
+
+function getDisplayName(): string {
+  if (typeof window === "undefined") return "Profile"
+  const fullName = localStorage.getItem("elitescore_full_name")
+  if (fullName && fullName.trim()) return fullName
+  const username = localStorage.getItem("elitescore_username")
+  if (username && username.trim()) return username
+  const email = localStorage.getItem("elitescore_email")
+  if (email) return email.split("@")[0] || "Profile"
+  return "Profile"
+}
+
+function getInitials(name: string): string {
+  const parts = name.trim().split(/\s+/)
+  if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+  return (parts[0]?.slice(0, 2) ?? "?").toUpperCase()
+}
+
+function defaultProfile(): ProfileResponse {
+  return {
+    name: getDisplayName(),
+    level: 0,
+    elitescore: 0,
+    streak: 0,
+    global_rank: null,
+    bio: null,
+    avatar_url: null,
+    linkedin_url: null,
+    github_url: null,
+    challenge_history: [],
+  }
+}
+
 export default function ProfilePage() {
+  const router = useRouter()
+  const [authChecked, setAuthChecked] = useState(false)
+  const [profile, setProfile] = useState<ProfileResponse | null>(null)
+  const [profileLoading, setProfileLoading] = useState(true)
+  const [profileError, setProfileError] = useState<string | null>(null)
+  const [hasExistingProfile, setHasExistingProfile] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+
+  useEffect(() => {
+    const token = localStorage.getItem("elitescore_access_token")
+    const loggedIn = localStorage.getItem("elitescore_logged_in")
+    const isAuthorized = Boolean(token || loggedIn === "true")
+    if (!isAuthorized) {
+      router.replace("/login")
+      return
+    }
+    setAuthChecked(true)
+  }, [router])
+
+  useEffect(() => {
+    if (!authChecked) return
+    const token = localStorage.getItem("elitescore_access_token")
+    if (!token) {
+      setProfile(defaultProfile())
+      setHasExistingProfile(false)
+      setProfileLoading(false)
+      return
+    }
+    let cancelled = false
+    setProfileLoading(true)
+    setProfileError(null)
+    fetch(PROFILE_ME_URL, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    })
+      .then(async (res) => {
+        if (cancelled) return
+        const status = res.status
+        const body = await res.json().catch(() => null)
+
+        if (process.env.NODE_ENV === "development") {
+          console.debug("[Profile GET /users/me]", { status, ok: res.ok, body })
+        }
+
+        if (status === 401) {
+          router.replace("/login")
+          return
+        }
+
+        if (status === 404 || !res.ok) {
+          setProfile(defaultProfile())
+          setHasExistingProfile(false)
+          if (status !== 404) {
+            setProfileError(body?.message ?? body?.error ?? (status >= 500 ? "Server error — showing defaults" : "Could not load — showing defaults"))
+          }
+          return
+        }
+
+        if (body && typeof body === "object") {
+          setProfile(body as ProfileResponse)
+          setHasExistingProfile(true)
+          if (body.name && typeof body.name === "string") {
+            try {
+              localStorage.setItem("elitescore_full_name", body.name)
+            } catch {
+              // ignore
+            }
+          }
+        } else {
+          setProfile(defaultProfile())
+          setHasExistingProfile(false)
+          setProfileError("Invalid response — showing defaults")
+        }
+      })
+      .catch((err) => {
+        if (cancelled) return
+        if (process.env.NODE_ENV === "development") {
+          const msg = err?.message ?? String(err)
+          console.debug("[Profile] fetch error (showing defaults):", msg)
+        }
+        setProfile(defaultProfile())
+        setHasExistingProfile(false)
+        setProfileError("Connection issue — showing defaults")
+      })
+      .finally(() => {
+        if (!cancelled) setProfileLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [authChecked, router])
 
   const handleToggleSettings = () => setShowSettings((prev) => !prev)
   const handleOpenDeleteConfirm = () => setShowDeleteConfirm(true)
   const handleCloseDeleteConfirm = () => setShowDeleteConfirm(false)
 
-  // Mock user data
+  const displayName = profile?.name?.trim() || getDisplayName()
+  const challengeHistory = profile?.challenge_history ?? []
+  const totalCompleted = challengeHistory.filter((c) => c.status === "completed" || c.status === "passed").length
+  const maxDifficulty = challengeHistory.reduce((max, c) => {
+    const d = c.challenge_templates?.difficulty
+    return typeof d === "number" && d > max ? d : max
+  }, 0)
+
   const userData = {
-    name: "Alex Chen",
-    eliteScore: 1847,
-    rankPercentile: "Top 3%",
-    currentStreak: 42,
-    verificationBadge: true,
-    level: 18,
-    currentXP: 3450,
-    xpToNextLevel: 5000,
+    name: displayName,
+    eliteScore: profile != null ? profile.elitescore : "—",
+    rankPercentile: profile?.global_rank != null ? `#${profile.global_rank}` : "—",
+    currentStreak: profile?.streak ?? 0,
+    verificationBadge: false,
+    level: profile?.level ?? 0,
+    currentXP: 0,
+    xpToNextLevel: 1,
     stats: {
-      totalCompleted: 34,
-      highestDifficulty: 5,
-      longestStreak: 89,
-      consistencyRate: 87,
+      totalCompleted,
+      highestDifficulty: maxDifficulty,
+      longestStreak: profile?.streak ?? 0,
+      consistencyRate: 0,
     },
-    challengeHistory: [
-      {
-        id: 1,
-        name: "30-Day Coding Sprint",
-        difficulty: 5,
-        duration: 30,
-        status: "completed",
-        completionDate: "2024-12-15",
-        proofCount: 30,
-      },
-      {
-        id: 2,
-        name: "Morning Workout",
-        difficulty: 3,
-        duration: 21,
-        status: "completed",
-        completionDate: "2024-11-30",
-        proofCount: 21,
-      },
-      {
-        id: 3,
-        name: "Read 5 Books",
-        difficulty: 4,
-        duration: 60,
-        status: "failed",
-        failureDate: "2024-10-20",
-        proofCount: 12,
-      },
-      {
-        id: 4,
-        name: "LinkedIn Posts Daily",
-        difficulty: 4,
-        duration: 14,
-        status: "completed",
-        completionDate: "2024-10-05",
-        proofCount: 14,
-      },
-      {
-        id: 5,
-        name: "No Social Media",
-        difficulty: 5,
-        duration: 30,
-        status: "failed",
-        failureDate: "2024-09-10",
-        proofCount: 18,
-      },
-    ],
+    challengeHistory: challengeHistory.map((c) => {
+      const t = c.challenge_templates
+      const name = t?.name ?? "Challenge"
+      const difficulty = typeof t?.difficulty === "number" ? t.difficulty : 0
+      const duration = typeof t?.duration_days === "number" ? t.duration_days : 0
+      const status = c.status === "completed" || c.status === "passed" ? "completed" : "failed"
+      return {
+        id: c.id,
+        name,
+        difficulty,
+        duration,
+        status,
+        completionDate: c.completed_at ?? undefined,
+        failureDate: c.failed_at ?? undefined,
+        proofCount: 0,
+      }
+    }),
     background: {
-      education: [
-        { institution: "Stanford University", degree: "BS Computer Science", year: "2023" },
-        { institution: "Harvard Extension", degree: "Certificate in AI", year: "2022" },
-      ],
-      roles: [
-        { company: "Tech Startup", position: "Software Engineer", period: "2023-Present" },
-        { company: "Google", position: "SWE Intern", period: "Summer 2022" },
-      ],
-      certifications: ["AWS Certified Developer", "Google Cloud Professional", "Meta Frontend Certificate"],
-      achievements: ["Won MIT Hackathon 2022", "Published Research on ML", "Built App with 10K+ Users"],
+      education: [] as Array<{ institution: string; degree: string; year: string }>,
+      roles: [] as Array<{ company: string; position: string; period: string }>,
+      certifications: [] as string[],
+      achievements: [] as string[],
     },
     links: {
-      linkedin: "linkedin.com/in/alexchen",
-      github: "github.com/alexchen",
-      portfolio: "alexchen.dev",
+      linkedin: profile?.linkedin_url?.trim() ?? "",
+      github: profile?.github_url?.trim() ?? "",
+      portfolio: "",
     },
+    bio: profile?.bio?.trim() ?? "",
+    avatarUrl: profile?.avatar_url?.trim() ?? "",
   }
 
-  useEffect(() => {
-    if (userData?.name) {
-      try {
-        localStorage.setItem("elitescore_user_name", userData.name)
-      } catch {
-        // ignore
-      }
-    }
-  }, [userData.name])
+  if (!authChecked) {
+    return (
+      <div className="flex min-h-[40vh] w-full items-center justify-center px-4">
+        <p className="text-slate-500">Loading...</p>
+      </div>
+    )
+  }
+
+  if (profileLoading) {
+    return (
+      <div className="min-h-[100dvh] w-full bg-[#f5f5f6] flex items-center justify-center pb-20">
+        <Loader2 className="h-8 w-8 animate-spin text-slate-400" aria-hidden />
+      </div>
+    )
+  }
 
   return (
-    <div className="min-h-[100dvh] bg-[#f5f5f6] font-sans text-slate-800 antialiased pt-[max(1rem,env(safe-area-inset-top))] pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] pb-[max(5rem,calc(4rem+env(safe-area-inset-bottom)))]">
-      <div className="container mx-auto px-4 py-4 sm:py-6 md:py-8 max-w-5xl">
+    <div className="min-h-[100dvh] w-full bg-[#f5f5f6] font-sans text-slate-800 antialiased pt-[max(1rem,env(safe-area-inset-top))] pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] pb-[max(5rem,calc(4rem+env(safe-area-inset-bottom)))]">
+      <div className="mx-auto w-full px-3 py-4 sm:px-4 sm:py-6 md:py-8 md:max-w-5xl">
+        {profileError && (
+          <p className="mb-3 text-xs text-amber-700 bg-amber-50 border border-amber-200/80 rounded-xl px-3 py-2" role="status">{profileError}</p>
+        )}
         {/* Hero strip — matches home / leaderboard */}
         <section className="relative overflow-hidden rounded-2xl px-4 py-5 sm:px-6 sm:py-6 mb-4" style={{ background: APP_GRADIENT }} aria-labelledby="profile-heading">
-          <span className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full bg-white/10 blur-2xl" aria-hidden />
           <h1 id="profile-heading" className="relative text-xl font-extrabold leading-tight text-white sm:text-2xl">Profile</h1>
           <p className="relative mt-0.5 text-sm text-white/85">Identity, performance & history.</p>
+          <Link href="/profile/me" className="relative mt-4 inline-flex items-center justify-center rounded-xl px-5 py-2.5 text-sm font-semibold text-white min-h-[44px] touch-manipulation transition-transform hover:scale-[1.02] bg-white/20 border border-white/30 hover:bg-white/30" aria-label={hasExistingProfile ? "Edit your profile" : "Set up your profile"}>{hasExistingProfile ? "Edit profile" : "Set up profile"}</Link>
         </section>
 
         <div className={`${CARD_BASE} overflow-hidden`}>
@@ -145,10 +275,14 @@ export default function ProfilePage() {
             <div className="flex flex-col sm:flex-row items-start justify-between gap-4 mb-4 sm:mb-6">
               <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 w-full sm:w-auto">
                 <div className="relative shrink-0">
-                  <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full p-1" style={{ background: APP_GRADIENT }}>
-                    <div className="w-full h-full rounded-full bg-white flex items-center justify-center text-2xl sm:text-3xl font-bold text-pink-600">
-                      AC
-                    </div>
+                  <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full p-1 overflow-hidden" style={{ background: APP_GRADIENT }}>
+                    {userData.avatarUrl ? (
+                      <img src={userData.avatarUrl} alt="" className="w-full h-full rounded-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full rounded-full bg-white flex items-center justify-center text-2xl sm:text-3xl font-bold text-pink-600">
+                        {getInitials(userData.name)}
+                      </div>
+                    )}
                   </div>
                   {userData.verificationBadge && (
                     <div className="absolute -bottom-0.5 -right-0.5 w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-pink-500 flex items-center justify-center border-2 border-white" aria-hidden="true">
@@ -166,7 +300,7 @@ export default function ProfilePage() {
                   <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 text-[11px] sm:text-xs text-slate-500">
                     <span className="flex items-center gap-1">
                       <Trophy className="w-3 h-3 text-pink-600" aria-hidden="true" />
-                      <span className="font-bold text-pink-600">{userData.eliteScore.toLocaleString()}</span>
+                      <span className="font-bold text-pink-600">{typeof userData.eliteScore === "number" ? userData.eliteScore.toLocaleString() : userData.eliteScore}</span>
                       <span className="hidden sm:inline">EliteScore</span>
                     </span>
                     <span className="hidden sm:inline">·</span>
@@ -178,19 +312,12 @@ export default function ProfilePage() {
                       <span>day streak</span>
                     </span>
                   </div>
+                  {userData.bio ? <p className="text-xs sm:text-sm text-slate-600 mt-1.5 line-clamp-2">{userData.bio}</p> : null}
                 </div>
               </div>
               <div className="flex items-center gap-1.5 w-full sm:w-auto justify-center sm:justify-end">
-                <Button size="sm" variant="outline" className="bg-slate-100 border-slate-200 text-slate-700 hover:bg-slate-200/80 hover:border-slate-300 text-[10px] sm:text-xs min-h-[44px] flex-1 sm:flex-initial touch-manipulation rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/40" aria-label="Share profile">
-                  <Share2 className="w-3.5 h-3.5 mr-0 sm:mr-1.5" aria-hidden="true" />
-                  <span className="hidden sm:inline">Share</span>
-                </Button>
-                <Button size="sm" variant="outline" className="bg-slate-100 border-slate-200 text-slate-700 hover:bg-slate-200/80 hover:border-slate-300 text-[10px] sm:text-xs min-h-[44px] flex-1 sm:flex-initial touch-manipulation rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/40" aria-label="Copy profile link">
-                  <LinkIcon className="w-3.5 h-3.5 mr-0 sm:mr-1.5" aria-hidden="true" />
-                  <span className="hidden sm:inline">Copy Link</span>
-                </Button>
-                <Button size="sm" variant="ghost" className="min-h-[44px] min-w-[44px] p-0 touch-manipulation rounded-xl bg-slate-100 border border-slate-200 text-slate-600 hover:bg-slate-200/80 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/40" onClick={handleToggleSettings} aria-label={showSettings ? "Close settings" : "Open settings"}>
-                  <Settings className="w-4 h-4" aria-hidden />
+                <Button size="sm" variant="ghost" className="min-h-[44px] min-w-[44px] p-0 touch-manipulation rounded-xl border border-pink-200/80 bg-pink-50/50 text-pink-600 hover:bg-pink-100/80 hover:border-pink-300/80 focus:outline-none focus-visible:ring-2 focus-visible:ring-pink-300/50" onClick={handleToggleSettings} aria-label={showSettings ? "Close settings" : "Open settings"}>
+                  <Settings className="w-4 h-4 text-pink-600" aria-hidden />
                 </Button>
               </div>
             </div>
@@ -228,19 +355,6 @@ export default function ProfilePage() {
               </div>
             )}
 
-            <div className="rounded-2xl border border-slate-200/80 bg-white p-3 sm:p-4 mt-4 shadow-sm">
-              <div className="flex items-center justify-between gap-2 mb-2">
-                <div className="flex items-center gap-2">
-                  <Zap className="w-4 h-4 text-orange-500" aria-hidden="true" />
-                  <span className="text-xs sm:text-sm font-semibold text-slate-800">Level {userData.level}</span>
-                </div>
-                <span className="text-[10px] sm:text-xs text-slate-500">{userData.currentXP.toLocaleString()} / {userData.xpToNextLevel.toLocaleString()} XP</span>
-              </div>
-              <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
-                <div className="h-full rounded-full transition-all duration-500" style={{ width: `${(userData.currentXP / userData.xpToNextLevel) * 100}%`, background: APP_GRADIENT }} role="progressbar" aria-valuenow={userData.currentXP} aria-valuemin={0} aria-valuemax={userData.xpToNextLevel} />
-              </div>
-              <p className="text-[10px] text-slate-500 mt-1.5">XP shown here and after proof submission</p>
-            </div>
           </div>
 
           {/* Credibility Stats — card grid, landing theme */}
@@ -258,7 +372,7 @@ export default function ProfilePage() {
                   <Target className="w-3.5 h-3.5 text-orange-500" aria-hidden="true" />
                   <span className="text-[10px] sm:text-xs text-slate-500 uppercase tracking-wider">Max Difficulty</span>
                 </div>
-                <p className="text-xl sm:text-2xl font-bold text-slate-800">{userData.stats.highestDifficulty}/5</p>
+                <p className="text-xl sm:text-2xl font-bold text-slate-800">{userData.stats.highestDifficulty === 0 ? "—" : `${userData.stats.highestDifficulty}/5`}</p>
               </div>
               <div className="rounded-2xl border border-slate-200/80 bg-white p-3 sm:p-4 min-h-[44px] flex flex-col justify-center shadow-sm">
                 <div className="flex items-center gap-1.5 mb-0.5">
@@ -272,7 +386,7 @@ export default function ProfilePage() {
                   <TrendingUp className="w-3.5 h-3.5 text-green-500" aria-hidden="true" />
                   <span className="text-[10px] sm:text-xs text-slate-500 uppercase tracking-wider">Consistency</span>
                 </div>
-                <p className="text-xl sm:text-2xl font-bold text-slate-800">{userData.stats.consistencyRate}%</p>
+                <p className="text-xl sm:text-2xl font-bold text-slate-800">{userData.stats.consistencyRate === 0 ? "—" : `${userData.stats.consistencyRate}%`}</p>
               </div>
             </div>
           </div>
@@ -283,134 +397,80 @@ export default function ProfilePage() {
               <h2 className="text-sm sm:text-base font-bold text-slate-800 mb-1">Challenge History</h2>
               <p className="text-[10px] sm:text-xs text-slate-500 mb-3">Public & immutable — failures are visible</p>
               <div className="space-y-2">
-                {userData.challengeHistory.map((challenge) => (
-                  <div key={challenge.id} className={`flex items-start sm:items-center gap-3 p-3 rounded-xl border shadow-sm transition-all touch-manipulation ${challenge.status === "completed" ? "bg-pink-50/50 border-pink-200/50" : "bg-red-50/50 border-red-200/50"}`}>
-                    <div className={`w-9 h-9 shrink-0 rounded-full flex items-center justify-center border-2 ${challenge.status === "completed" ? "bg-white border-pink-300" : "bg-white border-red-300"}`} aria-hidden="true">
-                      {challenge.status === "completed" ? <Check className="w-4 h-4 text-pink-500" aria-hidden /> : <X className="w-4 h-4 text-red-500" aria-hidden />}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center gap-1.5 mb-0.5">
-                        <h3 className="text-xs sm:text-sm font-semibold text-slate-800 truncate">{challenge.name}</h3>
-                        <Badge variant="secondary" className={`text-[10px] shrink-0 border-0 ${challenge.status === "completed" ? "bg-pink-500 text-white hover:bg-pink-500" : "bg-red-500 text-white hover:bg-red-500"}`}>
-                          {challenge.status === "completed" ? "Completed" : "Failed"}
-                        </Badge>
-                      </div>
-                      <p className="text-[10px] sm:text-xs text-slate-600">{challenge.difficulty}/5 · {challenge.duration}d · {challenge.proofCount} proofs · {challenge.status === "completed" ? challenge.completionDate : challenge.failureDate}</p>
-                    </div>
+                {userData.challengeHistory.length === 0 ? (
+                  <div className="py-8 px-4 rounded-xl border border-slate-200/80 bg-slate-50/50 text-slate-500 text-sm text-center">
+                    <p className="mb-1">No challenges yet</p>
+                    <p className="text-xs">Completed and failed challenges will appear here.</p>
                   </div>
-                ))}
+                ) : (
+                  userData.challengeHistory.map((challenge) => (
+                    <div key={challenge.id} className={`flex items-start sm:items-center gap-3 p-3 rounded-xl border shadow-sm transition-all touch-manipulation ${challenge.status === "completed" ? "bg-pink-50/50 border-pink-200/50" : "bg-red-50/50 border-red-200/50"}`}>
+                      <div className={`w-9 h-9 shrink-0 rounded-full flex items-center justify-center border-2 ${challenge.status === "completed" ? "bg-white border-pink-300" : "bg-white border-red-300"}`} aria-hidden="true">
+                        {challenge.status === "completed" ? <Check className="w-4 h-4 text-pink-500" aria-hidden /> : <X className="w-4 h-4 text-red-500" aria-hidden />}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-1.5 mb-0.5">
+                          <h3 className="text-xs sm:text-sm font-semibold text-slate-800 truncate">{challenge.name}</h3>
+                          <Badge variant="secondary" className={`text-[10px] shrink-0 border-0 ${challenge.status === "completed" ? "bg-pink-500 text-white hover:bg-pink-500" : "bg-red-500 text-white hover:bg-red-500"}`}>
+                            {challenge.status === "completed" ? "Completed" : "Failed"}
+                          </Badge>
+                        </div>
+                        <p className="text-[10px] sm:text-xs text-slate-600">{challenge.difficulty}/5 · {challenge.duration}d · {challenge.proofCount} proofs · {challenge.status === "completed" ? challenge.completionDate : challenge.failureDate}</p>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
           </div>
 
-          {/* Background */}
-          <div className="border-t border-slate-200/80 p-4 sm:p-6">
-            <div className="rounded-xl bg-slate-50/50 border border-slate-200/80 p-4 sm:p-5">
-              <div className="flex flex-wrap items-center gap-2 mb-2">
-                <h2 className="text-sm sm:text-base font-bold text-slate-800">Background</h2>
-                <Badge variant="secondary" className="text-[10px] bg-slate-100 text-slate-500 border-slate-200/80">Not Score-Weighted</Badge>
-              </div>
-              <p className="text-[10px] sm:text-xs text-slate-500 mb-4">Context only — does not affect EliteScore or leaderboard.</p>
-              <div className="space-y-4 sm:space-y-5">
-                <div>
-                  <div className="flex items-center gap-1.5 mb-2">
-                    <GraduationCap className="w-3.5 h-3.5 text-pink-600" aria-hidden="true" />
-                    <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-500">Education</h3>
-                  </div>
-                  <div className="space-y-1.5">
-                    {userData.background.education.map((edu, index) => (
-                      <div key={index} className="rounded-xl border border-slate-200/80 bg-slate-50/50 p-2.5 sm:p-3">
-                        <p className="text-xs sm:text-sm font-medium text-slate-800">{edu.degree}</p>
-                        <p className="text-[10px] sm:text-xs text-slate-500">{edu.institution} · {edu.year}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <div className="flex items-center gap-1.5 mb-2">
-                    <Briefcase className="w-3.5 h-3.5 text-orange-500" aria-hidden="true" />
-                    <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-500">Past Roles</h3>
-                  </div>
-                  <div className="space-y-1.5">
-                    {userData.background.roles.map((role, index) => (
-                      <div key={index} className="rounded-xl border border-slate-200/80 bg-slate-50/50 p-2.5 sm:p-3">
-                        <p className="text-xs sm:text-sm font-medium text-slate-800">{role.position}</p>
-                        <p className="text-[10px] sm:text-xs text-slate-500">{role.company} · {role.period}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <div className="flex items-center gap-1.5 mb-2">
-                    <Award className="w-3.5 h-3.5 text-green-500" aria-hidden="true" />
-                    <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-500">Certifications</h3>
-                  </div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {userData.background.certifications.map((cert, index) => (
-                      <Badge key={index} variant="secondary" className="text-[10px] bg-green-50 text-green-600 border-green-200/80">{cert}</Badge>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <div className="flex items-center gap-1.5 mb-2">
-                    <Trophy className="w-3.5 h-3.5 text-orange-500" aria-hidden="true" />
-                    <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-500">Major Achievements</h3>
-                  </div>
-                  <div className="space-y-1.5">
-                    {userData.background.achievements.map((achievement, index) => (
-                      <div key={index} className="flex items-start gap-2">
-                        <div className="w-1.5 h-1.5 rounded-full bg-orange-500 mt-1.5 shrink-0" aria-hidden="true" />
-                        <p className="text-[11px] sm:text-sm text-slate-600">{achievement}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* External Links — subtle tints per link type, landing theme */}
+{/* External Links — subtle tints per link type, landing theme */}
           <div className="border-t border-slate-200/80 p-4 sm:p-6">
             <div className="rounded-2xl border border-slate-200/80 bg-white p-4 sm:p-5 shadow-sm">
               <h2 className="text-sm sm:text-base font-bold text-slate-800 mb-3">External Links</h2>
               <div className="space-y-2">
+                {!userData.links.linkedin && !userData.links.github && !userData.links.portfolio ? (
+                  <div className="py-6 px-4 rounded-xl border border-slate-200/80 bg-slate-50/50 text-slate-500 text-sm text-center">
+                    <p>No links added yet. Add LinkedIn, GitHub or portfolio in Set up profile.</p>
+                  </div>
+                ) : null}
                 {userData.links.linkedin && (
-                  <a href={`https://${userData.links.linkedin}`} target="_blank" rel="noopener noreferrer" className="flex items-center justify-between gap-3 p-3 rounded-xl bg-pink-50/80 min-h-[44px] touch-manipulation hover:bg-pink-100/60 transition-colors group" aria-label="Open LinkedIn profile">
+                  <a href={userData.links.linkedin.startsWith("http") ? userData.links.linkedin : `https://${userData.links.linkedin}`} target="_blank" rel="noopener noreferrer" className="flex items-center justify-between gap-3 p-3 rounded-xl bg-pink-50/80 min-h-[44px] touch-manipulation hover:bg-pink-100/60 transition-colors group" aria-label="Open LinkedIn profile">
                     <div className="flex items-center gap-3 min-w-0">
                       <div className="w-9 h-9 shrink-0 rounded-lg bg-pink-500 flex items-center justify-center">
                         <LinkIcon className="w-4 h-4 text-white" aria-hidden="true" />
                       </div>
                       <div className="min-w-0">
                         <p className="text-xs sm:text-sm font-semibold text-slate-800">LinkedIn</p>
-                        <p className="text-[10px] sm:text-xs text-slate-500 truncate">{userData.links.linkedin}</p>
+                        <p className="text-[10px] sm:text-xs text-slate-500 truncate">{userData.links.linkedin.replace(/^https?:\/\//i, "")}</p>
                       </div>
                     </div>
                     <ExternalLink className="w-4 h-4 shrink-0 text-slate-500 group-hover:text-slate-700 transition-colors" aria-hidden="true" />
                   </a>
                 )}
                 {userData.links.github && (
-                  <a href={`https://${userData.links.github}`} target="_blank" rel="noopener noreferrer" className="flex items-center justify-between gap-3 p-3 rounded-xl bg-amber-50/80 min-h-[44px] touch-manipulation hover:bg-amber-100/60 transition-colors group" aria-label="Open GitHub profile">
+                  <a href={userData.links.github.startsWith("http") ? userData.links.github : `https://${userData.links.github}`} target="_blank" rel="noopener noreferrer" className="flex items-center justify-between gap-3 p-3 rounded-xl bg-amber-50/80 min-h-[44px] touch-manipulation hover:bg-amber-100/60 transition-colors group" aria-label="Open GitHub profile">
                     <div className="flex items-center gap-3 min-w-0">
                       <div className="w-9 h-9 shrink-0 rounded-lg bg-amber-500 flex items-center justify-center">
                         <LinkIcon className="w-4 h-4 text-white" aria-hidden="true" />
                       </div>
                       <div className="min-w-0">
                         <p className="text-xs sm:text-sm font-semibold text-slate-800">GitHub</p>
-                        <p className="text-[10px] sm:text-xs text-slate-500 truncate">{userData.links.github}</p>
+                        <p className="text-[10px] sm:text-xs text-slate-500 truncate">{userData.links.github.replace(/^https?:\/\//i, "")}</p>
                       </div>
                     </div>
                     <ExternalLink className="w-4 h-4 shrink-0 text-slate-500 group-hover:text-slate-700 transition-colors" aria-hidden="true" />
                   </a>
                 )}
                 {userData.links.portfolio && (
-                  <a href={`https://${userData.links.portfolio}`} target="_blank" rel="noopener noreferrer" className="flex items-center justify-between gap-3 p-3 rounded-xl bg-blue-50/80 min-h-[44px] touch-manipulation hover:bg-blue-100/60 transition-colors group" aria-label="Open portfolio">
+                  <a href={userData.links.portfolio.startsWith("http") ? userData.links.portfolio : `https://${userData.links.portfolio}`} target="_blank" rel="noopener noreferrer" className="flex items-center justify-between gap-3 p-3 rounded-xl bg-blue-50/80 min-h-[44px] touch-manipulation hover:bg-blue-100/60 transition-colors group" aria-label="Open portfolio">
                     <div className="flex items-center gap-3 min-w-0">
                       <div className="w-9 h-9 shrink-0 rounded-lg bg-blue-500 flex items-center justify-center">
                         <LinkIcon className="w-4 h-4 text-white" aria-hidden="true" />
                       </div>
                       <div className="min-w-0">
                         <p className="text-xs sm:text-sm font-semibold text-slate-800">Portfolio</p>
-                        <p className="text-[10px] sm:text-xs text-slate-500 truncate">{userData.links.portfolio}</p>
+                        <p className="text-[10px] sm:text-xs text-slate-500 truncate">{userData.links.portfolio.replace(/^https?:\/\//i, "")}</p>
                       </div>
                     </div>
                     <ExternalLink className="w-4 h-4 shrink-0 text-slate-500 group-hover:text-slate-700 transition-colors" aria-hidden="true" />

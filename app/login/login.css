@@ -86,6 +86,17 @@
   min-height: 0;
 }
 
+.login-split-right .login-form-title,
+.login-split-right .login-form-sub {
+  flex-shrink: 0;
+}
+
+.login-split-right .login-form {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
 .login-form-title {
   font-size: 1.125rem;
   font-weight: 800;

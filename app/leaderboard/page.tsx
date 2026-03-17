@@ -105,8 +105,8 @@ export default function LeaderboardPage() {
   const me = useMemo(() => leaderboard.find((u) => u.isCurrentUser), [leaderboard])
 
   return (
-    <div className="min-h-[100dvh] bg-[#f5f5f6] font-sans text-slate-800 antialiased pb-[max(5rem,calc(4rem+env(safe-area-inset-bottom)))]">
-      <div className="mx-auto max-w-lg px-4 pt-4 pb-6">
+    <div className="min-h-[100dvh] w-full bg-[#f5f5f6] font-sans text-slate-800 antialiased pb-[max(5rem,calc(4rem+env(safe-area-inset-bottom)))]">
+      <div className="w-full px-3 pt-4 pb-6 sm:px-4 md:mx-auto md:max-w-lg">
 
         {/* Hero strip */}
         <section

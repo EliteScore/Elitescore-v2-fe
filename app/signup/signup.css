@@ -80,10 +80,21 @@
   min-width: 0;
   background: var(--white);
   padding: 1rem 1.25rem;
-  overflow: auto;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   min-height: 0;
+}
+
+.signup-split-right .signup-form-title,
+.signup-split-right .signup-form-sub {
+  flex-shrink: 0;
+}
+
+.signup-split-right .signup-form {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .signup-form-title {

@@ -13,7 +13,6 @@ import {
   Heart,
   MessageCircle,
   Bookmark,
-  Bell,
   Play,
   Target,
   Flame,
@@ -239,73 +238,11 @@ export default function ChallengeDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f5f5f6] font-sans text-slate-800 antialiased">
-      {/* Gradient header — matches landing page header style */}
-      <header
-        className="sticky top-0 z-30 border-b border-white/10"
-        style={{ background: APP_GRADIENT }}
-      >
-        <div className="mx-auto flex h-14 max-w-7xl items-center gap-3 px-4 sm:px-6">
-          <Link
-            href="/challenges"
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/20 text-white transition-colors hover:bg-white/30"
-            aria-label="Back to challenges"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </Link>
-
-          {/* Challenge name — truncates on mobile */}
-          <p className="min-w-0 flex-1 truncate text-sm font-semibold text-white">
-            {challenge.name}
-          </p>
-
-          <div className="flex shrink-0 items-center gap-2">
-            <button
-              type="button"
-              className="flex h-9 w-9 items-center justify-center rounded-xl text-white/90 transition-colors hover:bg-white/20"
-              aria-label="Notifications"
-            >
-              <Bell className="h-5 w-5" />
-            </button>
-
-            {/* Day + XP pill — hidden on tiny screens */}
-            <div className="hidden items-center gap-2 rounded-xl bg-white/20 px-3 py-1.5 sm:flex">
-              <div
-                className="flex h-7 w-7 items-center justify-center rounded-full bg-white/30 text-xs font-bold text-white"
-                aria-hidden
-              >
-                R
-              </div>
-              <div>
-                <p className="text-xs font-semibold leading-none text-white">
-                  Day {challenge.currentDay}/{challenge.duration}
-                </p>
-                <p className="mt-0.5 text-[10px] leading-none text-white/70">
-                  {challenge.reward} XP reward
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* Progress bar just below header */}
-      <div className="h-1 w-full bg-slate-200/80">
-        <div
-          className="h-full transition-all duration-500"
-          style={{ width: `${challenge.progress}%`, background: APP_GRADIENT }}
-          role="progressbar"
-          aria-valuenow={challenge.progress}
-          aria-valuemin={0}
-          aria-valuemax={100}
-          aria-label={`${challenge.progress}% complete`}
-        />
-      </div>
-
-      <div className="mx-auto flex max-w-7xl">
+    <div className="min-h-screen w-full bg-[#f5f5f6] font-sans text-slate-800 antialiased">
+      <div className="mx-auto flex w-full max-w-7xl">
         {/* ── Left sidebar: Course outline (desktop only) ── */}
         <aside className="hidden w-72 shrink-0 border-r border-slate-200/80 bg-white lg:block">
-          <div className="sticky top-[3.625rem] h-[calc(100vh-3.625rem)] overflow-y-auto">
+          <div className="sticky top-0 h-screen overflow-y-auto">
             <div className="border-b border-slate-100 px-5 py-4">
               <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-500">
                 Course outline
@@ -391,8 +328,16 @@ export default function ChallengeDetailPage() {
         </aside>
 
         {/* ── Main content ── */}
-        <main className="min-w-0 flex-1 px-4 py-6 sm:px-6">
-          <div className="mx-auto max-w-3xl space-y-6">
+        <main className="min-w-0 flex-1 px-3 py-6 sm:px-4 md:px-6">
+          <div className="mx-auto w-full max-w-3xl space-y-6">
+            <Link
+              href="/challenges"
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-slate-800"
+              aria-label="Back to challenges"
+            >
+              <ArrowLeft className="h-4 w-4" aria-hidden />
+              Back to challenges
+            </Link>
 
             {/* Mobile course outline accordion */}
             <div className={`${CARD_BASE} overflow-hidden lg:hidden`}>

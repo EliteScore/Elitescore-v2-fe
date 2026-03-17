@@ -1,0 +1,305 @@
+# EliteScore Auth — API Reference
+
+Base URL: https://elitescore-auth-jh8f8.ondigitalocean.app/
+
+Authentication and profile only. For challenges, leaderboard, proofs, and invites see the Challenges API.
+
+---
+
+## Authentication
+
+| Environment | Mechanism |
+|-------------|-----------|
+| All        | Protected routes: `Authorization: Bearer <access_token>`. Token is validated via Supabase JWT (user id + email from `/auth/v1/user`). |
+
+No dev bypass; every protected route requires a valid Supabase access token from signup or login.
+
+---
+
+## Error Format
+
+Errors use a simple JSON shape:
+
+```json
+{
+  "code": "email_exists",
+  "message": "Email already in use"
+}
+```
+
+| Status | When |
+|--------|------|
+| 400 | Validation failure, missing or invalid body |
+| 401 | Missing or invalid `Authorization: Bearer` token |
+| 404 | User or profile not found |
+| 409 | Duplicate email or handle (signup) |
+| 500 | Unexpected server error (e.g. Supabase unavailable) |
+
+---
+
+## Resource: Auth
+
+Path prefix: `/auth`
+
+### POST /auth/signup
+
+**Summary:** Register a new user. Creates Supabase auth user and `public.users` row (via trigger). Returns tokens when email confirmation is off; 202 when confirmation is on.
+
+**Auth:** none
+
+**Consumes:** application/json  
+**Produces:** application/json
+
+**Request body:**
+
+```json
+{
+  "email": "user@example.com",
+  "password": "SecurePass8!",
+  "full_name": "Jane Doe",
+  "handle": "jane_doe"
+}
+```
+
+| Field      | Type   | Required | Description |
+|------------|--------|----------|-------------|
+| email      | string | Yes      | Valid email; stored lowercased |
+| password   | string | Yes      | Min 8 characters |
+| full_name  | string | Yes      | Display name |
+| handle     | string | Yes      | Unique handle (e.g. for `/profiles/{handle}`); validated format |
+
+**Responses:**
+
+| Code | Description | Body |
+|------|-------------|------|
+| 201 Created | Signup OK; email confirmation off | `access_token`, `refresh_token`, `expires_in`, `user_id` |
+| 202 Accepted | Email confirmation on | `{ "message": "Check email to confirm signup." }` |
+| 400 Bad Request | Invalid body or handle format | ApiError (code, message) |
+| 409 Conflict | Email already registered or handle taken | ApiError (`email_exists` or `handle_taken`) |
+
+---
+
+### POST /auth/login
+
+**Summary:** Sign in with email and password. Returns Supabase access and refresh tokens.
+
+**Auth:** none
+
+**Consumes:** application/json  
+**Produces:** application/json
+
+**Request body:**
+
+```json
+{
+  "email": "user@example.com",
+  "password": "SecurePass8!"
+}
+```
+
+| Field    | Type   | Required | Description |
+|----------|--------|----------|-------------|
+| email    | string | Yes      | User email |
+| password | string | Yes      | Password   |
+
+**Responses:**
+
+| Code | Description | Body |
+|------|-------------|------|
+| 200 OK | Login success | `access_token`, `refresh_token`, `expires_in`, `user_id` |
+| 401 Unauthorized | Invalid email or password | ApiError (`invalid_credentials`) |
+
+---
+
+### GET /auth/me
+
+**Summary:** Current authenticated user (minimal). Use for token check and `user_id` / `email`.
+
+**Auth:** required (Bearer)
+
+**Produces:** application/json
+
+**Responses:**
+
+| Code | Description | Body |
+|------|-------------|------|
+| 200 OK | Authenticated | `user_id`, `email` |
+| 401 Unauthorized | Missing or invalid token | ApiError |
+
+---
+
+## Resource: Profile
+
+Path prefix: `/users`
+
+### GET /users/me
+
+**Summary:** Full profile for the authenticated user: identity, score snapshot, bio, links, and challenge history.
+
+**Auth:** required (Bearer)
+
+**Produces:** application/json
+
+**Responses:**
+
+| Code | Description | Body |
+|------|-------------|------|
+| 200 OK | Profile | See response body below |
+| 401 Unauthorized | Missing or invalid token | ApiError |
+| 404 Not Found | Profile row not found | ApiError (`profile_not_found`) |
+
+**200 body:**
+
+| Field           | Type   | Description |
+|-----------------|--------|-------------|
+| name            | string | full_name   |
+| level           | int    | User level  |
+| elitescore      | int    | EliteScore 0–1000 |
+| streak          | int    | Current streak |
+| global_rank     | int?   | Global leaderboard rank (null if unranked) |
+| bio             | string?| Short bio   |
+| avatar_url      | string?| Profile picture URL |
+| linkedin_url    | string?| LinkedIn URL |
+| github_url      | string?| GitHub URL  |
+| challenge_history | array | User’s challenge enrollments (id, status, start_date, end_date, current_day, completed_at, failed_at, created_at, challenge_templates: { name, difficulty, duration_days }). Empty if `user_challenges` missing or not readable. |
+
+---
+
+### PATCH /users/me
+
+**Summary:** Update profile. Only listed fields are accepted.
+
+**Auth:** required (Bearer)
+
+**Consumes:** application/json  
+**Produces:** application/json
+
+**Request body:** any subset of:
+
+| Field       | Type   | Description |
+|-------------|--------|-------------|
+| full_name   | string | Display name |
+| timezone    | string | e.g. America/New_York |
+| bio         | string | Short bio   |
+| avatar_url  | string | Profile picture URL |
+| linkedin_url| string | LinkedIn URL |
+| github_url  | string | GitHub URL  |
+
+**Responses:**
+
+| Code | Description | Body |
+|------|-------------|------|
+| 200 OK | Updated profile (same shape as GET /users/me) | Profile + challenge_history |
+| 400 Bad Request | No allowed fields in body | ApiError (`no_fields`) |
+| 401 Unauthorized | Missing or invalid token | ApiError |
+| 404 Not Found | Profile not found | ApiError |
+
+---
+
+## Resource: Public profile
+
+Path prefix: `/profiles`
+
+### GET /profiles/{handle}
+
+**Summary:** Public profile by handle. No auth. Same fields as GET /users/me plus `handle`; includes challenge_history when available.
+
+**Auth:** none
+
+**Path params:**
+
+| Param  | Type   | Required | Description |
+|--------|--------|----------|-------------|
+| handle | string | Yes      | User handle |
+
+**Produces:** application/json
+
+**Responses:**
+
+| Code | Description | Body |
+|------|-------------|------|
+| 200 OK | Public profile | name, handle, level, elitescore, streak, global_rank, bio, avatar_url, linkedin_url, github_url, challenge_history |
+| 404 Not Found | No user with that handle | ApiError (`not_found`) |
+
+---
+
+## Health (no auth)
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/health` | Returns `{ "status": "ok", "message": "EliteScore Auth API is running" }` |
+| GET | `/actuator/health` | Spring Boot health; returns `{ "status": "UP" }` (e.g. for load balancers) |
+
+---
+
+## What this API does not cover
+
+Handled by the **Challenges API** (separate service):
+
+- Dashboard (unified home: score, rank, percentile, streaks detail, recent gains, leaderboard preview, recommended challenges)
+- Challenge templates and steps (list, get steps)
+- My enrollments (can use GET /users/me `challenge_history` or Challenges `GET /api/challenges/my`)
+- Join challenge, submit proof, resubmit, abandon
+- Leaderboard (paginated, preview)
+- Streaks detail (current, longest, lastActiveAt)
+- Spectator invites (get by token, accept, unsubscribe)
+- Admin (verify proof, force-fail challenge, penalize day)
+
+This service is **auth + profile only**: signup, login, who-am-i, get/update profile, public profile by handle.
+
+---
+
+## Environment
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| SUPABASE_URL | Yes | Project URL (e.g. https://xxx.supabase.co) |
+| SUPABASE_ANON_KEY | Yes | Supabase anon key (Auth + PostgREST) |
+| CORS_ORIGINS | Yes | Comma-separated origins (e.g. http://localhost:3000) |
+
+Copy `.env.server.example` → `.env.server` and set the above. Optional: JDK + Maven paths in `run.cmd`.
+
+---
+
+## Run (local)
+
+```cmd
+.\run.cmd
+```
+
+Server: **http://localhost:8080**
+
+---
+
+## Deployment (DigitalOcean App Platform)
+
+1. Push to GitHub (do not commit `.env.server`).
+2. Create App → connect repo. Web Service; auto-detect Dockerfile; HTTP port `8080`.
+3. Set env: `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `CORS_ORIGINS`; optional `SPRING_PROFILES_ACTIVE=prod`.
+4. Deploy. Verify: `GET https://your-app-url/health`.
+
+---
+
+## Test (PowerShell)
+
+```powershell
+.\test-all-endpoints.ps1
+# optional: .\test-all-endpoints.ps1 -BaseUrl http://localhost:8080
+```
+
+Quick manual check:
+
+```powershell
+$signup = Invoke-RestMethod -Uri http://localhost:8080/auth/signup -Method POST -ContentType "application/json" -Body '{"email":"test@example.com","password":"Pass12345!","full_name":"Test User","handle":"testuser"}'
+$token = $signup.access_token
+Invoke-RestMethod -Uri http://localhost:8080/auth/me -Headers @{ Authorization = "Bearer $token" }
+Invoke-RestMethod -Uri http://localhost:8080/users/me -Headers @{ Authorization = "Bearer $token" }
+```
+
+---
+
+## Limitations and roadmap
+
+**Planned:** In-app avatar file upload (currently set `avatar_url` via PATCH).
+
+**Not implemented:** Password reset, email confirmation flow, 2FA, multiple login providers (OAuth linking). See Supabase docs; backend can add thin proxy endpoints as needed.

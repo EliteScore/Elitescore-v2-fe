@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, usePathname } from "next/navigation"
 import Link from "next/link"
 import { Eye, EyeOff, Check, X } from "lucide-react"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -11,16 +11,27 @@ import { z } from "zod"
 import "../auth.css"
 import "./signup.css"
 
+const AUTH_BASE_URL = "https://elitescore-auth-jh8f8.ondigitalocean.app"
+
 const signupSchema = z
   .object({
     fullName: z.string().min(2, { message: "Name is required." }),
-    email: z.string().email({ message: "Please enter a valid email address." }),
+    email: z
+      .string()
+      .email({ message: "Please enter a valid email address." })
+      .transform((val) => val.trim().toLowerCase()),
     password: z
       .string()
       .min(8, { message: "Password must be at least 8 characters." })
       .regex(/[A-Z]/, { message: "One uppercase letter required." })
       .regex(/[0-9]/, { message: "One number required." }),
-    username: z.string().min(3, { message: "Username must be at least 3 characters." }),
+    username: z
+      .string()
+      .min(3, { message: "Username must be at least 3 characters." })
+      .regex(/^[a-z0-9_]+$/, {
+        message: "Username can only contain lowercase letters, numbers, and underscores.",
+      })
+      .transform((val) => val.trim().toLowerCase()),
     agreeTerms: z.boolean().refine((val) => val === true, {
       message: "You must agree to the terms.",
     }),
@@ -30,6 +41,7 @@ type SignupFormValues = z.infer<typeof signupSchema>
 
 export default function SignupPage() {
   const router = useRouter()
+  const pathname = usePathname()
   const [isLoading, setIsLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [signupError, setSignupError] = useState<string | null>(null)
@@ -52,15 +64,72 @@ export default function SignupPage() {
     { label: "One number", met: /[0-9]/.test(password) },
   ]
 
-  const onSubmit = (data: SignupFormValues) => {
+  const onSubmit = async (data: SignupFormValues) => {
     setIsLoading(true)
     setSignupError(null)
-    setTimeout(() => {
+    const email = data.email
+    const username = data.username
+    try {
+      // 1) Create account (email and username already normalized by schema)
+      const signupRes = await fetch(`${AUTH_BASE_URL}/auth/signup`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email,
+          password: data.password,
+          full_name: data.fullName,
+          handle: username,
+        }),
+      })
+
+      if (!signupRes.ok) {
+        let message = "Could not create account. Please try again."
+        try {
+          const body = await signupRes.json()
+          if (typeof body?.message === "string") message = body.message
+        } catch {
+          // ignore parse error
+        }
+        setSignupError(message)
+        return
+      }
+
+      // 2) Log the user in immediately
+      const loginRes = await fetch(`${AUTH_BASE_URL}/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email,
+          password: data.password,
+        }),
+      })
+
+      if (!loginRes.ok) {
+        router.push("/login")
+        return
+      }
+
+      const loginData = await loginRes.json()
+      if (loginData?.access_token) {
+        localStorage.setItem("elitescore_access_token", loginData.access_token)
+      }
+      if (loginData?.refresh_token) {
+        localStorage.setItem("elitescore_refresh_token", loginData.refresh_token)
+      }
+      if (loginData?.user_id) {
+        localStorage.setItem("elitescore_user_id", String(loginData.user_id))
+      }
       localStorage.setItem("elitescore_logged_in", "true")
-      localStorage.setItem("elitescore_username", data.username)
-      localStorage.setItem("elitescore_email", data.email.trim().toLowerCase())
-      router.push("/home")
-    }, 1000)
+      localStorage.setItem("elitescore_full_name", data.fullName)
+      localStorage.setItem("elitescore_username", username)
+      localStorage.setItem("elitescore_email", email)
+      router.replace("/home")
+    } catch (error) {
+      console.error("Signup error:", error)
+      setSignupError("Something went wrong. Please try again.")
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   const handleGoogleSignIn = () => {
@@ -73,7 +142,7 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="auth-page signup-page">
+    <div key={pathname} className="auth-page signup-page">
       <main className="auth-main">
         <div className="signup-split-card">
           <div className="signup-split-left">
@@ -159,7 +228,7 @@ export default function SignupPage() {
                 <input
                   id="signup-username"
                   type="text"
-                  placeholder="johndoe"
+                  placeholder="e.g. johndoe (lowercase only)"
                   autoComplete="username"
                   className="auth-input"
                   {...form.register("username")}
@@ -215,8 +284,8 @@ export default function SignupPage() {
                 Sign up with Google
               </button>
             </form>
-            <p className="auth-footer-text signup-form-footer">
-              Already have an account? <Link href="/login" scroll={false}>Log in</Link>
+            <p className="auth-footer-text signup-form-footer auth-form-footer-pin">
+              Already have an account? <a href="/login" className="auth-cross-link">Log in</a>
             </p>
           </div>
         </div>
