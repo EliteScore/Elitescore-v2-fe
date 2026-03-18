@@ -1,7 +1,7 @@
 "use client"
 
-import { useState } from "react"
-import { useParams, useRouter } from "next/navigation"
+import { useEffect, useState } from "react"
+import { useParams, useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import {
   ArrowLeft,
@@ -21,203 +21,261 @@ import {
 const APP_GRADIENT = "linear-gradient(135deg, #db2777 0%, #ea580c 35%, #2563eb 70%, #7c3aed 100%)"
 const CARD_BASE = "rounded-2xl border border-slate-200/80 bg-white shadow-sm"
 
-// Mock data
-const challengeData: Record<
-  number,
-  {
-    id: number
-    name: string
-    description: string
-    difficulty: number
-    duration: number
-    currentDay: number
-    daysRemaining: number
-    progress: number
-    reward: number
-    requirements: string[]
-    roadmap: {
-      id: number
-      title: string
-      status: "completed" | "in_progress" | "locked"
-      tasks: { id: number; title: string; completed: boolean; day: number | string }[]
-    }[]
-    todayTask: {
-      day: number
-      title: string
-      description: string
-      requirements: string[]
-      xp: number
+/** Parse YouTube video ID and optional start (seconds) from watch, embed, or youtu.be URLs */
+function parseYouTubeUrl(url: string): { videoId: string; startSeconds?: number } | null {
+  if (!url?.trim()) return null
+  const s = url.trim()
+  let videoId: string | null = null
+  let startSeconds: number | undefined
+  try {
+    if (s.includes("youtube.com/watch")) {
+      const u = new URL(s)
+      videoId = u.searchParams.get("v") ?? null
+      const t = u.searchParams.get("t")
+      if (t != null) startSeconds = parseInt(t.replace(/[^0-9]/g, ""), 10) || undefined
+    } else if (s.includes("youtu.be/")) {
+      const u = new URL(s)
+      videoId = u.pathname.slice(1).split("/")[0] || null
+      const t = u.searchParams.get("t")
+      if (t != null) startSeconds = parseInt(t.replace(/[^0-9]/g, ""), 10) || undefined
+    } else if (s.includes("youtube.com/embed/")) {
+      const u = new URL(s)
+      const pathId = u.pathname.split("/embed/")[1]?.split("/")[0]
+      videoId = pathId || null
+      const start = u.searchParams.get("start")
+      if (start != null) startSeconds = parseInt(start, 10) || undefined
     }
+  } catch {
+    return null
   }
-> = {
-  1: {
-    id: 1,
-    name: "30-Day Python Mastery",
-    description: "Master Python fundamentals through hands-on projects and daily coding challenges",
-    difficulty: 4,
-    duration: 30,
-    currentDay: 12,
-    daysRemaining: 18,
-    progress: 40,
-    reward: 450,
-    requirements: [
-      "Complete 3 LeetCode problems daily",
-      "Build 1 project per week",
-      "Submit code screenshots as proof",
-      "Follow Python best practices",
-    ],
-    roadmap: [
-      {
-        id: 1,
-        title: "Week 1: Python Fundamentals",
-        status: "completed",
-        tasks: [
-          { id: 1, title: "Variables & Data Types", completed: true, day: 1 },
-          { id: 2, title: "Control Flow (if/else, loops)", completed: true, day: 2 },
-          { id: 3, title: "Functions & Modules", completed: true, day: 3 },
-          { id: 4, title: "Lists & Dictionaries", completed: true, day: 4 },
-          { id: 5, title: "File Handling", completed: true, day: 5 },
-          { id: 6, title: "Error Handling", completed: true, day: 6 },
-          { id: 7, title: "Week 1 Project: CLI Tool", completed: true, day: 7 },
-        ],
-      },
-      {
-        id: 2,
-        title: "Week 2: Data Structures & Algorithms",
-        status: "in_progress",
-        tasks: [
-          { id: 8, title: "Arrays & Strings", completed: true, day: 8 },
-          { id: 9, title: "Stacks & Queues", completed: true, day: 9 },
-          { id: 10, title: "Linked Lists", completed: true, day: 10 },
-          { id: 11, title: "Trees & Graphs", completed: true, day: 11 },
-          { id: 12, title: "Sorting Algorithms", completed: true, day: 12 },
-          { id: 13, title: "Searching Algorithms", completed: false, day: 13 },
-          { id: 14, title: "Week 2 Project: Data Processor", completed: false, day: 14 },
-        ],
-      },
-      {
-        id: 3,
-        title: "Week 3: OOP & Design Patterns",
-        status: "locked",
-        tasks: [
-          { id: 15, title: "Classes & Objects", completed: false, day: 15 },
-          { id: 16, title: "Inheritance & Polymorphism", completed: false, day: 16 },
-          { id: 17, title: "Design Patterns", completed: false, day: 17 },
-          { id: 18, title: "SOLID Principles", completed: false, day: 18 },
-          { id: 19, title: "Testing with pytest", completed: false, day: 19 },
-          { id: 20, title: "Debugging Techniques", completed: false, day: 20 },
-          { id: 21, title: "Week 3 Project: OOP System", completed: false, day: 21 },
-        ],
-      },
-      {
-        id: 4,
-        title: "Week 4: Real-World Application",
-        status: "locked",
-        tasks: [
-          { id: 22, title: "API Development with Flask", completed: false, day: 22 },
-          { id: 23, title: "Database Integration", completed: false, day: 23 },
-          { id: 24, title: "Authentication & Security", completed: false, day: 24 },
-          { id: 25, title: "Deployment Setup", completed: false, day: 25 },
-          { id: 26, title: "Testing & Documentation", completed: false, day: 26 },
-          { id: 27, title: "Performance Optimization", completed: false, day: 27 },
-          { id: 28, title: "Final Project: Full-Stack App", completed: false, day: "28-30" },
-        ],
-      },
-    ],
-    todayTask: {
-      day: 12,
-      title: "Sorting Algorithms",
-      description:
-        "Implement and analyze QuickSort, MergeSort, and HeapSort. Code all three sorting algorithms, write time complexity analysis, and create a comparison benchmark. Upload a code screenshot as proof of completion.",
-      requirements: [
-        "Code all three sorting algorithms",
-        "Write time complexity analysis",
-        "Create comparison benchmark",
-        "Upload code screenshot",
-      ],
-      xp: 50,
-    },
-  },
-  2: {
-    id: 2,
-    name: "14-Day LinkedIn Growth",
-    description: "Build your professional brand and grow your LinkedIn presence",
-    difficulty: 2,
-    duration: 14,
-    currentDay: 7,
-    daysRemaining: 7,
-    progress: 50,
-    reward: 140,
-    requirements: [
-      "Post valuable content daily",
-      "Engage with 5+ posts per day",
-      "Connect with 3 professionals weekly",
-      "Share screenshots of activity",
-    ],
-    roadmap: [
-      {
-        id: 1,
-        title: "Week 1: Profile & Content Foundation",
-        status: "in_progress",
-        tasks: [
-          { id: 1, title: "Optimize profile photo & headline", completed: true, day: 1 },
-          { id: 2, title: "Write compelling about section", completed: true, day: 2 },
-          { id: 3, title: "First value post", completed: true, day: 3 },
-          { id: 4, title: "Share industry insight", completed: true, day: 4 },
-          { id: 5, title: "Create carousel post", completed: true, day: 5 },
-          { id: 6, title: "Engage with 10 posts", completed: true, day: 6 },
-          { id: 7, title: "Connect with 5 professionals", completed: true, day: 7 },
-        ],
-      },
-      {
-        id: 2,
-        title: "Week 2: Growth & Engagement",
-        status: "locked",
-        tasks: [
-          { id: 8, title: "Post about learning journey", completed: false, day: 8 },
-          { id: 9, title: "Share a success story", completed: false, day: 9 },
-          { id: 10, title: "Create video post", completed: false, day: 10 },
-          { id: 11, title: "Write article on expertise", completed: false, day: 11 },
-          { id: 12, title: "Host LinkedIn poll", completed: false, day: 12 },
-          { id: 13, title: "Celebrate milestone", completed: false, day: 13 },
-          { id: 14, title: "Reflect & plan next steps", completed: false, day: 14 },
-        ],
-      },
-    ],
-    todayTask: {
-      day: 7,
-      title: "Connect with 5 professionals",
-      description:
-        "Reach out to professionals in your industry with personalized messages. Find 5 relevant connections, write personalized connection requests, and upload a screenshot of sent requests as proof.",
-      requirements: [
-        "Find 5 relevant connections",
-        "Write personalized connection requests",
-        "Screenshot sent requests",
-        "Upload proof",
-      ],
-      xp: 30,
-    },
-  },
+  if (!videoId) return null
+  return { videoId, startSeconds }
+}
+
+function buildYouTubeEmbedUrl(videoId: string, startSeconds?: number | null, endSeconds?: number | null): string {
+  const u = new URL(`https://www.youtube.com/embed/${videoId}`)
+  if (startSeconds != null && startSeconds > 0) u.searchParams.set("start", String(startSeconds))
+  if (endSeconds != null && endSeconds > 0) u.searchParams.set("end", String(endSeconds))
+  return u.toString()
+}
+
+type RoadmapTask = { id: string; title: string; completed: boolean; day: number | string }
+type RoadmapWeek = {
+  id: string
+  title: string
+  status: "completed" | "in_progress" | "locked"
+  tasks: RoadmapTask[]
+}
+
+type UiChallenge = {
+  id: string
+  name: string
+  description: string
+  difficulty: number
+  duration: number
+  currentDay: number
+  daysRemaining: number
+  progress: number
+  reward: number
+  requirements: string[]
+  roadmap: RoadmapWeek[]
+  todayTask: {
+    day: number
+    title: string
+    description: string
+    requirements: string[]
+    xp: number
+    resourceLink?: string | null
+    resourceStartSeconds?: number | null
+    resourceEndSeconds?: number | null
+  }
+}
+
+type ChallengeTemplateApi = {
+  id?: string
+  name?: string
+  description?: string
+  difficulty?: number
+  durationDays?: number
+  completionBonus?: number
+  dailyRewardEliteScore?: number
+}
+
+type ChallengeRoadmapStepApi = {
+  id: string
+  week: number | null
+  day: number
+  title: string
+  instructions: string
+  expectedProof?: string | null
+  rewardEliteScore?: number | null
+  resourceLink?: string | null
+  resource_link?: string | null
+  resourceStartSeconds?: number | null
+  resource_start_seconds?: number | null
+  resourceEndSeconds?: number | null
+  resource_end_seconds?: number | null
 }
 
 export default function ChallengeDetailPage() {
   const params = useParams()
   const router = useRouter()
-  const challengeId = parseInt(params.id as string)
-  const challenge = challengeData[challengeId as keyof typeof challengeData]
+  const searchParams = useSearchParams()
+  const rawId = params.id as string
+  const dayParam = searchParams.get("day")
+  const requestedDay = dayParam != null ? parseInt(dayParam, 10) : null
 
-  const [expandedWeeks, setExpandedWeeks] = useState<Set<number>>(new Set([1, 2]))
+  const [challenge, setChallenge] = useState<UiChallenge | null>(null)
+  const [expandedWeeks, setExpandedWeeks] = useState<Set<string>>(new Set())
   const [showUploadProof, setShowUploadProof] = useState(false)
   const [liked, setLiked] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [loading, setLoading] = useState(true)
 
-  const handleToggleWeek = (weekId: number) => {
+  useEffect(() => {
+    let cancelled = false
+    const load = async () => {
+      const token =
+        typeof window !== "undefined" ? localStorage.getItem("elitescore_access_token") : null
+      if (!token) {
+        setLoading(false)
+        return
+      }
+      const userId =
+        typeof window !== "undefined" ? localStorage.getItem("elitescore_user_id") : null
+
+      const headers: HeadersInit = {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      }
+      if (userId) {
+        ;(headers as Record<string, string>)["X-User-Id"] = userId
+      }
+
+      try {
+        const tplRes = await fetch("/api/challenges", { headers })
+        const tplData = await tplRes.json().catch(() => null)
+        const templates: ChallengeTemplateApi[] = Array.isArray(tplData) ? tplData : []
+        const tpl = templates.find((t) => t.id === rawId)
+
+        const stepsRes = await fetch(`/api/challenges/${rawId}/steps`, { headers })
+        const stepsData = await stepsRes.json().catch(() => null)
+        const steps: ChallengeRoadmapStepApi[] = Array.isArray(stepsData) ? stepsData : []
+
+        if (cancelled) return
+
+        if (!tpl && steps.length === 0) {
+          setChallenge(null)
+          setLoading(false)
+          return
+        }
+
+        const duration = typeof tpl?.durationDays === "number" ? tpl.durationDays : steps.length
+        const reward =
+          typeof tpl?.completionBonus === "number"
+            ? tpl.completionBonus
+            : typeof tpl?.dailyRewardEliteScore === "number" && duration > 0
+            ? tpl.dailyRewardEliteScore * duration
+            : 0
+        const difficulty =
+          typeof tpl?.difficulty === "number" && tpl.difficulty > 0 ? tpl.difficulty : 3
+
+        const weeksMap = new Map<number, ChallengeRoadmapStepApi[]>()
+        steps.forEach((s) => {
+          const w = s.week ?? 1
+          if (!weeksMap.has(w)) weeksMap.set(w, [])
+          weeksMap.get(w)!.push(s)
+        })
+
+        const sortedWeeks = Array.from(weeksMap.entries()).sort((a, b) => a[0] - b[0])
+        const roadmap: RoadmapWeek[] = sortedWeeks.map(([weekNumber, weekSteps], index) => {
+          const sortedSteps = [...weekSteps].sort((a, b) => a.day - b.day)
+          const isFirst = index === 0
+          const tasks: RoadmapTask[] = sortedSteps.map((s) => ({
+            id: s.id,
+            title: s.title,
+            completed: false,
+            day: s.day,
+          }))
+          const status: RoadmapWeek["status"] = isFirst ? "in_progress" : "locked"
+          return {
+            id: String(weekNumber),
+            title: `Week ${weekNumber}`,
+            status,
+            tasks,
+          }
+        })
+
+        const stepForDay =
+          requestedDay != null && !Number.isNaN(requestedDay)
+            ? steps.find((s) => s.day === requestedDay)
+            : null
+        const firstStep = stepForDay ?? steps[0]
+        const todayDay = firstStep?.day ?? requestedDay ?? 1
+        const xp = typeof firstStep?.rewardEliteScore === "number" ? firstStep.rewardEliteScore : 0
+        const description = firstStep?.instructions ?? "Daily task for this challenge."
+        const requirements: string[] =
+          (firstStep?.expectedProof ?? "")
+            .split(/\r?\n/)
+            .map((s) => s.trim())
+            .filter(Boolean) || []
+
+        const ui: UiChallenge = {
+          id: rawId,
+          name: tpl?.name ?? "Challenge",
+          description: tpl?.description ?? "",
+          difficulty,
+          duration: duration || 0,
+          currentDay: todayDay,
+          daysRemaining: duration > todayDay ? duration - todayDay : 0,
+          progress: 0,
+          reward,
+          requirements,
+          roadmap,
+          todayTask: {
+            day: todayDay,
+            title: firstStep?.title ?? "Today's task",
+            description,
+            requirements: requirements.length ? requirements : ["Submit proof of completion."],
+            xp,
+            resourceLink: firstStep?.resourceLink ?? firstStep?.resource_link ?? null,
+            resourceStartSeconds: firstStep?.resourceStartSeconds ?? firstStep?.resource_start_seconds ?? null,
+            resourceEndSeconds: firstStep?.resourceEndSeconds ?? firstStep?.resource_end_seconds ?? null,
+          },
+        }
+
+        setChallenge(ui)
+        setExpandedWeeks(new Set(roadmap.map((w) => w.id)))
+        setLoading(false)
+      } catch (err) {
+        if (!cancelled) {
+          setChallenge(null)
+          setLoading(false)
+        }
+      }
+    }
+
+    load()
+    return () => {
+      cancelled = true
+    }
+  }, [rawId, requestedDay])
+
+  const handleToggleWeek = (weekId: string) => {
     setExpandedWeeks((prev) => {
       const next = new Set(prev)
       if (next.has(weekId)) next.delete(weekId)
       else next.add(weekId)
       return next
     })
+  }
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#f5f5f6] px-4">
+        <p className="text-sm text-slate-500">Loading challenge...</p>
+      </div>
+    )
   }
 
   if (!challenge) {
@@ -347,21 +405,21 @@ export default function ChallengeDetailPage() {
                 onClick={() => {
                   setExpandedWeeks((prev) => {
                     const next = new Set(prev)
-                    if (next.has(-1)) next.delete(-1)
-                    else next.add(-1)
+                    if (next.has("-1")) next.delete("-1")
+                    else next.add("-1")
                     return next
                   })
                 }}
-                aria-expanded={expandedWeeks.has(-1)}
+                aria-expanded={expandedWeeks.has("-1")}
               >
                 <span className="text-sm font-semibold text-slate-800">Course outline</span>
-                {expandedWeeks.has(-1) ? (
+                {expandedWeeks.has("-1") ? (
                   <ChevronUp className="h-4 w-4 text-slate-400" aria-hidden />
                 ) : (
                   <ChevronDown className="h-4 w-4 text-slate-400" aria-hidden />
                 )}
               </button>
-              {expandedWeeks.has(-1) && (
+              {expandedWeeks.has("-1") && (
                 <ul className="border-t border-slate-100 px-5 pb-4 pt-3 space-y-1">
                   {challenge.roadmap.flatMap((week) =>
                     week.tasks.map((task) => {
@@ -398,28 +456,79 @@ export default function ChallengeDetailPage() {
               </button>
             </div>
 
-            {/* Video block — landing-style card */}
-            <div className="overflow-hidden rounded-2xl border border-slate-200/80 shadow-lg">
-              <div className="relative flex aspect-video items-center justify-center bg-gradient-to-br from-slate-800 to-slate-900">
-                <button
-                  type="button"
-                  className="flex h-16 w-16 items-center justify-center rounded-full bg-white/90 text-slate-800 shadow-xl transition-transform hover:scale-105 active:scale-95"
-                  aria-label="Play video"
-                >
-                  <Play className="h-8 w-8 pl-1" fill="currentColor" />
-                </button>
-                {/* Mini stats overlay */}
-                <div className="absolute inset-x-0 bottom-0 flex items-center justify-between bg-gradient-to-t from-black/60 to-transparent px-4 pb-3 pt-6">
-                  <span className="text-xs font-medium text-white/90">
-                    {challenge.name}
-                  </span>
-                  <div className="flex items-center gap-1.5 rounded-full bg-white/20 px-2.5 py-1 text-xs font-semibold text-white backdrop-blur-sm">
-                    <Flame className="h-3.5 w-3.5 text-orange-300" aria-hidden />
-                    {challenge.progress}% done
+            {/* Video block — YouTube embed when resourceLink is YouTube, else placeholder with link */}
+            {(() => {
+              const link = challenge.todayTask.resourceLink
+              const startSec = challenge.todayTask.resourceStartSeconds
+              const endSec = challenge.todayTask.resourceEndSeconds
+              const parsed = link ? parseYouTubeUrl(link) : null
+              const embedUrl = parsed
+                ? buildYouTubeEmbedUrl(parsed.videoId, startSec ?? parsed.startSeconds, endSec)
+                : null
+
+              return (
+                <div className="overflow-hidden rounded-2xl border border-slate-200/80 shadow-lg">
+                  <div className="relative flex aspect-video w-full flex-col bg-slate-900">
+                    {embedUrl ? (
+                      <iframe
+                        src={embedUrl}
+                        title={`${challenge.todayTask.title} — video`}
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                        allowFullScreen
+                        className="absolute inset-0 h-full w-full"
+                      />
+                    ) : (
+                      <div className="relative flex flex-1 items-center justify-center bg-gradient-to-br from-slate-800 to-slate-900">
+                        {link ? (
+                          <a
+                            href={link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex h-16 w-16 items-center justify-center rounded-full bg-white/90 text-slate-800 shadow-xl transition-transform hover:scale-105 active:scale-95"
+                            aria-label="Play video (opens in new tab)"
+                          >
+                            <Play className="h-8 w-8 pl-1" fill="currentColor" />
+                          </a>
+                        ) : (
+                          <div
+                            className="flex h-16 w-16 items-center justify-center rounded-full bg-white/90 text-slate-800 shadow-xl"
+                            aria-hidden
+                          >
+                            <Play className="h-8 w-8 pl-1" fill="currentColor" />
+                          </div>
+                        )}
+                        {/* Mini stats overlay */}
+                        <div className="absolute inset-x-0 bottom-0 flex items-center justify-between bg-gradient-to-t from-black/60 to-transparent px-4 pb-3 pt-6">
+                          <span className="text-xs font-medium text-white/90 truncate pr-2">
+                            {challenge.name}
+                          </span>
+                          <div className="flex items-center gap-1.5 rounded-full bg-white/20 px-2.5 py-1 text-xs font-semibold text-white backdrop-blur-sm shrink-0">
+                            <Flame className="h-3.5 w-3.5 text-orange-300" aria-hidden />
+                            {challenge.progress}% done
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-200/80 bg-white px-4 py-3">
+                    <p className="text-sm font-semibold text-slate-800 truncate">
+                      {challenge.todayTask.title}
+                    </p>
+                    {link && (
+                      <a
+                        href={link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-100 hover:border-slate-300"
+                      >
+                        {parsed ? "Open in YouTube" : "Open link"}
+                        <Play className="h-3.5 w-3.5" aria-hidden />
+                      </a>
+                    )}
                   </div>
                 </div>
-              </div>
-            </div>
+              )
+            })()}
 
             {/* Action bar */}
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200/80 pb-5">

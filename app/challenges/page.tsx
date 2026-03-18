@@ -1,7 +1,8 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import {
   Trophy, Target, Calendar, Clock, Lock, Upload, CheckCircle2, XCircle,
   Flame, AlertTriangle, ChevronRight, History, Users, Mail, X, Check,
@@ -14,12 +15,11 @@ interface Supporter {
   id: string
   email: string
   status: "pending" | "accepted" | "declined"
-  /** True when added via "Share via WhatsApp" (invite link) instead of email */
-  viaLink?: boolean
 }
 
 type ActiveChallenge = {
-  id: number
+  id: string
+  templateId: string
   name: string
   difficulty: number
   currentDay: number
@@ -36,6 +36,19 @@ type ActiveChallenge = {
   deadlineUrgent: boolean
 }
 
+/** From GET /api/challenges/my */
+type UserEnrollment = {
+  id: string
+  userId?: string
+  challengeTemplateId: string
+  status: string
+  startDate?: string
+  endDate?: string
+  currentDay?: number
+  missedDaysCount?: number
+  createdAt?: string
+}
+
 type LibraryChallenge = {
   id: number
   name: string
@@ -46,6 +59,7 @@ type LibraryChallenge = {
   completionRate: number
   description: string
   gradientClass: string
+  templateId?: string
 }
 
 type HistoryChallenge = {
@@ -65,42 +79,14 @@ const APP_GRADIENT = "linear-gradient(135deg, #db2777 0%, #ea580c 35%, #2563eb 7
 const CARD_BASE = "rounded-2xl border border-slate-200/80 bg-white shadow-sm"
 const MAX_ACTIVE = 2
 
-const INITIAL_ACTIVE: ActiveChallenge[] = [
-  {
-    id: 1,
-    name: "30-Day Python Mastery",
-    difficulty: 4,
-    currentDay: 12,
-    totalDays: 30,
-    daysRemaining: 18,
-    todayTask: "Complete 3 LeetCode medium problems using Python.",
-    progress: 40,
-    reward: 450,
-    track: "Technical Skills",
-    weekLabel: "Week 2 · Build",
-    accentFrom: "#db2777",
-    accentTo: "#ea580c",
-    deadline: "Tonight 11:59 PM",
-    deadlineUrgent: true,
-  },
-  {
-    id: 2,
-    name: "14-Day LinkedIn Growth",
-    difficulty: 2,
-    currentDay: 7,
-    totalDays: 14,
-    daysRemaining: 7,
-    todayTask: "Post a career insight and engage with 5 posts in your industry.",
-    progress: 50,
-    reward: 140,
-    track: "Career Development",
-    weekLabel: "Week 1 · Foundation",
-    accentFrom: "#2563eb",
-    accentTo: "#7c3aed",
-    deadline: "Tomorrow 11:59 PM",
-    deadlineUrgent: false,
-  },
-]
+const TRACK_ACCENTS: Record<string, { from: string; to: string }> = {
+  git: { from: "#db2777", to: "#ea580c" },
+  cybersecurity: { from: "#2563eb", to: "#7c3aed" },
+  sql: { from: "#0891b2", to: "#0e7490" },
+  data: { from: "#059669", to: "#047857" },
+  ai: { from: "#7c3aed", to: "#5b21b6" },
+  default: { from: "#db2777", to: "#ea580c" },
+}
 
 const LIBRARY: LibraryChallenge[] = [
   {
@@ -221,28 +207,224 @@ function DifficultyDots({ level, max = 5 }: { level: number; max?: number }) {
 // ── Page ────────────────────────────────────────────────────────────────────
 
 export default function ChallengesPage() {
+  const router = useRouter()
   const [activeTab, setActiveTab] = useState("active")
   const [trackFilter, setTrackFilter] = useState("All")
   const [selectedId, setSelectedId] = useState<number | null>(null)
   const [showLockIn, setShowLockIn] = useState(false)
-  const [showProofFor, setShowProofFor] = useState<number | null>(null)
-  const [showQuitFor, setShowQuitFor] = useState<number | null>(null)
+  const [showProofFor, setShowProofFor] = useState<string | null>(null)
+  const [showQuitFor, setShowQuitFor] = useState<string | null>(null)
+  const [quitError, setQuitError] = useState<string | null>(null)
 
-  const [activeChallenges, setActiveChallenges] = useState<ActiveChallenge[]>(INITIAL_ACTIVE)
+  const [activeChallenges, setActiveChallenges] = useState<ActiveChallenge[]>([])
+  const [activeLoading, setActiveLoading] = useState(true)
   const [history, setHistory] = useState<HistoryChallenge[]>(INITIAL_HISTORY)
 
   const [lockInStep, setLockInStep] = useState<"invite" | "confirm" | "success">("invite")
   const [supporters, setSupporters] = useState<Supporter[]>([])
   const [supporterEmail, setSupporterEmail] = useState("")
   const [emailError, setEmailError] = useState("")
+  const [joinInProgress, setJoinInProgress] = useState(false)
+
+  const [libraryChallenges, setLibraryChallenges] = useState<LibraryChallenge[]>(LIBRARY)
+  const [libraryLoading, setLibraryLoading] = useState(false)
+
+  type ChallengeTemplateApi = {
+    id?: string
+    name?: string
+    track?: string
+    difficulty?: number
+    description?: string
+    durationDays?: number
+    dailyRewardEliteScore?: number
+    completionBonus?: number
+    completionRateCached?: number | null
+  }
+
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    const token = (localStorage.getItem("elitescore_access_token") ?? "").trim()
+    if (!token) {
+      setLibraryLoading(false)
+      setActiveLoading(false)
+      router.replace("/login")
+      return
+    }
+    const userId = localStorage.getItem("elitescore_user_id")
+
+    setLibraryLoading(true)
+    setActiveLoading(true)
+    const headers: HeadersInit = {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    }
+    if (userId) {
+      ;(headers as Record<string, string>)["X-User-Id"] = userId
+    }
+
+    let cancelled = false
+
+    Promise.all([
+      fetch("/api/challenges", { method: "GET", headers }).then(async (res) => {
+        const data = await res.json().catch(() => null)
+        if (process.env.NODE_ENV === "development") {
+          console.debug("[Challenges Library] GET /api/challenges", {
+            status: res.status,
+            ok: res.ok,
+            isArray: Array.isArray(data),
+            count: Array.isArray(data) ? data.length : undefined,
+          })
+        }
+        if (res.status === 401) {
+          localStorage.removeItem("elitescore_access_token")
+          localStorage.removeItem("elitescore_logged_in")
+          router.replace("/login")
+          return null
+        }
+        if (!res.ok || !Array.isArray(data)) return null
+        return data as ChallengeTemplateApi[]
+      }),
+      fetch("/api/challenges/my", { method: "GET", headers }).then(async (res) => {
+        const data = await res.json().catch(() => null)
+        if (process.env.NODE_ENV === "development") {
+          console.debug("[Challenges Active] GET /api/challenges/my", {
+            status: res.status,
+            ok: res.ok,
+            isArray: Array.isArray(data),
+            count: Array.isArray(data) ? data.length : undefined,
+          })
+        }
+        if (res.status === 401) {
+          localStorage.removeItem("elitescore_access_token")
+          localStorage.removeItem("elitescore_logged_in")
+          router.replace("/login")
+          return null
+        }
+        if (!res.ok || !Array.isArray(data)) return null
+        return data as UserEnrollment[]
+      }),
+    ])
+      .then(([templates, enrollments]) => {
+        if (cancelled) return
+
+        if (templates) {
+          const mapped: LibraryChallenge[] = templates.map((t, index) => {
+            const duration = typeof t.durationDays === "number" ? t.durationDays : 0
+            const reward =
+              typeof t.completionBonus === "number"
+                ? t.completionBonus
+                : typeof t.dailyRewardEliteScore === "number" && duration > 0
+                ? t.dailyRewardEliteScore * duration
+                : 0
+            const completionRate =
+              typeof t.completionRateCached === "number" ? Math.round(t.completionRateCached) : 0
+
+            const track = t.track ?? "General"
+            const lowerTrack = track.toLowerCase()
+            let gradientClass = "from-amber-500/90 to-orange-500/90"
+            if (lowerTrack.includes("sql") || lowerTrack.includes("data")) {
+              gradientClass = "from-blue-500/90 to-indigo-500/90"
+            } else if (lowerTrack.includes("ai") || lowerTrack.includes("ml")) {
+              gradientClass = "from-violet-500/90 to-purple-500/90"
+            } else if (lowerTrack.includes("cyber") || lowerTrack.includes("security")) {
+              gradientClass = "from-emerald-500/90 to-teal-500/90"
+            }
+
+            return {
+              id: index + 1,
+              name: t.name ?? "Challenge",
+              track,
+              difficulty: typeof t.difficulty === "number" ? t.difficulty : 3,
+              duration,
+              reward,
+              completionRate,
+              description: t.description ?? "",
+              gradientClass,
+              templateId: t.id,
+            }
+          })
+          if (mapped.length > 0) setLibraryChallenges(mapped)
+        }
+
+        if (enrollments && enrollments.length > 0 && templates && templates.length > 0) {
+          const active: ActiveChallenge[] = enrollments
+            .filter((e) => String(e.status).toLowerCase() === "active")
+            .map((enrollment) => {
+              const tpl = templates.find((t) => t.id === enrollment.challengeTemplateId)
+              const duration =
+                typeof tpl?.durationDays === "number" ? tpl.durationDays : 0
+              const currentDay = typeof enrollment.currentDay === "number" ? enrollment.currentDay : 1
+              const totalDays = duration || 1
+              const daysRemaining = Math.max(0, totalDays - currentDay)
+              const progress = totalDays > 0 ? Math.round((currentDay / totalDays) * 100) : 0
+              const reward =
+                typeof tpl?.completionBonus === "number"
+                  ? tpl.completionBonus
+                  : typeof tpl?.dailyRewardEliteScore === "number" && duration > 0
+                  ? tpl.dailyRewardEliteScore * duration
+                  : 0
+              const track = tpl?.track ?? "General"
+              const accents = TRACK_ACCENTS[track?.toLowerCase() ?? ""] ?? TRACK_ACCENTS.default
+              let endDate: Date | null = null
+              if (enrollment.endDate) {
+                endDate = new Date(enrollment.endDate)
+              }
+              const isToday =
+                endDate &&
+                endDate.getDate() === new Date().getDate() &&
+                endDate.getMonth() === new Date().getMonth() &&
+                endDate.getFullYear() === new Date().getFullYear()
+              const weekNum = Math.ceil(currentDay / 7) || 1
+              return {
+                id: enrollment.id,
+                templateId: enrollment.challengeTemplateId,
+                name: tpl?.name ?? "Challenge",
+                difficulty: typeof tpl?.difficulty === "number" ? tpl.difficulty : 3,
+                currentDay,
+                totalDays,
+                daysRemaining,
+                todayTask: "Complete today's task — open challenge for details.",
+                progress,
+                reward,
+                track,
+                weekLabel: `Week ${weekNum}`,
+                accentFrom: accents.from,
+                accentTo: accents.to,
+                deadline: isToday ? "Tonight 11:59 PM" : endDate ? endDate.toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "—",
+                deadlineUrgent: !!isToday,
+              }
+            })
+          setActiveChallenges(active)
+        }
+      })
+      .catch((err) => {
+        if (process.env.NODE_ENV === "development") {
+          console.debug("[Challenges] fetch error", err)
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setLibraryLoading(false)
+          setActiveLoading(false)
+        }
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [router])
 
   const activeCount = activeChallenges.length
   const canJoin = activeCount < MAX_ACTIVE
-  const selectedLibrary = LIBRARY.find((c) => c.id === selectedId)
-  const alreadyEnrolled = selectedId !== null && activeChallenges.some((c) => c.id === selectedId)
+  const selectedLibrary = libraryChallenges.find((c) => c.id === selectedId) ?? null
+  const alreadyEnrolled =
+    selectedLibrary?.templateId != null &&
+    activeChallenges.some((c) => c.templateId === selectedLibrary.templateId)
 
   const filteredLibrary =
-    trackFilter === "All" ? LIBRARY : LIBRARY.filter((c) => c.track === trackFilter)
+    trackFilter === "All"
+      ? libraryChallenges
+      : libraryChallenges.filter((c) => c.track === trackFilter)
 
   const validateEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
 
@@ -250,36 +432,12 @@ export default function ChallengesPage() {
     if (!supporterEmail.trim()) { setEmailError("Email is required"); return }
     if (!validateEmail(supporterEmail)) { setEmailError("Please enter a valid email"); return }
     if (supporters.length >= 3) { setEmailError("Maximum 3 supporters allowed"); return }
-    if (supporters.some((s) => !s.viaLink && s.email.toLowerCase() === supporterEmail.toLowerCase())) {
+    if (supporters.some((s) => s.email.toLowerCase() === supporterEmail.toLowerCase())) {
       setEmailError("Already added"); return
     }
     setSupporters([...supporters, { id: Date.now().toString(), email: supporterEmail, status: "pending" }])
     setSupporterEmail("")
     setEmailError("")
-  }
-
-  const hasViaLinkSupporter = supporters.some((s) => s.viaLink)
-  const inviterName =
-    typeof window !== "undefined"
-      ? (localStorage.getItem("elitescore_user_name") ?? "A friend")
-      : "A friend"
-  const inviteUrl =
-    typeof window !== "undefined"
-      ? `${window.location.origin}/spectator/join?challenge=${encodeURIComponent(selectedLibrary?.name ?? "challenge")}&from=${encodeURIComponent(inviterName)}`
-      : ""
-  const whatsappMessage = `I'm locking in a challenge on EliteScore. Be my spectator — sign up here: ${inviteUrl}`
-  const handleShareViaWhatsApp = () => {
-    if (!inviteUrl) return
-    const encoded = encodeURIComponent(whatsappMessage)
-    try {
-      navigator.clipboard.writeText(inviteUrl)
-    } catch {
-      // ignore
-    }
-    window.open(`https://wa.me/?text=${encoded}`, "_blank", "noopener,noreferrer")
-    if (!hasViaLinkSupporter) {
-      setSupporters((prev) => [...prev, { id: "via-link", email: "Via invite link", status: "pending", viaLink: true }])
-    }
   }
 
   const handleRemoveSupporter = (id: string) =>
@@ -295,36 +453,74 @@ export default function ChallengesPage() {
   }
 
   const handleSendInvites = () => {
-    if (supporters.length === 0) { setEmailError("Add at least one supporter to continue"); return }
+    if (supporters.length === 0) { setEmailError("Add at least one spectator email to continue"); return }
     setLockInStep("confirm")
   }
 
-  const handleConfirmLockIn = () => {
+  const handleConfirmLockIn = async () => {
+    if (joinInProgress) return
     if (!selectedLibrary || alreadyEnrolled) return
-    const newChallenge: ActiveChallenge = {
-      id: selectedLibrary.id,
-      name: selectedLibrary.name,
-      difficulty: selectedLibrary.difficulty,
-      currentDay: 1,
-      totalDays: selectedLibrary.duration,
-      daysRemaining: selectedLibrary.duration - 1,
-      todayTask: `Start your first day — ${selectedLibrary.description.slice(0, 60)}...`,
-      progress: 0,
-      reward: selectedLibrary.reward,
-      track: selectedLibrary.track,
-      weekLabel: "Week 1 · Start",
-      accentFrom: "#db2777",
-      accentTo: "#ea580c",
-      deadline: "Tonight 11:59 PM",
-      deadlineUrgent: false,
+    if (!selectedLibrary.templateId) {
+      setEmailError("This challenge cannot be joined yet. Missing template id.")
+      return
     }
-    setActiveChallenges((prev) => [...prev, newChallenge])
+    const primary = supporters[0]
+    if (!primary) {
+      setEmailError("Add at least one spectator email before locking in.")
+      return
+    }
+
+    setJoinInProgress(true)
+    setEmailError("")
+
+    try {
+      const token = typeof window !== "undefined" ? localStorage.getItem("elitescore_access_token") : null
+      if (!token) {
+        setEmailError("Not logged in. Please sign in again.")
+        setJoinInProgress(false)
+        return
+      }
+      const userId = typeof window !== "undefined" ? localStorage.getItem("elitescore_user_id") : null
+      const headers: HeadersInit = {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      }
+      if (userId) {
+        ;(headers as Record<string, string>)["X-User-Id"] = userId
+      }
+
+      const res = await fetch(`/api/challenges/${selectedLibrary.templateId}/join`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ spectatorEmail: primary.email }),
+      })
+      const data = await res.json().catch(() => null)
+      if (!res.ok) {
+        const detail =
+          (data && typeof data === "object" && "detail" in data && (data as any).detail) ||
+          (data && typeof data === "object" && "message" in data && (data as any).message) ||
+          "Could not join challenge."
+        setEmailError(String(detail))
+        setJoinInProgress(false)
+        return
+      }
+    } catch (err) {
+      if (process.env.NODE_ENV === "development") {
+        console.debug("[Challenges] join error", err)
+      }
+      setEmailError("Network error while joining. Please try again.")
+      setJoinInProgress(false)
+      return
+    }
+
     setLockInStep("success")
     setTimeout(() => {
       setShowLockIn(false)
       setSelectedId(null)
       setLockInStep("invite")
       setSupporters([])
+      setJoinInProgress(false)
+      window.location.reload()
     }, 2200)
   }
 
@@ -336,25 +532,65 @@ export default function ChallengesPage() {
     setEmailError("")
   }
 
-  const handleConfirmQuit = () => {
-    if (showQuitFor === null) return
+  const handleConfirmQuit = async () => {
+    if (showQuitFor == null) return
     const quitting = activeChallenges.find((c) => c.id === showQuitFor)
-    if (quitting) {
-      setActiveChallenges((prev) => prev.filter((c) => c.id !== showQuitFor))
-      setHistory((prev) => [
-        {
-          id: Date.now(),
-          name: quitting.name,
-          difficulty: quitting.difficulty,
-          duration: quitting.totalDays,
-          status: "failed",
-          completedDate: new Date().toISOString().slice(0, 10),
-          eliteScoreImpact: "-60",
-          streakBonus: "0",
-        },
-        ...prev,
-      ])
+    if (!quitting) {
+      setShowQuitFor(null)
+      return
     }
+
+    const isLocal = quitting.id.startsWith("local-")
+    if (!isLocal) {
+      try {
+        const token = typeof window !== "undefined" ? localStorage.getItem("elitescore_access_token") : null
+        if (!token) {
+          setQuitError("Not logged in. Please sign in again.")
+          return
+        }
+        const userId = typeof window !== "undefined" ? localStorage.getItem("elitescore_user_id") : null
+        const headers: HeadersInit = {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        }
+        if (userId) {
+          ;(headers as Record<string, string>)["X-User-Id"] = userId
+        }
+        const res = await fetch(`/api/challenges/${quitting.id}/abandon`, {
+          method: "POST",
+          headers,
+        })
+        const data = await res.json().catch(() => null)
+        if (!res.ok) {
+          const detail =
+            (data && typeof data === "object" && "detail" in data && (data as { detail?: string }).detail) ||
+            (data && typeof data === "object" && "message" in data && (data as { message?: string }).message) ||
+            "Could not quit challenge."
+          setQuitError(String(detail))
+          return
+        }
+      } catch (err) {
+        if (process.env.NODE_ENV === "development") console.debug("[Challenges] abandon error", err)
+        setQuitError("Network error. Please try again.")
+        return
+      }
+    }
+
+    setQuitError(null)
+    setActiveChallenges((prev) => prev.filter((c) => c.id !== showQuitFor))
+    setHistory((prev) => [
+      {
+        id: Date.now(),
+        name: quitting.name,
+        difficulty: quitting.difficulty,
+        duration: quitting.totalDays,
+        status: "failed",
+        completedDate: new Date().toISOString().slice(0, 10),
+        eliteScoreImpact: "-35",
+        streakBonus: "0",
+      },
+      ...prev,
+    ])
     setShowQuitFor(null)
   }
 
@@ -433,16 +669,24 @@ export default function ChallengesPage() {
       {activeTab === "active" && (
         <div className="space-y-6">
 
+          {activeLoading && (
+            <div className={`${CARD_BASE} flex items-center justify-center p-8`}>
+              <p className="text-sm text-slate-500">Loading your active challenges...</p>
+            </div>
+          )}
+
           {/* Today's tasks */}
           <section className={`${CARD_BASE} p-6`} aria-labelledby="tasks-heading">
             <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-500">Today · Daily tasks</p>
             <h2 id="tasks-heading" className="mt-0.5 text-lg font-bold text-slate-800">
-              {activeChallenges.length > 0
+              {activeLoading
+                ? "Loading..."
+                : activeChallenges.length > 0
                 ? `${activeChallenges.length} task${activeChallenges.length > 1 ? "s" : ""} due today`
                 : "No tasks today"}
             </h2>
 
-            {activeChallenges.length > 0 ? (
+            {!activeLoading && activeChallenges.length > 0 ? (
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
                 {activeChallenges.map((c) => (
                   <div key={c.id} className="overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-sm">
@@ -462,15 +706,16 @@ export default function ChallengesPage() {
                         <Clock className="h-3.5 w-3.5 shrink-0" aria-hidden />
                         Deadline: {c.deadline}
                       </p>
-                      <button
-                        type="button"
-                        onClick={() => setShowProofFor(c.id)}
-                        className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-xl py-2.5 text-xs font-bold text-white transition-transform hover:scale-[1.02]"
-                        style={{ background: APP_GRADIENT }}
-                        aria-label={`Submit proof for ${c.name}`}
-                      >
-                        <Upload className="h-3.5 w-3.5" aria-hidden /> Submit Proof
-                      </button>
+                      {c.templateId ? (
+                        <Link
+                          href={`/challenges/${c.templateId}${c.currentDay > 0 ? `?day=${c.currentDay}` : ""}`}
+                          className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-xl py-2.5 text-xs font-bold text-white transition-transform hover:scale-[1.02]"
+                          style={{ background: APP_GRADIENT }}
+                          aria-label={`View details for day ${c.currentDay} — ${c.name}`}
+                        >
+                          View details <ArrowUpRight className="h-3.5 w-3.5" aria-hidden />
+                        </Link>
+                      ) : null}
                     </div>
                   </div>
                 ))}
@@ -576,19 +821,33 @@ export default function ChallengesPage() {
                         <p className="mt-0.5 text-xs leading-relaxed text-slate-700">{challenge.todayTask}</p>
                       </div>
 
-                      <div className="mt-3 grid grid-cols-2 gap-2">
-                        <button
-                          type="button"
-                          onClick={() => setShowProofFor(challenge.id)}
-                          className="flex items-center justify-center gap-1.5 rounded-xl py-2.5 text-xs font-bold text-white transition-transform hover:scale-[1.02]"
-                          style={{ background: APP_GRADIENT }}
-                          aria-label={`Submit proof for ${challenge.name}`}
+                      {challenge.templateId && (
+                        <Link
+                          href={`/challenges/${challenge.templateId}`}
+                          className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white py-2.5 text-xs font-semibold text-slate-600 transition-colors hover:bg-slate-50"
                         >
-                          <Upload className="h-3.5 w-3.5" aria-hidden /> Submit Proof
-                        </button>
+                          View course outline <ArrowUpRight className="h-3.5 w-3.5" aria-hidden />
+                        </Link>
+                      )}
+
+                      <div className="mt-3 grid grid-cols-2 gap-2">
+                        {challenge.templateId ? (
+                          <Link
+                            href={`/challenges/${challenge.templateId}${challenge.currentDay > 0 ? `?day=${challenge.currentDay}` : ""}`}
+                            className="flex items-center justify-center gap-1.5 rounded-xl py-2.5 text-xs font-bold text-white transition-transform hover:scale-[1.02]"
+                            style={{ background: APP_GRADIENT }}
+                            aria-label={`View details for day ${challenge.currentDay} — ${challenge.name}`}
+                          >
+                            View details <ArrowUpRight className="h-3.5 w-3.5" aria-hidden />
+                          </Link>
+                        ) : (
+                          <span className="flex items-center justify-center rounded-xl border border-slate-200 bg-slate-100 py-2.5 text-xs font-medium text-slate-400">
+                            View details
+                          </span>
+                        )}
                         <button
                           type="button"
-                          onClick={() => setShowQuitFor(challenge.id)}
+                          onClick={() => { setQuitError(null); setShowQuitFor(challenge.id) }}
                           className="flex items-center justify-center rounded-xl border border-red-200 bg-white py-2.5 text-xs font-semibold text-red-500 transition-colors hover:bg-red-50"
                           aria-label={`Quit ${challenge.name}`}
                         >
@@ -700,16 +959,27 @@ export default function ChallengesPage() {
                     </div>
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={() => setSelectedId(challenge.id)}
-                    disabled={!canJoin}
-                    className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-xl py-2.5 text-xs font-bold text-white transition-transform hover:scale-[1.02] disabled:cursor-not-allowed disabled:opacity-50"
-                    style={{ background: APP_GRADIENT }}
-                    aria-label={`View details for ${challenge.name}`}
-                  >
-                    View Details <ChevronRight className="h-3.5 w-3.5" aria-hidden />
-                  </button>
+                  <div className="mt-3 flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedId(challenge.id)}
+                      disabled={!canJoin}
+                      className="flex-1 flex items-center justify-center gap-1.5 rounded-xl py-2.5 text-xs font-bold text-white transition-transform hover:scale-[1.02] disabled:cursor-not-allowed disabled:opacity-50"
+                      style={{ background: APP_GRADIENT }}
+                      aria-label={`View details for ${challenge.name}`}
+                    >
+                      View Details <ChevronRight className="h-3.5 w-3.5" aria-hidden />
+                    </button>
+                    {challenge.templateId && (
+                      <Link
+                        href={`/challenges/${challenge.templateId}`}
+                        className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-3 py-2 text-[11px] font-semibold text-slate-600 hover:bg-slate-50"
+                        aria-label={`Open ${challenge.name} full details`}
+                      >
+                        Open
+                      </Link>
+                    )}
+                  </div>
 
                   {!canJoin && (
                     <p className="mt-1.5 text-center text-[10px] font-semibold uppercase tracking-wider text-orange-600">
@@ -886,6 +1156,15 @@ export default function ChallengesPage() {
 
             {/* Sticky footer — ends above bottom nav on mobile; button text forced visible */}
             <div className="shrink-0 border-t border-slate-200/80 bg-white px-4 py-3 sm:px-6 sm:py-4">
+              {selectedLibrary?.templateId && (
+                <Link
+                  href={`/challenges/${selectedLibrary.templateId}`}
+                  className="mb-3 flex w-full items-center justify-center gap-2 rounded-xl border-2 border-slate-200 bg-white py-3 text-sm font-semibold text-slate-700 transition-colors hover:border-slate-300 hover:bg-slate-50 active:scale-[0.98] min-h-[44px] touch-manipulation"
+                >
+                  View course outline
+                  <ArrowUpRight className="h-4 w-4 shrink-0" aria-hidden />
+                </Link>
+              )}
               <button
                 type="button"
                 onClick={handleLockInStart}
@@ -1006,21 +1285,6 @@ export default function ChallengesPage() {
                         {emailError && <p className="text-xs text-red-500">{emailError}</p>}
                       </div>
 
-                      <div className="flex items-center gap-2 pt-1">
-                        <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 sm:text-xs">Or invite via</span>
-                        <button
-                          type="button"
-                          onClick={handleShareViaWhatsApp}
-                          className="inline-flex items-center gap-1.5 rounded-xl border border-[#25D366]/40 bg-[#25D366]/10 px-3 py-2 text-xs font-semibold text-[#128C7E] hover:bg-[#25D366]/20 active:scale-[0.98] touch-manipulation"
-                          aria-label="Share invite link via WhatsApp"
-                        >
-                          <svg className="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-                            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
-                          </svg>
-                          WhatsApp
-                        </button>
-                      </div>
-
                       {supporters.length > 0 ? (
                         <div className="space-y-1.5">
                           <div className="flex items-center justify-between">
@@ -1030,17 +1294,9 @@ export default function ChallengesPage() {
                           {supporters.map((s) => (
                             <div key={s.id} className="flex items-center justify-between gap-2 rounded-xl border border-slate-200/80 bg-white p-2.5 shadow-sm">
                               <div className="flex min-w-0 items-center gap-2">
-                                {s.viaLink ? (
-                                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#25D366]/20 text-[#128C7E]" aria-hidden>
-                                    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
-                                      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
-                                    </svg>
-                                  </div>
-                                ) : (
-                                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white" style={{ background: APP_GRADIENT }} aria-hidden>
-                                    {s.email.charAt(0).toUpperCase()}
-                                  </div>
-                                )}
+                                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white" style={{ background: APP_GRADIENT }} aria-hidden>
+                                  {s.email.charAt(0).toUpperCase()}
+                                </div>
                                 <p className="truncate text-xs font-medium text-slate-800 sm:text-sm">{s.email}</p>
                               </div>
                               <button type="button" onClick={() => handleRemoveSupporter(s.id)} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-red-500 hover:bg-red-50 touch-manipulation" aria-label={`Remove ${s.email}`}>
@@ -1136,7 +1392,7 @@ export default function ChallengesPage() {
                 <div className="shrink-0 border-t border-slate-200/80 bg-white px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-6 sm:py-4">
                   <div className="flex gap-2 sm:gap-3">
                     <button type="button" onClick={() => setLockInStep("invite")} className="flex-1 rounded-xl border border-slate-200 bg-white py-3 text-sm font-semibold text-slate-600 hover:bg-slate-50 active:bg-slate-100 min-h-[48px] touch-manipulation">Back</button>
-                    <button type="button" onClick={handleConfirmLockIn} className="flex flex-1 items-center justify-center rounded-xl py-3 text-sm font-bold transition-transform active:scale-[0.98] min-h-[48px] touch-manipulation text-white [-webkit-text-fill-color:white] [text-shadow:0_1px_2px_rgba(0,0,0,0.2)]" style={{ background: APP_GRADIENT, color: "white" }}>I&apos;m committed — Lock In</button>
+                    <button type="button" onClick={handleConfirmLockIn} disabled={joinInProgress} className="flex flex-1 items-center justify-center rounded-xl py-3 text-sm font-bold transition-transform active:scale-[0.98] min-h-[48px] touch-manipulation text-white [-webkit-text-fill-color:white] [text-shadow:0_1px_2px_rgba(0,0,0,0.2)] disabled:opacity-70 disabled:pointer-events-none" style={{ background: APP_GRADIENT, color: "white" }}>{joinInProgress ? "Joining…" : "I'm committed — Lock In"}</button>
                   </div>
                 </div>
               </>
@@ -1254,41 +1510,57 @@ export default function ChallengesPage() {
       {/* ── Quit Confirmation Modal ── */}
       {showQuitFor !== null && (
         <div
-          className="fixed inset-0 z-50 flex items-end bg-black/40 p-4 backdrop-blur-sm sm:items-center"
-          onClick={() => setShowQuitFor(null)}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
+          onClick={() => { setQuitError(null); setShowQuitFor(null) }}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="quit-modal-title"
+          aria-describedby="quit-modal-desc"
         >
           <div
-            className="w-full rounded-2xl bg-white p-6 shadow-xl sm:mx-auto sm:max-w-md"
+            className="flex max-h-[85vh] w-full max-w-md flex-col rounded-2xl bg-white shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-start gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-red-100" aria-hidden>
-                <AlertTriangle className="h-5 w-5 text-red-500" />
-              </div>
-              <div>
-                <h3 className="text-base font-bold text-slate-800">Quit Challenge?</h3>
-                <p className="mt-1 text-sm leading-relaxed text-slate-500">
-                  Quitting results in a{" "}
-                  <strong className="text-red-600">−60 EliteScore penalty</strong> and marks this as failed. This
-                  cannot be undone.
-                </p>
+            <div className="flex flex-1 flex-col gap-4 overflow-y-auto p-6">
+              <div className="flex items-start gap-4">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-red-100" aria-hidden>
+                  <AlertTriangle className="h-6 w-6 text-red-600" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h2 id="quit-modal-title" className="text-lg font-bold text-slate-800">
+                    Quit this challenge?
+                  </h2>
+                  <p id="quit-modal-desc" className="mt-2 text-sm leading-relaxed text-slate-600">
+                    If you quit:
+                  </p>
+                  <ul className="mt-2 list-inside list-disc space-y-1 text-sm text-slate-600" aria-hidden>
+                    <li>Your EliteScore will be reduced by <strong className="font-semibold text-red-600">35 points</strong></li>
+                    <li>This challenge will be marked as <strong className="font-semibold text-slate-700">abandoned</strong></li>
+                    <li>This action <strong className="font-semibold text-slate-700">cannot be undone</strong></li>
+                  </ul>
+                  {quitError && (
+                    <p className="mt-3 text-sm font-medium text-red-600" role="alert">{quitError}</p>
+                  )}
+                </div>
               </div>
             </div>
-            <div className="mt-5 flex gap-3">
-              <button
-                type="button"
-                onClick={() => setShowQuitFor(null)}
-                className="flex-1 rounded-xl border border-slate-200 bg-white py-3 text-sm font-semibold text-slate-600 hover:bg-slate-50"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleConfirmQuit}
-                className="flex-1 rounded-xl bg-red-500 py-3 text-sm font-bold text-white transition-colors hover:bg-red-600"
-              >
-                Quit Challenge
-              </button>
+            <div className="shrink-0 border-t border-slate-100 p-4">
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => { setQuitError(null); setShowQuitFor(null) }}
+                  className="flex-1 rounded-xl border border-slate-200 bg-white py-3 text-sm font-semibold text-slate-600 hover:bg-slate-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmQuit}
+                  className="flex-1 rounded-xl bg-red-500 py-3 text-sm font-bold text-white transition-colors hover:bg-red-600"
+                >
+                  Quit Challenge
+                </button>
+              </div>
             </div>
           </div>
         </div>

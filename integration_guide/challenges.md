@@ -1,18 +1,21 @@
 # EliteScore Challenges — API Reference
 
-**Base URL:** `https://elitescore-challenges-k554v.ondigitalocean.app/` (dev) or your deployed domain  
-**OpenAPI / Swagger UI:** `/swagger-ui.html` · `/api-docs`
+**Base URL:** `https://elitescore-challenges-k554v.ondigitalocean.app`  
+**OpenAPI / Swagger UI:** `https://elitescore-challenges-k554v.ondigitalocean.app/swagger-ui.html` · `https://elitescore-challenges-k554v.ondigitalocean.app/api-docs`
 
 ---
 
 ## Authentication
 
-| Environment | Mechanism |
-|-------------|-----------|
-| **Production** (`!dev` profile) | `Authorization: Bearer <token>`. JWT validated via JWKS; `sub` injected as `X-User-Id` header. |
-| **Dev** (`dev` profile) | Pass `X-User-Id: <uuid>` directly. JWT validation disabled; all routes `permitAll`. |
+All protected endpoints require a valid JWT.
 
-Admin endpoints require the user to exist in the `admins` table (`ROLE_ADMIN`).
+| Header | Value |
+|--------|-------|
+| **Authorization** | `Bearer <supabase_session_access_token>` |
+
+The JWT is validated via Supabase JWKS. The `sub` claim (user ID) is injected internally as `X-User-Id`; clients send the bearer token only.
+
+**Frontend:** Use `session.access_token` from Supabase Auth and send `Authorization: Bearer <token>` on every API request. To obtain the token: signup or login via the **Auth API** (see `docs/auth.endpoints`); that service is verified working without 401 when the client sends a valid Bearer token.
 
 ---
 
@@ -31,6 +34,7 @@ All errors follow [RFC 9457 Problem Details](https://www.rfc-editor.org/rfc/rfc9
 
 | Status | When |
 |--------|------|
+| 401 | Missing or invalid JWT |
 | 400 | Validation failure, missing header, malformed body |
 | 403 | User does not own the resource |
 | 404 | Entity not found |
@@ -49,7 +53,7 @@ All errors follow [RFC 9457 Problem Details](https://www.rfc-editor.org/rfc/rfc9
 **Auth:** required (User)  
 **Produces:** application/json
 
-**Headers:** `X-User-Id` (uuid) — required in dev; set by JWT filter in prod
+**Headers:** `Authorization: Bearer <token>`
 
 **Responses:**
 
@@ -60,18 +64,21 @@ All errors follow [RFC 9457 Problem Details](https://www.rfc-editor.org/rfc/rfc9
   - `streaks` — `{ streakCurrent, streakLongest, lastActiveAt }`
   - `recentScoreGains` — last 10 score events: `{ eventType, eliteScoreDelta, createdAt }[]`
   - `leaderboardPreview` — `{ title, summary, entries }` (nearby peers)
-  - `recommendedChallenges` — up to 5 personalized templates (excludes enrolled, prefers user's track)
+  - `recommendedChallenges` — up to 5 templates (excludes enrolled, sorted by completion rate then difficulty)
 - **404 Not Found** — User not found or not in leaderboard Body: ProblemDetails
 - **401 Unauthorized** — Missing or invalid token Body: ProblemDetails
 
 **Notes:**
 
-- Single round-trip for the home view. Recommendations exclude challenges the user has enrolled in (any status); sorts by completion rate then difficulty. If user has a `track`, same-track challenges appear first.
+- Single round-trip for the home view. Recommendations exclude challenges the user has enrolled in (any status); sorted by completion rate then difficulty.
+- The `streaks` field (`streakCurrent`, `streakLongest`, `lastActiveAt`) and `leaderboardPreview` are embedded directly — no separate endpoint call is needed for these on the home screen.
 
 ---
 
 ## Resource: ChallengeResource  
 **Path Prefix:** `/api/challenges`
+
+Missed days and challenge failure are applied automatically by the backend (scheduler + resubmit flow). There are no endpoints for manually failing a challenge or penalizing a day — see **Automated Challenge Lifecycle** below.
 
 ### GET /api/challenges
 
@@ -79,7 +86,7 @@ All errors follow [RFC 9457 Problem Details](https://www.rfc-editor.org/rfc/rfc9
 **Auth:** required (User)  
 **Produces:** application/json
 
-**Headers:** `X-User-Id` (dev) or `Authorization: Bearer` (prod)
+**Headers:** `Authorization: Bearer <token>`
 
 **Responses:**
 
@@ -103,7 +110,7 @@ All errors follow [RFC 9457 Problem Details](https://www.rfc-editor.org/rfc/rfc9
 
 - `templateId` (uuid) — required
 
-**Headers:** `X-User-Id` (dev) or `Authorization: Bearer` (prod)
+**Headers:** `Authorization: Bearer <token>`
 
 **Responses:**
 
@@ -123,7 +130,7 @@ All errors follow [RFC 9457 Problem Details](https://www.rfc-editor.org/rfc/rfc9
 **Auth:** required (User)  
 **Produces:** application/json
 
-**Headers:** `X-User-Id` (uuid) — required in dev; set by JWT filter in prod
+**Headers:** `Authorization: Bearer <token>`
 
 **Responses:**
 
@@ -132,14 +139,14 @@ All errors follow [RFC 9457 Problem Details](https://www.rfc-editor.org/rfc/rfc9
 
 **Notes:**
 
-- Returns enrollments for the user identified by `X-User-Id` / JWT `sub`.
+- Returns enrollments for the user identified by JWT `sub`.
 - Fields: `id`, `userId`, `challengeTemplateId`, `status`, `startDate`, `endDate`, `currentDay`, `missedDaysCount`, `createdAt`.
 
 ---
 
 ### POST /api/challenges/{templateId}/join
 
-**Summary:** Join (start) a challenge. Creates a `UserChallenge` with `status=active` and `currentDay=0`.  
+**Summary:** Join (start) a challenge. Creates a `UserChallenge` with `status=active`, `currentDay=0`, and sends invite/welcome email to `spectatorEmail`.  
 **Auth:** required (User)  
 **Consumes:** application/json  
 **Produces:** application/json
@@ -148,7 +155,7 @@ All errors follow [RFC 9457 Problem Details](https://www.rfc-editor.org/rfc/rfc9
 
 - `templateId` (uuid) — required
 
-**Headers:** `X-User-Id` (uuid) — required
+**Headers:** `Authorization: Bearer <token>`
 
 **Request Body:**
 
@@ -173,6 +180,7 @@ All errors follow [RFC 9457 Problem Details](https://www.rfc-editor.org/rfc/rfc9
 **Notes:**
 
 - Creates spectator link for accountability.
+- Sends invite/welcome email to `spectatorEmail` immediately after successful join.
 - Fails if user is already enrolled in the same template.
 
 ---
@@ -188,7 +196,7 @@ All errors follow [RFC 9457 Problem Details](https://www.rfc-editor.org/rfc/rfc9
 
 - `userChallengeId` (uuid) — required
 
-**Headers:** `X-User-Id` (uuid) — required
+**Headers:** `Authorization: Bearer <token>`
 
 **Request Body:**
 
@@ -225,11 +233,10 @@ All errors follow [RFC 9457 Problem Details](https://www.rfc-editor.org/rfc/rfc9
 
 **Notes:**
 
-- **AI verification outcomes:**
-  - `pass` (confidence >= 0.75) → proof `verified`, score awarded, `currentDay` advanced
-  - `pending_admin_review` (0.60–0.74) → queued for admin, no penalty
-  - `rejected` (< 0.60) → proof `needs_review`, 24-hour resubmit window
-- OpenAI failure (network, rate-limit, parse) → `pending_admin_review` (user not penalized).
+- **AI verification is fully automatic — no admin involvement:**
+  - `pass` (AI confidence >= 0.75) → proof `verified`, score awarded, `currentDay` advanced immediately
+  - `rejected` (AI confidence < 0.75, or insufficient proof) → proof status `needs_review`, 24-hour resubmit window opened, AI feedback shown to user
+- If AI is temporarily unavailable (network/rate-limit) → user also gets the 24-hr resubmit window with a retry message.
 
 ---
 
@@ -245,7 +252,7 @@ All errors follow [RFC 9457 Problem Details](https://www.rfc-editor.org/rfc/rfc9
 - `userChallengeId` (uuid) — required
 - `submissionId` (uuid) — required
 
-**Headers:** `X-User-Id` (uuid) — required
+**Headers:** `Authorization: Bearer <token>`
 
 **Request Body:** Same as `POST /api/challenges/{userChallengeId}/proofs`
 
@@ -261,7 +268,8 @@ All errors follow [RFC 9457 Problem Details](https://www.rfc-editor.org/rfc/rfc9
 
 **Notes:**
 
-- Resubmit outcomes: `pass` → score awarded; `pending_admin_review` → escalated; `rejected` (attempt 2) → immediate missed-day penalty, no further retries.
+- Resubmit outcomes: `pass` → score awarded, day advanced; `rejected` (attempt 2) → immediate missed-day penalty applied automatically, no further retries.
+- If `missedDaysCount` reaches `maxMissedDays` (default 3) after this missed day, the challenge is auto-failed.
 
 ---
 
@@ -275,7 +283,7 @@ All errors follow [RFC 9457 Problem Details](https://www.rfc-editor.org/rfc/rfc9
 
 - `userChallengeId` (uuid) — required
 
-**Headers:** `X-User-Id` (uuid) — required
+**Headers:** `Authorization: Bearer <token>`
 
 **Responses:**
 
@@ -292,109 +300,19 @@ All errors follow [RFC 9457 Problem Details](https://www.rfc-editor.org/rfc/rfc9
 
 ---
 
-## Resource: AdminResource  
-**Path Prefix:** `/api/admin`
+## Automated Challenge Lifecycle
 
-All admin endpoints require `ROLE_ADMIN` (user in `admins` table).
+No admin manual actions. Everything happens automatically:
 
-### POST /api/admin/proofs/{submissionId}/verify
-
-**Summary:** Manually verify a proof — overrides AI decision.  
-**Auth:** required (Admin)  
-**Consumes:** application/json  
-**Produces:** application/json
-
-**Path Params:**
-
-- `submissionId` (uuid) — required
-
-**Headers:** `X-User-Id` (uuid) — required; must be admin in dev; JWT in prod
-
-**Request Body:**
-
-```json
-{
-  "verdict": "pass",
-  "verifierType": "admin",
-  "verifierUserId": "uuid",
-  "confidence": 0.95,
-  "reason": "Screenshot clearly shows completed module"
-}
-```
-
-| Field | Type | Required | Validation | Description |
-|-------|------|----------|------------|-------------|
-| verdict | string | Yes | `"pass"` \| `"fail"` | Decision |
-| verifierType | string | No | `"peer"` \| `"admin"` \| `"ai"` | Default `"admin"` |
-| verifierUserId | uuid | No | — | Who verified |
-| confidence | decimal | No | 0.0–1.0 | Confidence score |
-| reason | string | No | — | Explanation |
-
-**Responses:**
-
-- **200 OK** — Verification applied Body: `Verification`
-- **404 Not Found** — Submission not found Body: ProblemDetails
-- **409 Conflict** — Proof already in terminal status (`verified`/`rejected`) Body: ProblemDetails
-- **401 Unauthorized** — Not authenticated Body: ProblemDetails
-- **403 Forbidden** — Not admin Body: ProblemDetails
-
-**Notes:**
-
-- `pass` → proof `verified`, score awarded, day advanced, streak updated.
-- `fail` → proof `rejected`, no score change.
-
----
-
-### POST /api/admin/challenges/{userChallengeId}/fail
-
-**Summary:** Force-fail an active challenge. Applies the quit penalty (default -35).  
-**Auth:** required (Admin)  
-**Produces:** application/json
-
-**Path Params:**
-
-- `userChallengeId` (uuid) — required
-
-**Headers:** `X-User-Id` (uuid) — required; must be admin
-
-**Responses:**
-
-- **200 OK** — Challenge failed Body: `UserChallenge` (status = `"failed"`)
-- **404 Not Found** — User challenge not found Body: ProblemDetails
-- **409 Conflict** — Challenge not active Body: ProblemDetails
-- **401 Unauthorized** — Not authenticated Body: ProblemDetails
-- **403 Forbidden** — Not admin Body: ProblemDetails
-
-**Notes:**
-
-- Same effect as user abandoning; applies `failPenalty` (default -35).
-
----
-
-### POST /api/admin/challenges/{userChallengeId}/penalize-day/{day}
-
-**Summary:** Apply a missed-day penalty for a specific day (default -8 score).  
-**Auth:** required (Admin)  
-**Produces:** (204 No Content)
-
-**Path Params:**
-
-- `userChallengeId` (uuid) — required
-- `day` (int) — required, >= 1
-
-**Headers:** `X-User-Id` (uuid) — required; must be admin
-
-**Responses:**
-
-- **204 No Content** — Penalty applied
-- **400 Bad Request** — `day` < 1 Body: ProblemDetails
-- **404 Not Found** — User challenge not found Body: ProblemDetails
-- **401 Unauthorized** — Not authenticated Body: ProblemDetails
-- **403 Forbidden** — Not admin Body: ProblemDetails
-
-**Notes:**
-
-- If `missedDaysCount` reaches `maxMissedDays` (default 3), challenge is auto-failed.
+| Event | What triggers it | Outcome |
+|-------|-----------------|---------|
+| **Proof approved** | AI confidence ≥ 0.75 | Score awarded, `currentDay` advances, spectators emailed |
+| **Proof rejected** | AI confidence < 0.75 or insufficient proof | `needs_review` status, 24-hr resubmit window, AI feedback shown |
+| **Resubmit rejected** | AI rejects attempt 2 | Missed-day penalty applied immediately (-8), auto-fail if 3rd miss |
+| **Resubmit window expires** | 24 hrs pass with no resubmit (MissedDayScheduler, runs every 30 min) | Missed-day penalty applied, auto-fail if 3rd miss |
+| **Challenge auto-failed** | `missedDaysCount` reaches `maxMissedDays` (default 3) | Challenge `failed`, fail penalty applied (-35), spectators emailed |
+| **User abandons** | User calls `POST .../abandon` | Challenge `abandoned`, quit penalty applied (-35), spectators emailed |
+| **Challenge completed** | All days completed | Completion bonus (+50–100), spectators emailed |
 
 ---
 
@@ -412,7 +330,7 @@ All admin endpoints require `ROLE_ADMIN` (user in `admins` table).
 - `page` (int) — default 0
 - `size` (int) — default 20, max 100
 
-**Headers:** `X-User-Id` (dev) or `Authorization: Bearer` (prod)
+**Headers:** `Authorization: Bearer <token>`
 
 **Responses:**
 
@@ -424,49 +342,7 @@ All admin endpoints require `ROLE_ADMIN` (user in `admins` table).
 **Notes:**
 
 - Ranking order: `elite_score DESC` → `streak_current DESC` → `created_at ASC` → `id ASC`.
-
----
-
-### GET /api/leaderboard/preview
-
-**Summary:** Dashboard preview: your rank + 1 peer above + 1 peer below.  
-**Auth:** required (User)  
-**Produces:** application/json
-
-**Headers:** `X-User-Id` (uuid) — required
-
-**Responses:**
-
-- **200 OK** — Preview with summary and nearby entries Body: `LeaderboardPreviewResponse`
-  - `title`, `summary`: `{ currentRank, eliteScore, percentile }`
-  - `entries`: `{ userId, handle, displayName, avatarUrl, eliteScore, rank, isCurrentUser }[]`
-- **404 Not Found** — User not found (no leaderboard entry) Body: ProblemDetails
-- **401 Unauthorized** — Missing or invalid token Body: ProblemDetails
-
----
-
-## Resource: StreakResource  
-**Path Prefix:** `/api/streaks`
-
-### GET /api/streaks/me
-
-**Summary:** Get the authenticated user's streak information.  
-**Auth:** required (User)  
-**Produces:** application/json
-
-**Headers:** `X-User-Id` (uuid) — required
-
-**Responses:**
-
-- **200 OK** — Streak info Body: `StreakResponse`
-  - `streakCurrent`, `streakLongest`, `lastActiveAt`
-- **404 Not Found** — User not found Body: ProblemDetails
-- **401 Unauthorized** — Missing or invalid token Body: ProblemDetails
-
-**Notes:**
-
-- A streak day = any UTC calendar day with at least one `verified` proof.
-- Milestone bonuses: 7 days (+5), 14 days (+10), 21 days (+15), 30 days (+20).
+- For the compact rank-preview widget (your rank ± 1 peer) use the `leaderboardPreview` field returned by `GET /api/dashboard` — no separate endpoint call needed.
 
 ---
 
@@ -569,15 +445,14 @@ Spectator invite flow — **no authentication**. Used when a spectator clicks th
 
 ## AI Verification
 
-Proof submissions are verified by OpenAI (`gpt-5-mini`) with strict JSON schema output.
+Proof submissions are verified by OpenAI (`gpt-5-mini`) with strict JSON schema output. **No manual admin review** — two outcomes only:
 
 | Confidence | Verdict | User Impact |
 |------------|---------|-------------|
-| >= 0.75 | pass | Auto-accepted, score awarded |
-| 0.60–0.74 | pending_admin_review | Queued for admin, no penalty |
-| < 0.60 | rejected | 24-hr resubmit window |
+| >= 0.75 | pass | Auto-accepted, score awarded, day advanced |
+| < 0.75 | rejected | 24-hr resubmit window, AI feedback shown |
 
-Any OpenAI failure (network, rate-limit, parse) → `pending_admin_review` (user not penalized).
+If the AI service is temporarily unavailable (network, rate-limit, parse error), the user gets the same 24-hr resubmit window with a retry message so they can submit again.
 
 ---
 
@@ -607,46 +482,48 @@ Set the following environment variables:
 
 **CORS**
 
-- `CORS_ORIGINS` — Comma-separated origins (default `http://localhost:3000`)
+- `CORS_ORIGINS` — Comma-separated allowed origins (e.g. `https://your-frontend.vercel.app`)
 
 **Email (Azure Communication Services)**
 
 - `AZURE_COMM_CONNECTION_STRING` — Connection string for Azure Communication Services
 - `AZURE_EMAIL_SENDER` — Verified sender address (e.g. `DoNotReply@elite-score.com`)
-- `APP_BASE_URL` — Base URL for invite and unsubscribe links (default `http://localhost:8080`)
+- `APP_BASE_URL` — Base URL for invite and unsubscribe links (e.g. `https://elitescore-challenges-k554v.ondigitalocean.app`)
 
 ---
 
 ## Examples — cURL
 
-Base URL: `BASE=http://localhost:8080`
+Base URL: `BASE=https://elitescore-challenges-k554v.ondigitalocean.app`
+
+Replace `<token>` with the Supabase session access token (`session.access_token`).
 
 **Dashboard**
 
 ```bash
 curl -X GET "$BASE/api/dashboard" \
-  -H "X-User-Id: <uuid>"
+  -H "Authorization: Bearer <token>"
 ```
 
 **List challenges**
 
 ```bash
 curl -X GET "$BASE/api/challenges" \
-  -H "X-User-Id: <uuid>"
+  -H "Authorization: Bearer <token>"
 ```
 
 **List steps for a template**
 
 ```bash
 curl -X GET "$BASE/api/challenges/<templateId>/steps" \
-  -H "X-User-Id: <uuid>"
+  -H "Authorization: Bearer <token>"
 ```
 
 **My enrollments**
 
 ```bash
 curl -X GET "$BASE/api/challenges/my" \
-  -H "X-User-Id: <uuid>"
+  -H "Authorization: Bearer <token>"
 ```
 
 **Join challenge**
@@ -654,7 +531,7 @@ curl -X GET "$BASE/api/challenges/my" \
 ```bash
 curl -X POST "$BASE/api/challenges/<templateId>/join" \
   -H "Content-Type: application/json" \
-  -H "X-User-Id: <uuid>" \
+  -H "Authorization: Bearer <token>" \
   -d '{"spectatorEmail":"friend@example.com"}'
 ```
 
@@ -663,7 +540,7 @@ curl -X POST "$BASE/api/challenges/<templateId>/join" \
 ```bash
 curl -X POST "$BASE/api/challenges/<userChallengeId>/proofs" \
   -H "Content-Type: application/json" \
-  -H "X-User-Id: <uuid>" \
+  -H "Authorization: Bearer <token>" \
   -d '{"proofText":"Completed module 3...","proofLink":"https://github.com/user/repo"}'
 ```
 
@@ -672,7 +549,7 @@ curl -X POST "$BASE/api/challenges/<userChallengeId>/proofs" \
 ```bash
 curl -X POST "$BASE/api/challenges/<userChallengeId>/proofs/<submissionId>/resubmit" \
   -H "Content-Type: application/json" \
-  -H "X-User-Id: <uuid>" \
+  -H "Authorization: Bearer <token>" \
   -d '{"proofText":"Updated proof with more detail..."}'
 ```
 
@@ -680,51 +557,14 @@ curl -X POST "$BASE/api/challenges/<userChallengeId>/proofs/<submissionId>/resub
 
 ```bash
 curl -X POST "$BASE/api/challenges/<userChallengeId>/abandon" \
-  -H "X-User-Id: <uuid>"
-```
-
-**Admin: Verify proof**
-
-```bash
-curl -X POST "$BASE/api/admin/proofs/<submissionId>/verify" \
-  -H "Content-Type: application/json" \
-  -H "X-User-Id: <admin-uuid>" \
-  -d '{"verdict":"pass","reason":"Screenshot shows completed work"}'
-```
-
-**Admin: Force-fail challenge**
-
-```bash
-curl -X POST "$BASE/api/admin/challenges/<userChallengeId>/fail" \
-  -H "X-User-Id: <admin-uuid>"
-```
-
-**Admin: Penalize missed day**
-
-```bash
-curl -X POST "$BASE/api/admin/challenges/<userChallengeId>/penalize-day/1" \
-  -H "X-User-Id: <admin-uuid>"
+  -H "Authorization: Bearer <token>"
 ```
 
 **Leaderboard**
 
 ```bash
 curl -X GET "$BASE/api/leaderboard?page=0&size=20" \
-  -H "X-User-Id: <uuid>"
-```
-
-**Leaderboard preview**
-
-```bash
-curl -X GET "$BASE/api/leaderboard/preview" \
-  -H "X-User-Id: <uuid>"
-```
-
-**My streaks**
-
-```bash
-curl -X GET "$BASE/api/streaks/me" \
-  -H "X-User-Id: <uuid>"
+  -H "Authorization: Bearer <token>"
 ```
 
 **Invites (no auth)**
