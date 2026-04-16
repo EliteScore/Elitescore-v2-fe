@@ -2,7 +2,6 @@
 
 import { useState } from "react"
 import { useRouter, usePathname } from "next/navigation"
-import Link from "next/link"
 import { Eye, EyeOff } from "lucide-react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
@@ -30,6 +29,11 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [loginError, setLoginError] = useState<string | null>(null)
+  const [showForgotPassword, setShowForgotPassword] = useState(false)
+  const [forgotEmail, setForgotEmail] = useState("")
+  const [forgotPasswordError, setForgotPasswordError] = useState<string | null>(null)
+  const [forgotPasswordSuccess, setForgotPasswordSuccess] = useState<string | null>(null)
+  const [isForgotPasswordLoading, setIsForgotPasswordLoading] = useState(false)
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -92,6 +96,111 @@ export default function LoginPage() {
     }, 1000)
   }
 
+  async function handleForgotPasswordSubmit() {
+    setForgotPasswordError(null)
+    setForgotPasswordSuccess(null)
+
+    const normalizedEmail = forgotEmail.trim().toLowerCase()
+    const parsedEmail = z.string().email({ message: "Please enter a valid email address." }).safeParse(normalizedEmail)
+    if (!parsedEmail.success) {
+      setForgotPasswordError(parsedEmail.error.issues[0]?.message ?? "Please enter a valid email address.")
+      return
+    }
+
+    setIsForgotPasswordLoading(true)
+    const forgotPasswordUrl = `${AUTH_BASE_URL}/auth/forgot-password`
+    const requestBody = { email: normalizedEmail }
+
+    try {
+      if (process.env.NODE_ENV === "development") {
+        console.debug("[elitescore][forgot-password] request", {
+          url: forgotPasswordUrl,
+          method: "POST",
+          headers: { "Content-Type": "application/json", Accept: "application/json" },
+          body: requestBody,
+        })
+      }
+
+      const res = await fetch(forgotPasswordUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify(requestBody),
+      })
+
+      const rawBody = await res.text()
+
+      if (process.env.NODE_ENV === "development") {
+        console.debug("[elitescore][forgot-password] response", {
+          ok: res.ok,
+          status: res.status,
+          statusText: res.statusText,
+          bodyLength: rawBody.length,
+          bodyPreview: rawBody.slice(0, 400),
+        })
+      }
+
+      const genericSuccessMessage = "If the account exists, a reset link has been sent."
+
+      let jsonOk = false
+      let data: unknown = null
+      try {
+        data = rawBody ? JSON.parse(rawBody) : null
+        jsonOk = true
+      } catch {
+        // non-JSON body (e.g. load balancer HTML)
+      }
+
+      if (process.env.NODE_ENV === "development") {
+        if (jsonOk) {
+          console.debug("[elitescore][forgot-password] parsed JSON", data)
+        } else {
+          console.warn("[elitescore][forgot-password] response was not JSON", {
+            bodyPreview: rawBody.slice(0, 400),
+          })
+        }
+      }
+
+      const apiMessage =
+        jsonOk &&
+        data &&
+        typeof data === "object" &&
+        "message" in data &&
+        typeof (data as { message: unknown }).message === "string"
+          ? (data as { message: string }).message.trim() || null
+          : null
+
+      if (!res.ok) {
+        const fallback =
+          res.status === 502 || res.status === 504
+            ? "The auth service timed out or is temporarily unavailable. Please try again in a few minutes."
+            : res.status === 503
+              ? "The auth service is temporarily unavailable. Please try again later."
+              : res.status === 429
+                ? "Too many reset attempts. Please wait and try again."
+                : "The password reset request could not be completed. Please try again."
+        setForgotPasswordError(apiMessage ?? fallback)
+        return
+      }
+
+      if (!jsonOk) {
+        setForgotPasswordError(
+          "Received an unexpected response from the auth service. Please try again, or contact support if this continues.",
+        )
+        return
+      }
+
+      setForgotPasswordSuccess(apiMessage ?? genericSuccessMessage)
+    } catch (error) {
+      console.error("Forgot password error:", error)
+      setForgotPasswordError("Something went wrong. Please try again.")
+    } finally {
+      setIsForgotPasswordLoading(false)
+    }
+  }
+
   return (
     <div key={pathname} className="auth-page login-page">
       <main className="auth-main">
@@ -126,7 +235,20 @@ export default function LoginPage() {
               <div className="auth-field">
                 <div className="auth-field-row">
                   <label htmlFor="login-password" className="auth-label">Password</label>
-                  <Link href="/forgot-password" className="auth-link login-form-link">Forgot password?</Link>
+                  <button
+                    type="button"
+                    className="auth-link login-form-link login-forgot-toggle"
+                    onClick={() => {
+                      setShowForgotPassword((previous) => !previous)
+                      setForgotPasswordError(null)
+                      setForgotPasswordSuccess(null)
+                      if (!showForgotPassword) {
+                        setForgotEmail(form.getValues("email").trim().toLowerCase())
+                      }
+                    }}
+                  >
+                    Forgot password?
+                  </button>
                 </div>
                 <div className="auth-input-wrap">
                   <input
@@ -150,6 +272,37 @@ export default function LoginPage() {
                   <span className="auth-error">{form.formState.errors.password.message}</span>
                 )}
               </div>
+
+              {showForgotPassword && (
+                <div className="login-forgot-panel">
+                  <p className="login-forgot-copy">Enter your email to get a reset link.</p>
+                  <div className="auth-form login-forgot-form">
+                    <div className="auth-field">
+                      <label htmlFor="forgot-email" className="auth-label">Email</label>
+                      <input
+                        id="forgot-email"
+                        type="email"
+                        placeholder="Enter your email"
+                        autoComplete="email"
+                        className="auth-input"
+                        value={forgotEmail}
+                        onChange={(event) => setForgotEmail(event.target.value)}
+                      />
+                    </div>
+                    {forgotPasswordError && <p className="auth-error login-form-error" role="alert">{forgotPasswordError}</p>}
+                    {forgotPasswordSuccess && <p className="login-form-success" role="status">{forgotPasswordSuccess}</p>}
+                    <button
+                      type="button"
+                      className="auth-btn login-btn-ghost"
+                      onClick={handleForgotPasswordSubmit}
+                      disabled={isForgotPasswordLoading || isLoading}
+                      aria-label={isForgotPasswordLoading ? "Sending reset link" : "Send reset link"}
+                    >
+                      {isForgotPasswordLoading ? "Sending..." : "Send reset link"}
+                    </button>
+                  </div>
+                </div>
+              )}
 
               <label className="auth-checkbox-wrap">
                 <input type="checkbox" className="auth-checkbox" {...form.register("remember")} />

@@ -1,0 +1,290 @@
+-- WARNING: This schema is for context only and is not meant to be run.
+-- Table order and constraints may not be valid for execution.
+
+CREATE TABLE public.admins (
+  user_id uuid NOT NULL,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT admins_pkey PRIMARY KEY (user_id),
+  CONSTRAINT admins_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id)
+);
+CREATE TABLE public.ai_verification_runs (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  proof_submission_id uuid NOT NULL,
+  model text NOT NULL,
+  prompt_version text NOT NULL,
+  input_summary text,
+  output_summary text,
+  raw_response_json jsonb,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT ai_verification_runs_pkey PRIMARY KEY (id),
+  CONSTRAINT ai_verification_runs_proof_submission_id_fkey FOREIGN KEY (proof_submission_id) REFERENCES public.proof_submissions(id)
+);
+CREATE TABLE public.auth_identities (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL,
+  provider text NOT NULL CHECK (provider = ANY (ARRAY['google'::text, 'email'::text])),
+  provider_user_id text NOT NULL,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT auth_identities_pkey PRIMARY KEY (id),
+  CONSTRAINT auth_identities_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id)
+);
+CREATE TABLE public.beta_signups (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  email text NOT NULL UNIQUE,
+  name text,
+  source text,
+  status text NOT NULL DEFAULT 'pending'::text CHECK (status = ANY (ARRAY['pending'::text, 'invited'::text, 'converted'::text, 'dropped'::text])),
+  invited_at timestamp with time zone,
+  converted_user_id uuid,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT beta_signups_pkey PRIMARY KEY (id),
+  CONSTRAINT beta_signups_converted_user_id_fkey FOREIGN KEY (converted_user_id) REFERENCES public.users(id)
+);
+CREATE TABLE public.challenge_roadmap_steps (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  challenge_template_id uuid NOT NULL,
+  week integer,
+  day integer NOT NULL CHECK (day >= 1),
+  title text NOT NULL,
+  instructions text NOT NULL,
+  expected_proof text,
+  step_type text CHECK (step_type IS NULL OR (step_type = ANY (ARRAY['learn'::text, 'practice'::text, 'project'::text, 'review'::text]))),
+  resource_link text,
+  resource_start_seconds integer CHECK (resource_start_seconds IS NULL OR resource_start_seconds >= 0),
+  resource_end_seconds integer CHECK (resource_end_seconds IS NULL OR resource_end_seconds >= 0),
+  proof_type_required text CHECK (proof_type_required IS NULL OR (proof_type_required = ANY (ARRAY['image'::text, 'link'::text, 'text'::text, 'video'::text, 'mixed'::text]))),
+  requires_proof boolean NOT NULL DEFAULT true,
+  submission_requirements text,
+  reward_xp integer NOT NULL DEFAULT 0 CHECK (reward_xp >= 0),
+  reward_elite_score integer NOT NULL DEFAULT 0 CHECK (reward_elite_score >= 0),
+  sort_order integer,
+  CONSTRAINT challenge_roadmap_steps_pkey PRIMARY KEY (id),
+  CONSTRAINT challenge_roadmap_steps_challenge_template_id_fkey FOREIGN KEY (challenge_template_id) REFERENCES public.challenge_templates(id)
+);
+CREATE TABLE public.challenge_templates (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  name text NOT NULL,
+  track text NOT NULL,
+  difficulty integer NOT NULL CHECK (difficulty >= 1 AND difficulty <= 5),
+  description text NOT NULL,
+  daily_requirement text NOT NULL,
+  proof_type_required text NOT NULL CHECK (proof_type_required = ANY (ARRAY['image'::text, 'link'::text, 'text'::text, 'video'::text, 'mixed'::text])),
+  failure_condition text NOT NULL,
+  duration_days integer NOT NULL CHECK (duration_days >= 1),
+  base_reward_xp integer NOT NULL CHECK (base_reward_xp >= 0),
+  completion_rate_cached numeric CHECK (completion_rate_cached IS NULL OR completion_rate_cached >= 0::numeric AND completion_rate_cached <= 100::numeric),
+  is_active boolean NOT NULL DEFAULT true,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  skills_youll_learn jsonb NOT NULL DEFAULT '[]'::jsonb CHECK (jsonb_typeof(skills_youll_learn) = 'array'::text),
+  before_you_begin text,
+  resource_links jsonb NOT NULL DEFAULT '[]'::jsonb CHECK (jsonb_typeof(resource_links) = 'array'::text),
+  daily_reward_elite_score integer NOT NULL DEFAULT 15,
+  missed_day_penalty integer NOT NULL DEFAULT '-8'::integer,
+  max_missed_days integer NOT NULL DEFAULT 3,
+  fail_penalty integer NOT NULL DEFAULT '-35'::integer,
+  quit_penalty integer NOT NULL DEFAULT '-35'::integer,
+  completion_bonus integer NOT NULL DEFAULT 40,
+  CONSTRAINT challenge_templates_pkey PRIMARY KEY (id)
+);
+CREATE TABLE public.leaderboard_rows (
+  snapshot_id uuid NOT NULL,
+  user_id uuid NOT NULL,
+  rank integer NOT NULL CHECK (rank >= 1),
+  elite_score integer NOT NULL CHECK (elite_score >= 0 AND elite_score <= 1000),
+  CONSTRAINT leaderboard_rows_snapshot_id_fkey FOREIGN KEY (snapshot_id) REFERENCES public.leaderboard_snapshots(id),
+  CONSTRAINT leaderboard_rows_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id)
+);
+CREATE TABLE public.leaderboard_snapshots (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  scope text NOT NULL CHECK (scope = ANY (ARRAY['global'::text, 'track'::text])),
+  track text,
+  snapshot_date date NOT NULL,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT leaderboard_snapshots_pkey PRIMARY KEY (id)
+);
+CREATE TABLE public.notification_outbox (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  type text NOT NULL CHECK (type = ANY (ARRAY['spectator_fail'::text, 'spectator_complete'::text, 'daily_update'::text, 'welcome'::text, 'proof_approved'::text, 'streak_milestone'::text, 'challenge_complete'::text, 'challenge_failed'::text, 'missed_deadline'::text, 'marketing_join'::text, 'weekly_digest'::text, 're_engagement'::text])),
+  to_email text NOT NULL,
+  user_id uuid,
+  user_challenge_id uuid,
+  payload jsonb NOT NULL,
+  status text NOT NULL DEFAULT 'queued'::text CHECK (status = ANY (ARRAY['queued'::text, 'sent'::text, 'failed'::text])),
+  dedupe_key text,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  sent_at timestamp with time zone,
+  CONSTRAINT notification_outbox_pkey PRIMARY KEY (id),
+  CONSTRAINT notification_outbox_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id),
+  CONSTRAINT notification_outbox_user_challenge_id_fkey FOREIGN KEY (user_challenge_id) REFERENCES public.user_challenges(id)
+);
+CREATE TABLE public.notification_preferences (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  email text NOT NULL UNIQUE,
+  marketing_opt_in boolean NOT NULL DEFAULT true,
+  unsubscribed_at timestamp with time zone,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT notification_preferences_pkey PRIMARY KEY (id)
+);
+CREATE TABLE public.proof_assets (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  proof_submission_id uuid NOT NULL,
+  asset_type text NOT NULL CHECK (asset_type = ANY (ARRAY['image'::text, 'video'::text, 'file'::text])),
+  url text NOT NULL,
+  sha256 text,
+  mime_type text,
+  size_bytes bigint CHECK (size_bytes IS NULL OR size_bytes >= 0),
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT proof_assets_pkey PRIMARY KEY (id),
+  CONSTRAINT proof_assets_proof_submission_id_fkey FOREIGN KEY (proof_submission_id) REFERENCES public.proof_submissions(id)
+);
+CREATE TABLE public.proof_submissions (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  user_challenge_id uuid NOT NULL,
+  user_id uuid NOT NULL,
+  challenge_day integer NOT NULL CHECK (challenge_day >= 1),
+  submitted_at timestamp with time zone NOT NULL DEFAULT now(),
+  status text NOT NULL CHECK (status = ANY (ARRAY['submitted'::text, 'verified'::text, 'rejected'::text, 'needs_review'::text, 'blocked'::text, 'pending_admin_review'::text])),
+  proof_text text,
+  proof_link text,
+  proof_hash text,
+  notes text,
+  challenge_roadmap_step_id uuid,
+  resubmit_deadline timestamp with time zone,
+  ai_feedback text,
+  attempt_number integer NOT NULL DEFAULT 1,
+  review_queued_at timestamp with time zone,
+  CONSTRAINT proof_submissions_pkey PRIMARY KEY (id),
+  CONSTRAINT proof_submissions_user_challenge_id_fkey FOREIGN KEY (user_challenge_id) REFERENCES public.user_challenges(id),
+  CONSTRAINT proof_submissions_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id),
+  CONSTRAINT proof_submissions_challenge_roadmap_step_id_fkey FOREIGN KEY (challenge_roadmap_step_id) REFERENCES public.challenge_roadmap_steps(id)
+);
+CREATE TABLE public.score_events (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL,
+  event_type text NOT NULL CHECK (event_type = ANY (ARRAY['daily_verified'::text, 'challenge_completed'::text, 'challenge_failed'::text, 'streak_bonus'::text, 'decay'::text, 'manual_adjust'::text])),
+  pillar text NOT NULL CHECK (pillar = ANY (ARRAY['experience'::text, 'skills'::text, 'impact'::text, 'projects'::text, 'leadership'::text, 'communication'::text])),
+  delta numeric NOT NULL,
+  source_type text,
+  source_id uuid,
+  meta jsonb,
+  idempotency_key text,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  xp_delta integer NOT NULL DEFAULT 0,
+  elite_score_delta integer NOT NULL DEFAULT 0,
+  challenge_roadmap_step_id uuid,
+  CONSTRAINT score_events_pkey PRIMARY KEY (id),
+  CONSTRAINT score_events_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id),
+  CONSTRAINT score_events_challenge_roadmap_step_id_fkey FOREIGN KEY (challenge_roadmap_step_id) REFERENCES public.challenge_roadmap_steps(id)
+);
+CREATE TABLE public.user_achievements (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL,
+  title text NOT NULL,
+  description text,
+  link text,
+  achieved_on date,
+  CONSTRAINT user_achievements_pkey PRIMARY KEY (id),
+  CONSTRAINT user_achievements_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id)
+);
+CREATE TABLE public.user_activity_days (
+  user_id uuid NOT NULL,
+  activity_date date NOT NULL,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT user_activity_days_pkey PRIMARY KEY (user_id, activity_date),
+  CONSTRAINT user_activity_days_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id)
+);
+CREATE TABLE public.user_challenge_invites (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  user_challenge_id uuid NOT NULL,
+  inviter_user_id uuid NOT NULL,
+  spectator_email text NOT NULL,
+  spectator_user_id uuid,
+  status text NOT NULL CHECK (status = ANY (ARRAY['pending'::text, 'accepted'::text, 'declined'::text, 'unsubscribed'::text])),
+  notify_on_fail boolean NOT NULL DEFAULT true,
+  notify_on_complete boolean NOT NULL DEFAULT true,
+  notify_daily boolean NOT NULL DEFAULT false,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  accepted_at timestamp with time zone,
+  token uuid NOT NULL DEFAULT gen_random_uuid() UNIQUE,
+  invited_via text CHECK (invited_via IS NULL OR (invited_via = ANY (ARRAY['whatsapp'::text, 'email'::text]))),
+  spectator_name text,
+  CONSTRAINT user_challenge_invites_pkey PRIMARY KEY (id),
+  CONSTRAINT user_challenge_invites_user_challenge_id_fkey FOREIGN KEY (user_challenge_id) REFERENCES public.user_challenges(id),
+  CONSTRAINT user_challenge_invites_inviter_user_id_fkey FOREIGN KEY (inviter_user_id) REFERENCES public.users(id),
+  CONSTRAINT user_challenge_invites_spectator_user_id_fkey FOREIGN KEY (spectator_user_id) REFERENCES public.users(id)
+);
+CREATE TABLE public.user_challenges (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL,
+  challenge_template_id uuid NOT NULL,
+  status text NOT NULL CHECK (status = ANY (ARRAY['active'::text, 'completed'::text, 'failed'::text, 'abandoned'::text])),
+  start_date date NOT NULL,
+  end_date date NOT NULL,
+  current_day integer NOT NULL DEFAULT 0 CHECK (current_day >= 0),
+  completed_at timestamp with time zone,
+  failed_at timestamp with time zone,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  missed_days_count integer NOT NULL DEFAULT 0,
+  CONSTRAINT user_challenges_pkey PRIMARY KEY (id),
+  CONSTRAINT user_challenges_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id),
+  CONSTRAINT user_challenges_challenge_template_id_fkey FOREIGN KEY (challenge_template_id) REFERENCES public.challenge_templates(id)
+);
+CREATE TABLE public.user_pillar_scores (
+  user_id uuid NOT NULL,
+  pillar text NOT NULL CHECK (pillar = ANY (ARRAY['experience'::text, 'skills'::text, 'impact'::text, 'projects'::text, 'leadership'::text, 'communication'::text])),
+  score integer NOT NULL CHECK (score >= 0 AND score <= 100),
+  updated_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT user_pillar_scores_pkey PRIMARY KEY (user_id, pillar),
+  CONSTRAINT user_pillar_scores_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id)
+);
+CREATE TABLE public.user_score_snapshots (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL,
+  elite_score integer NOT NULL CHECK (elite_score >= 0 AND elite_score <= 1000),
+  xp integer NOT NULL CHECK (xp >= 0),
+  streak_current integer NOT NULL CHECK (streak_current >= 0),
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT user_score_snapshots_pkey PRIMARY KEY (id),
+  CONSTRAINT user_score_snapshots_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id)
+);
+CREATE TABLE public.users (
+  id uuid NOT NULL,
+  full_name text NOT NULL,
+  email text NOT NULL UNIQUE,
+  handle text NOT NULL UNIQUE,
+  profile_url text,
+  timezone text NOT NULL DEFAULT 'UTC'::text,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  updated_at timestamp with time zone NOT NULL DEFAULT now(),
+  deleted_at timestamp with time zone,
+  elite_score integer NOT NULL DEFAULT 300 CHECK (elite_score >= 0 AND elite_score <= 1000),
+  xp integer NOT NULL DEFAULT 0 CHECK (xp >= 0),
+  level integer NOT NULL DEFAULT 1 CHECK (level >= 1),
+  streak_current integer NOT NULL DEFAULT 0 CHECK (streak_current >= 0),
+  streak_longest integer NOT NULL DEFAULT 0 CHECK (streak_longest >= 0),
+  completed_challenges_count integer NOT NULL DEFAULT 0 CHECK (completed_challenges_count >= 0),
+  consistency_30d numeric NOT NULL DEFAULT 0 CHECK (consistency_30d >= 0::numeric AND consistency_30d <= 100::numeric),
+  global_rank integer CHECK (global_rank IS NULL OR global_rank >= 1),
+  percentile numeric CHECK (percentile IS NULL OR percentile >= 0::numeric AND percentile <= 100::numeric),
+  linkedin_url text,
+  github_url text,
+  portfolio_url text,
+  bio text,
+  avatar_url text,
+  streak integer NOT NULL DEFAULT 0,
+  last_active_at timestamp with time zone,
+  CONSTRAINT users_pkey PRIMARY KEY (id)
+);
+CREATE TABLE public.verifications (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  proof_submission_id uuid NOT NULL,
+  verifier_type text NOT NULL CHECK (verifier_type = ANY (ARRAY['peer'::text, 'admin'::text, 'ai'::text])),
+  verifier_user_id uuid,
+  verdict text NOT NULL CHECK (verdict = ANY (ARRAY['pass'::text, 'fail'::text])),
+  confidence numeric NOT NULL CHECK (confidence >= 0::numeric AND confidence <= 1::numeric),
+  reason text,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT verifications_pkey PRIMARY KEY (id),
+  CONSTRAINT verifications_proof_submission_id_fkey FOREIGN KEY (proof_submission_id) REFERENCES public.proof_submissions(id),
+  CONSTRAINT verifications_verifier_user_id_fkey FOREIGN KEY (verifier_user_id) REFERENCES public.users(id)
+);

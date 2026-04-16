@@ -199,6 +199,30 @@
   color: var(--dark);
 }
 
+.login-forgot-toggle {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+.login-forgot-panel {
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  border-radius: 12px;
+  background: #f8fafc;
+  padding: 0.75rem;
+}
+
+.login-forgot-form {
+  gap: 0.5rem;
+}
+
+.login-forgot-copy {
+  margin: 0 0 0.5rem;
+  font-size: 0.75rem;
+  color: var(--gray);
+}
+
 .login-form-footer {
   margin: 0.5rem 0 0;
   font-size: 0.6875rem;
@@ -213,6 +237,12 @@
 .login-form-error {
   color: #dc2626;
   font-size: 0.75rem;
+}
+
+.login-form-success {
+  color: #15803d;
+  font-size: 0.75rem;
+  margin: 0;
 }
 
 .login-spinner {
@@ -348,6 +378,15 @@
   }
 
   .login-form-link {
+    font-size: 0.8125rem;
+  }
+
+  .login-forgot-panel {
+    padding: 0.875rem;
+  }
+
+  .login-forgot-copy,
+  .login-form-success {
     font-size: 0.8125rem;
   }
 }
