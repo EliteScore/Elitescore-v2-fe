@@ -11,7 +11,6 @@ import {
   Target,
   Check,
   X,
-  Award,
   TrendingUp,
   LinkIcon,
   Settings,
@@ -27,6 +26,16 @@ import { BottomNav } from "@/components/bottom-nav"
 const PROFILE_ME_URL = "/api/profile/me"
 const APP_GRADIENT = "linear-gradient(135deg, #db2777 0%, #ea580c 35%, #2563eb 70%, #7c3aed 100%)"
 const CARD_BASE = "rounded-2xl border border-slate-200/80 bg-white shadow-sm"
+const ACCOUNT_DELETE_CONFIRMATION = "DELETE"
+const AUTH_STORAGE_KEYS = [
+  "elitescore_access_token",
+  "elitescore_refresh_token",
+  "elitescore_user_id",
+  "elitescore_logged_in",
+  "elitescore_email",
+  "elitescore_full_name",
+  "elitescore_username",
+] as const
 
 type ChallengeTemplate = { name?: string; difficulty?: number; duration_days?: number }
 type ChallengeEnrollment = {
@@ -86,6 +95,33 @@ function defaultProfile(): ProfileResponse {
   }
 }
 
+function clearAuthStorage() {
+  AUTH_STORAGE_KEYS.forEach((key) => {
+    try {
+      localStorage.removeItem(key)
+    } catch {
+      // ignore storage errors
+    }
+  })
+}
+
+async function parseApiMessage(res: Response): Promise<string | null> {
+  try {
+    const data: unknown = await res.json()
+    if (data && typeof data === "object") {
+      if ("message" in data && typeof (data as { message?: unknown }).message === "string") {
+        return (data as { message: string }).message
+      }
+      if ("error" in data && typeof (data as { error?: unknown }).error === "string") {
+        return (data as { error: string }).error
+      }
+    }
+  } catch {
+    // ignore parse failures
+  }
+  return null
+}
+
 export default function ProfilePage() {
   const router = useRouter()
   const [authChecked, setAuthChecked] = useState(false)
@@ -94,7 +130,17 @@ export default function ProfilePage() {
   const [profileError, setProfileError] = useState<string | null>(null)
   const [hasExistingProfile, setHasExistingProfile] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
+  const [showChangePassword, setShowChangePassword] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [settingsError, setSettingsError] = useState<string | null>(null)
+  const [settingsSuccess, setSettingsSuccess] = useState<string | null>(null)
+  const [isLogoutLoading, setIsLogoutLoading] = useState(false)
+  const [isDeleteLoading, setIsDeleteLoading] = useState(false)
+  const [isChangePasswordLoading, setIsChangePasswordLoading] = useState(false)
+  const [deleteConfirmationInput, setDeleteConfirmationInput] = useState("")
+  const [currentPassword, setCurrentPassword] = useState("")
+  const [newPassword, setNewPassword] = useState("")
+  const [confirmNewPassword, setConfirmNewPassword] = useState("")
 
   useEffect(() => {
     const token = localStorage.getItem("elitescore_access_token")
@@ -180,9 +226,169 @@ export default function ProfilePage() {
     }
   }, [authChecked, router])
 
-  const handleToggleSettings = () => setShowSettings((prev) => !prev)
-  const handleOpenDeleteConfirm = () => setShowDeleteConfirm(true)
-  const handleCloseDeleteConfirm = () => setShowDeleteConfirm(false)
+  const resetSettingsMessages = () => {
+    setSettingsError(null)
+    setSettingsSuccess(null)
+  }
+
+  const handleToggleSettings = () => {
+    resetSettingsMessages()
+    setShowSettings((prev) => !prev)
+  }
+
+  const handleOpenChangePassword = () => {
+    resetSettingsMessages()
+    setCurrentPassword("")
+    setNewPassword("")
+    setConfirmNewPassword("")
+    setShowChangePassword(true)
+  }
+
+  const handleCloseChangePassword = () => {
+    setShowChangePassword(false)
+    setCurrentPassword("")
+    setNewPassword("")
+    setConfirmNewPassword("")
+  }
+
+  const handleOpenDeleteConfirm = () => {
+    resetSettingsMessages()
+    setDeleteConfirmationInput("")
+    setShowDeleteConfirm(true)
+  }
+
+  const handleCloseDeleteConfirm = () => {
+    setShowDeleteConfirm(false)
+    setDeleteConfirmationInput("")
+  }
+
+  const handleLogout = async () => {
+    if (isLogoutLoading) return
+    resetSettingsMessages()
+    setIsLogoutLoading(true)
+    const token = localStorage.getItem("elitescore_access_token")
+    try {
+      if (token) {
+        const res = await fetch("/api/auth/logout", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        })
+
+        if (!res.ok && res.status !== 401) {
+          const apiMessage = await parseApiMessage(res)
+          setSettingsError(apiMessage ?? "Could not logout right now. Please try again.")
+          setIsLogoutLoading(false)
+          return
+        }
+      }
+
+      clearAuthStorage()
+      router.replace("/login")
+    } catch (error) {
+      console.error("Logout error:", error)
+      setSettingsError("Could not logout right now. Please try again.")
+      setIsLogoutLoading(false)
+    }
+  }
+
+  const handleChangePassword = async () => {
+    if (isChangePasswordLoading) return
+    resetSettingsMessages()
+
+    if (!currentPassword.trim() || !newPassword.trim() || !confirmNewPassword.trim()) {
+      setSettingsError("All password fields are required.")
+      return
+    }
+    if (newPassword !== confirmNewPassword) {
+      setSettingsError("New password and confirmation do not match.")
+      return
+    }
+    if (currentPassword === newPassword) {
+      setSettingsError("New password must be different from the current password.")
+      return
+    }
+
+    const token = localStorage.getItem("elitescore_access_token")
+    if (!token) {
+      clearAuthStorage()
+      router.replace("/login")
+      return
+    }
+
+    setIsChangePasswordLoading(true)
+    try {
+      const res = await fetch("/api/auth/password-reset", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          old_password: currentPassword,
+          new_password: newPassword,
+        }),
+      })
+
+      const apiMessage = await parseApiMessage(res)
+      if (!res.ok) {
+        setSettingsError(apiMessage ?? "Password could not be updated.")
+        return
+      }
+
+      setSettingsSuccess(apiMessage ?? "Password updated successfully.")
+      handleCloseChangePassword()
+    } catch (error) {
+      console.error("Change password error:", error)
+      setSettingsError("Password could not be updated.")
+    } finally {
+      setIsChangePasswordLoading(false)
+    }
+  }
+
+  const handleDeleteAccount = async () => {
+    if (isDeleteLoading) return
+    resetSettingsMessages()
+
+    if (deleteConfirmationInput.trim().toUpperCase() !== ACCOUNT_DELETE_CONFIRMATION) {
+      setSettingsError(`Type "${ACCOUNT_DELETE_CONFIRMATION}" to confirm account deletion.`)
+      return
+    }
+
+    const token = localStorage.getItem("elitescore_access_token")
+    if (!token) {
+      clearAuthStorage()
+      router.replace("/login")
+      return
+    }
+
+    setIsDeleteLoading(true)
+    try {
+      const res = await fetch("/api/auth/delete-account", {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      })
+
+      const apiMessage = await parseApiMessage(res)
+      if (!res.ok) {
+        setSettingsError(apiMessage ?? "Account could not be deleted.")
+        return
+      }
+
+      clearAuthStorage()
+      router.replace("/login")
+    } catch (error) {
+      console.error("Delete account error:", error)
+      setSettingsError("Account could not be deleted.")
+    } finally {
+      setIsDeleteLoading(false)
+    }
+  }
 
   const displayName = profile?.name?.trim() || getDisplayName()
   const challengeHistory = profile?.challenge_history ?? []
@@ -325,16 +531,26 @@ export default function ProfilePage() {
             {showSettings && (
               <div className="border-t border-slate-200/80 pt-4 space-y-2">
                 <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">Settings</h3>
+                {settingsError ? (
+                  <p className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-600" role="alert">
+                    {settingsError}
+                  </p>
+                ) : null}
+                {settingsSuccess ? (
+                  <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-700" role="status">
+                    {settingsSuccess}
+                  </p>
+                ) : null}
                 <div className="space-y-1.5">
-                  <Button size="sm" variant="outline" className="w-full justify-start text-xs min-h-[44px] bg-slate-100 border-slate-200 rounded-xl touch-manipulation text-slate-700 hover:bg-slate-200/80">
+                  <Button size="sm" variant="outline" className="w-full justify-start text-xs min-h-[44px] bg-slate-100 border-slate-200 rounded-xl touch-manipulation text-slate-700 hover:bg-slate-200/80" onClick={handleOpenChangePassword}>
                     <Lock className="w-3.5 h-3.5 mr-2" aria-hidden />
                     Change Password
                   </Button>
-                  <Button size="sm" variant="outline" className="w-full justify-start text-xs min-h-[44px] bg-slate-100 border-slate-200 rounded-xl touch-manipulation text-slate-700 hover:bg-slate-200/80">
+                  <Button size="sm" variant="outline" className="w-full justify-start text-xs min-h-[44px] bg-slate-100 border-slate-200 rounded-xl touch-manipulation text-slate-700 hover:bg-slate-200/80" onClick={handleLogout} disabled={isLogoutLoading}>
                     <LogOut className="w-3.5 h-3.5 mr-2" aria-hidden />
-                    Logout
+                    {isLogoutLoading ? "Logging out..." : "Logout"}
                   </Button>
-                  <Button size="sm" variant="outline" className="w-full justify-start text-xs min-h-[44px] bg-transparent border-red-500/30 text-red-500 hover:bg-red-50 rounded-xl touch-manipulation focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500/30" onClick={handleOpenDeleteConfirm}>
+                  <Button size="sm" variant="outline" className="w-full justify-start text-xs min-h-[44px] bg-transparent border-red-500/30 text-red-500 hover:bg-red-50 rounded-xl touch-manipulation focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500/30" onClick={handleOpenDeleteConfirm} disabled={isDeleteLoading}>
                     <Trash2 className="w-3.5 h-3.5 mr-2" aria-hidden />
                     Delete Account
                   </Button>
@@ -342,14 +558,65 @@ export default function ProfilePage() {
               </div>
             )}
 
+            {showChangePassword && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-3 sm:p-4" role="dialog" aria-modal="true" aria-labelledby="change-password-title" onClick={handleCloseChangePassword}>
+                <div className={`${CARD_BASE} p-4 sm:p-6 w-full max-w-md max-h-[88dvh] overflow-y-auto`} onClick={(e) => e.stopPropagation()}>
+                  <h3 id="change-password-title" className="text-base sm:text-lg font-bold text-slate-800 mb-2">Change Password</h3>
+                  <p className="text-xs sm:text-sm text-slate-600 mb-4 sm:mb-6 leading-relaxed">Use your current password and set a new one.</p>
+                  <div className="space-y-3">
+                    <input
+                      type="password"
+                      value={currentPassword}
+                      onChange={(event) => setCurrentPassword(event.target.value)}
+                      className="w-full min-h-[44px] rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-800"
+                      placeholder="Current password"
+                      autoComplete="current-password"
+                    />
+                    <input
+                      type="password"
+                      value={newPassword}
+                      onChange={(event) => setNewPassword(event.target.value)}
+                      className="w-full min-h-[44px] rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-800"
+                      placeholder="New password"
+                      autoComplete="new-password"
+                    />
+                    <input
+                      type="password"
+                      value={confirmNewPassword}
+                      onChange={(event) => setConfirmNewPassword(event.target.value)}
+                      className="w-full min-h-[44px] rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-800"
+                      placeholder="Confirm new password"
+                      autoComplete="new-password"
+                    />
+                  </div>
+                  <div className="mt-3 flex gap-2">
+                    <Button size="sm" variant="outline" className="flex-1 min-h-[40px] text-xs rounded-xl border-slate-200 touch-manipulation text-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-pink-500/30" onClick={handleCloseChangePassword} disabled={isChangePasswordLoading}>Cancel</Button>
+                    <Button size="sm" className="flex-1 min-h-[40px] bg-pink-600 hover:bg-pink-700 text-white text-xs rounded-xl touch-manipulation focus:outline-none focus-visible:ring-2 focus-visible:ring-pink-500/50" onClick={handleChangePassword} disabled={isChangePasswordLoading}>
+                      {isChangePasswordLoading ? "Updating..." : "Update Password"}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {showDeleteConfirm && (
-              <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:pb-4" role="dialog" aria-modal="true" aria-labelledby="delete-dialog-title" onClick={handleCloseDeleteConfirm}>
-                <div className={`${CARD_BASE} p-4 sm:p-6 w-full max-w-md`} onClick={(e) => e.stopPropagation()}>
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-3 sm:p-4" role="dialog" aria-modal="true" aria-labelledby="delete-dialog-title" onClick={handleCloseDeleteConfirm}>
+                <div className={`${CARD_BASE} p-4 sm:p-6 w-full max-w-md max-h-[88dvh] overflow-y-auto`} onClick={(e) => e.stopPropagation()}>
                   <h3 id="delete-dialog-title" className="text-base sm:text-lg font-bold text-slate-800 mb-2">Delete Account?</h3>
-                  <p className="text-xs sm:text-sm text-slate-600 mb-4 sm:mb-6 leading-relaxed">This cannot be undone. Your EliteScore, history, and data will be permanently deleted.</p>
-                  <div className="flex gap-2 sm:gap-3">
-                    <Button size="sm" variant="outline" className="flex-1 min-h-[44px] text-xs rounded-xl border-slate-200 touch-manipulation text-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-pink-500/30" onClick={handleCloseDeleteConfirm}>Cancel</Button>
-                    <Button size="sm" className="flex-1 min-h-[44px] bg-red-500 hover:bg-red-600 text-white text-xs rounded-xl touch-manipulation focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500/50" onClick={handleCloseDeleteConfirm}>Delete Permanently</Button>
+                  <p className="text-xs sm:text-sm text-slate-600 mb-3 leading-relaxed">This cannot be undone. Your EliteScore, history, and data will be permanently deleted.</p>
+                  <p className="text-xs text-slate-500 mb-3">Type <span className="font-semibold text-slate-700">{ACCOUNT_DELETE_CONFIRMATION}</span> to continue.</p>
+                  <input
+                    value={deleteConfirmationInput}
+                    onChange={(event) => setDeleteConfirmationInput(event.target.value)}
+                    className="mb-4 w-full min-h-[44px] rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-800"
+                    placeholder={`Type ${ACCOUNT_DELETE_CONFIRMATION}`}
+                    autoComplete="off"
+                  />
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="outline" className="flex-1 min-h-[40px] text-xs rounded-xl border-slate-200 touch-manipulation text-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-pink-500/30" onClick={handleCloseDeleteConfirm} disabled={isDeleteLoading}>Cancel</Button>
+                    <Button size="sm" className="flex-1 min-h-[40px] bg-red-500 hover:bg-red-600 text-white text-xs rounded-xl touch-manipulation focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500/50" onClick={handleDeleteAccount} disabled={isDeleteLoading}>
+                      {isDeleteLoading ? "Deleting..." : "Delete Permanently"}
+                    </Button>
                   </div>
                 </div>
               </div>

@@ -12,7 +12,7 @@ const DASHBOARD_PATHS = ["/home", "/challenges", "/leaderboard", "/community", "
 export function AppChrome({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const isLanding = pathname === "/landing"
-  const isAuth = pathname === "/login" || pathname === "/signup"
+  const isAuth = pathname === "/login" || pathname === "/signup" || pathname === "/reset-password"
   const isDashboard = DASHBOARD_PATHS.some((p) => pathname === p || pathname.startsWith(p + "/"))
 
   useEffect(() => {
