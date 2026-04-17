@@ -142,7 +142,7 @@ export default function LoginPage() {
         })
       }
 
-      const genericSuccessMessage = "If the account exists, a reset link has been sent."
+      const genericSuccessMessage = "If the account exists, a login link has been sent."
 
       let jsonOk = false
       let data: unknown = null
@@ -275,7 +275,7 @@ export default function LoginPage() {
 
               {showForgotPassword && (
                 <div className="login-forgot-panel">
-                  <p className="login-forgot-copy">Enter your email to get a reset link.</p>
+                  <p className="login-forgot-copy">Enter your email to get a login link. You can set a new password once you&apos;re in.</p>
                   <div className="auth-form login-forgot-form">
                     <div className="auth-field">
                       <label htmlFor="forgot-email" className="auth-label">Email</label>

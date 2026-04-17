@@ -6,6 +6,8 @@ import Link from "next/link"
 import { Clock, Flame, TrendingUp, Trophy, ArrowUpRight, CheckCircle2, Upload } from "lucide-react"
 
 const DASHBOARD_URL = "/api/dashboard"
+const CHALLENGES_MY_URL = "/api/challenges/my"
+const CHALLENGES_URL = "/api/challenges"
 const APP_GRADIENT = "linear-gradient(135deg, #db2777 0%, #ea580c 35%, #2563eb 70%, #7c3aed 100%)"
 const CARD_BASE = "rounded-2xl border border-slate-200/80 bg-white shadow-sm"
 
@@ -46,6 +48,45 @@ type DashboardResponse = {
   leaderboardPreview?: LeaderboardPreview
   recommendedChallenges?: RecommendedTemplate[]
   [key: string]: unknown
+}
+
+type UserChallenge = {
+  id: string | number
+  userId?: string
+  challengeTemplateId?: string | number
+  status?: string
+  startDate?: string
+  endDate?: string
+  currentDay?: number
+  missedDaysCount?: number
+  createdAt?: string
+}
+
+type ChallengeTemplateApi = {
+  id?: string
+  name?: string
+  track?: string
+  difficulty?: number
+  durationDays?: number
+  dailyRewardEliteScore?: number
+  completionBonus?: number
+}
+
+type ActiveChallengeUi = {
+  id: string
+  templateId: string | null
+  title: string
+  statusLabel: string
+  progress: number
+  currentDay: number
+  endDateLabel: string
+  endDateUrgent: boolean
+  missedDaysCount: number
+  challengeTemplateIdLabel: string
+  trackLabel: string
+  difficulty: number
+  durationDays: number
+  rewardPoints: number
 }
 
 function parseDashboardResponse(raw: unknown): DashboardResponse | null {
@@ -109,22 +150,6 @@ function getInitials(name: string): string {
   return (parts[0]?.slice(0, 2) ?? "?").toUpperCase()
 }
 
-/* Active challenges — from dashboard or empty */
-const ACTIVE_CHALLENGES: Array<{
-  id: string
-  title: string
-  tag: string
-  accentFrom: string
-  accentTo: string
-  difficulty: number
-  progress: number
-  daysLeft: number
-  deadline: string
-  deadlineUrgent: boolean
-  weekLabel: string
-  todayTask: string
-}> = []
-
 const CHALLENGE_CATEGORIES = ["Top", "AI", "Tech", "Career"]
 const GRADIENT_BY_TRACK: Record<string, string> = {
   AI: "from-violet-500/90 to-purple-500/90",
@@ -152,12 +177,130 @@ function DifficultyDots({ level, max = 5 }: { level: number; max?: number }) {
   )
 }
 
+function toIsoDate(raw: unknown): string | null {
+  if (typeof raw !== "string" || !raw.trim()) return null
+  const ts = Date.parse(raw)
+  if (!Number.isFinite(ts)) return null
+  return new Date(ts).toISOString()
+}
+
+function parseUserChallenges(raw: unknown): UserChallenge[] {
+  if (!Array.isArray(raw)) return []
+  return raw.map((item, index) => {
+    const row = item && typeof item === "object" ? (item as Record<string, unknown>) : {}
+    return {
+      id: (row.id as string | number | undefined) ?? `row-${index}`,
+      userId: typeof row.userId === "string" ? row.userId : typeof row.user_id === "string" ? row.user_id : undefined,
+      challengeTemplateId:
+        typeof row.challengeTemplateId === "string" || typeof row.challengeTemplateId === "number"
+          ? (row.challengeTemplateId as string | number)
+          : typeof row.challenge_template_id === "string" || typeof row.challenge_template_id === "number"
+            ? (row.challenge_template_id as string | number)
+            : undefined,
+      status:
+        typeof row.status === "string"
+          ? row.status
+          : typeof row.challenge_status === "string"
+            ? row.challenge_status
+            : undefined,
+      startDate: toIsoDate(row.startDate) ?? toIsoDate(row.start_date) ?? undefined,
+      endDate: toIsoDate(row.endDate) ?? toIsoDate(row.end_date) ?? undefined,
+      currentDay:
+        typeof row.currentDay === "number"
+          ? row.currentDay
+          : typeof row.current_day === "number"
+            ? row.current_day
+            : undefined,
+      missedDaysCount:
+        typeof row.missedDaysCount === "number"
+          ? row.missedDaysCount
+          : typeof row.missed_days_count === "number"
+            ? row.missed_days_count
+            : undefined,
+      createdAt: toIsoDate(row.createdAt) ?? toIsoDate(row.created_at) ?? undefined,
+    }
+  })
+}
+
+function parseChallengeTemplates(raw: unknown): Record<string, ChallengeTemplateApi> {
+  if (!Array.isArray(raw)) return {}
+  const map: Record<string, ChallengeTemplateApi> = {}
+  raw.forEach((item) => {
+    if (!item || typeof item !== "object") return
+    const row = item as Record<string, unknown>
+    const id = typeof row.id === "string" ? row.id : undefined
+    if (!id) return
+    map[id] = {
+      id,
+      name: typeof row.name === "string" ? row.name : undefined,
+      track: typeof row.track === "string" ? row.track : undefined,
+      difficulty: typeof row.difficulty === "number" ? row.difficulty : undefined,
+      durationDays: typeof row.durationDays === "number" ? row.durationDays : undefined,
+      dailyRewardEliteScore: typeof row.dailyRewardEliteScore === "number" ? row.dailyRewardEliteScore : undefined,
+      completionBonus: typeof row.completionBonus === "number" ? row.completionBonus : undefined,
+    }
+  })
+  return map
+}
+
+function shortTemplateId(value: string): string {
+  if (value.length <= 8) return value
+  return `${value.slice(0, 4)}...${value.slice(-4)}`
+}
+
+function mapToActiveChallengeUi(
+  challenge: UserChallenge,
+  templatesById: Record<string, ChallengeTemplateApi>,
+): ActiveChallengeUi {
+  const currentDay = Math.max(0, challenge.currentDay ?? 0)
+  const templateId = challenge.challengeTemplateId != null ? String(challenge.challengeTemplateId) : "Unknown"
+  const template = templateId !== "Unknown" ? templatesById[templateId] : undefined
+  const durationDays = typeof template?.durationDays === "number" && template.durationDays > 0 ? template.durationDays : 0
+  const progressBase = durationDays > 0 ? Math.round((currentDay / durationDays) * 100) : currentDay * 10
+  const progress = Math.min(100, Math.max(0, progressBase))
+  const statusLabel = (challenge.status ?? "active").replaceAll("_", " ")
+  const endTs = challenge.endDate ? Date.parse(challenge.endDate) : NaN
+  const endDateLabel =
+    Number.isFinite(endTs) ? new Date(endTs).toLocaleDateString() : "No end date"
+  const endDateUrgent = Number.isFinite(endTs) ? endTs - Date.now() <= 2 * 24 * 60 * 60 * 1000 : false
+  const difficulty =
+    typeof template?.difficulty === "number" && Number.isFinite(template.difficulty)
+      ? Math.min(5, Math.max(1, Math.round(template.difficulty)))
+      : 3
+  const rewardPoints =
+    typeof template?.completionBonus === "number"
+      ? template.completionBonus
+      : typeof template?.dailyRewardEliteScore === "number" && durationDays > 0
+        ? template.dailyRewardEliteScore * durationDays
+        : 0
+
+  return {
+    id: String(challenge.id),
+    templateId: templateId !== "Unknown" ? templateId : null,
+    title: template?.name?.trim() || "Challenge",
+    statusLabel,
+    progress,
+    currentDay,
+    endDateLabel,
+    endDateUrgent,
+    missedDaysCount: Math.max(0, challenge.missedDaysCount ?? 0),
+    challengeTemplateIdLabel: shortTemplateId(templateId),
+    trackLabel: template?.track?.trim() || "General",
+    difficulty,
+    durationDays,
+    rewardPoints,
+  }
+}
+
 export default function HomePage() {
   const router = useRouter()
   const [authChecked, setAuthChecked] = useState(false)
   const [displayName, setDisplayName] = useState("there")
   const [dashboard, setDashboard] = useState<DashboardResponse | null>(null)
   const [dashboardLoading, setDashboardLoading] = useState(true)
+  const [myChallenges, setMyChallenges] = useState<UserChallenge[]>([])
+  const [challengeTemplatesById, setChallengeTemplatesById] = useState<Record<string, ChallengeTemplateApi>>({})
+  const [myChallengesLoading, setMyChallengesLoading] = useState(true)
   const [activeCategory, setActiveCategory] = useState("Top")
 
   useEffect(() => {
@@ -245,6 +388,77 @@ export default function HomePage() {
     }
   }, [authChecked])
 
+  useEffect(() => {
+    if (!authChecked) return
+    const token = localStorage.getItem("elitescore_access_token")
+    if (!token) {
+      setChallengeTemplatesById({})
+      setMyChallenges([])
+      setMyChallengesLoading(false)
+      return
+    }
+    const userId = localStorage.getItem("elitescore_user_id")
+    let cancelled = false
+    setMyChallengesLoading(true)
+
+    const headers: Record<string, string> = {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    }
+    if (userId) headers["X-User-Id"] = userId
+
+    Promise.all([
+      fetch(CHALLENGES_URL, { method: "GET", headers }).then(async (res) => {
+        const body = await res.json().catch(() => null)
+        if (process.env.NODE_ENV === "development") {
+          console.debug("[Home Active Challenges] GET /api/challenges", {
+            status: res.status,
+            ok: res.ok,
+            isArray: Array.isArray(body),
+            count: Array.isArray(body) ? body.length : null,
+            body,
+          })
+        }
+        if (!res.ok) return {}
+        return parseChallengeTemplates(body)
+      }),
+      fetch(CHALLENGES_MY_URL, { method: "GET", headers }).then(async (res) => {
+        const body = await res.json().catch(() => null)
+        if (process.env.NODE_ENV === "development") {
+          console.debug("[Home Active Challenges] GET /api/challenges/my", {
+            status: res.status,
+            ok: res.ok,
+            isArray: Array.isArray(body),
+            count: Array.isArray(body) ? body.length : null,
+            body,
+          })
+        }
+        if (!res.ok) return []
+        return parseUserChallenges(body)
+      }),
+    ])
+      .then(([templatesMap, rows]) => {
+        if (cancelled) return
+        setChallengeTemplatesById(templatesMap)
+        setMyChallenges(rows)
+      })
+      .catch((err) => {
+        if (cancelled) return
+        if (process.env.NODE_ENV === "development") {
+          console.debug("[Home Active Challenges] fetch error", err)
+        }
+        setChallengeTemplatesById({})
+        setMyChallenges([])
+      })
+      .finally(() => {
+        if (!cancelled) setMyChallengesLoading(false)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [authChecked])
+
   const eliteScore = dashboard?.eliteScore ?? 0
   const globalRank = dashboard?.globalRank
   const percentile = dashboard?.percentile
@@ -297,6 +511,12 @@ export default function HomePage() {
     { id: "4", title: "Google Data Analytics", category: "Tech", points: 80, members: "22k", gradientClass: "from-amber-500/90 to-orange-500/90" },
   ]
   const recommendationsToShow: RecommendationUi[] = hasRecommendations ? filteredRecommendations : fallbackRecommendations
+  const activeChallenges = myChallenges
+    .filter((challenge) => {
+      const status = (challenge.status ?? "").toLowerCase()
+      return status === "" || status === "active" || status === "in_progress" || status === "in progress"
+    })
+    .map((challenge) => mapToActiveChallengeUi(challenge, challengeTemplatesById))
 
   const handleCategoryClick = (cat: string) => setActiveCategory(cat)
 
@@ -476,7 +696,11 @@ export default function HomePage() {
             </div>
 
             <div className="mt-5 grid gap-4 sm:grid-cols-2">
-              {ACTIVE_CHALLENGES.length === 0 ? (
+              {myChallengesLoading ? (
+                <div className="col-span-full flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-200 bg-slate-50/50 py-12 text-center">
+                  <p className="text-sm font-medium text-slate-600">Loading active challenges...</p>
+                </div>
+              ) : activeChallenges.length === 0 ? (
                 <div className="col-span-full flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-200 bg-slate-50/50 py-12 text-center">
                   <p className="text-sm font-medium text-slate-600">No active challenges yet</p>
                   <p className="mt-1 text-xs text-slate-500">Start one to track your progress here.</p>
@@ -490,16 +714,14 @@ export default function HomePage() {
                   </Link>
                 </div>
               ) : (
-                ACTIVE_CHALLENGES.map((challenge) => (
+                activeChallenges.map((challenge) => (
                   <article
                     key={challenge.id}
                     className="overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-sm transition-shadow hover:shadow-md"
                   >
                     <div
                       className="h-1.5 w-full"
-                      style={{
-                        background: `linear-gradient(to right, ${challenge.accentFrom}, ${challenge.accentTo})`,
-                      }}
+                      style={{ background: APP_GRADIENT }}
                       aria-hidden
                     />
                     <div className="p-4">
@@ -508,15 +730,23 @@ export default function HomePage() {
                           {challenge.title}
                         </h3>
                         <span className="shrink-0 rounded-lg bg-pink-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-pink-600">
-                          Active
+                          {challenge.statusLabel}
                         </span>
                       </div>
                       <p className="mt-1 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
-                        {challenge.weekLabel}
+                        {challenge.trackLabel} · Template #{challenge.challengeTemplateIdLabel}
                       </p>
                       <DifficultyDots level={challenge.difficulty} />
+                      <p className="mt-1 text-[11px] text-slate-500">
+                        {challenge.durationDays > 0 ? `${challenge.durationDays} days` : "Duration —"}
+                        {challenge.rewardPoints > 0 ? ` · ${challenge.rewardPoints} pts` : ""}
+                      </p>
                       <div className="mt-3">
                         <div className="flex items-center justify-between text-xs">
+                          <span className="text-slate-500">Current day</span>
+                          <span className="font-semibold text-slate-700">Day {challenge.currentDay}</span>
+                        </div>
+                        <div className="mt-2 flex items-center justify-between text-xs">
                           <span className="text-slate-500">Progress</span>
                           <span className="font-semibold text-slate-700">{challenge.progress}%</span>
                         </div>
@@ -535,20 +765,20 @@ export default function HomePage() {
                       </div>
                       <p
                         className={`mt-2 flex items-center gap-1.5 text-xs ${
-                          challenge.deadlineUrgent
+                          challenge.endDateUrgent
                             ? "font-semibold text-orange-600"
                             : "text-slate-500"
                         }`}
                       >
                         <Clock className="h-3.5 w-3.5 shrink-0" aria-hidden />
-                        Deadline: {challenge.deadline}
+                        End date: {challenge.endDateLabel}
                       </p>
                       <div className="mt-3 rounded-xl border border-slate-200/80 bg-slate-50/70 p-3">
                         <p className="text-[10px] font-semibold uppercase tracking-wide text-pink-600">
-                          Today&apos;s task
+                          Enrollment details
                         </p>
                         <p className="mt-0.5 text-xs leading-relaxed text-slate-700">
-                          {challenge.todayTask}
+                          Missed days: {challenge.missedDaysCount}
                         </p>
                       </div>
                       <div className="mt-3 grid grid-cols-2 gap-2">
@@ -562,7 +792,7 @@ export default function HomePage() {
                           Submit Proof
                         </button>
                         <Link
-                          href={`/challenges/${challenge.id}`}
+                          href={challenge.templateId ? `/challenges/${challenge.templateId}` : "/challenges"}
                           className="flex items-center justify-center rounded-xl border border-slate-200 bg-white py-2.5 text-xs font-semibold text-slate-600 transition-colors hover:bg-slate-50"
                           aria-label={`View details for ${challenge.title}`}
                         >

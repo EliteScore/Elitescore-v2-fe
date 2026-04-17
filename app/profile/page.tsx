@@ -27,6 +27,7 @@ const PROFILE_ME_URL = "/api/profile/me"
 const APP_GRADIENT = "linear-gradient(135deg, #db2777 0%, #ea580c 35%, #2563eb 70%, #7c3aed 100%)"
 const CARD_BASE = "rounded-2xl border border-slate-200/80 bg-white shadow-sm"
 const ACCOUNT_DELETE_CONFIRMATION = "DELETE"
+const MAGIC_LINK_FLAG_KEY = "elitescore_magic_link_pending_password"
 const AUTH_STORAGE_KEYS = [
   "elitescore_access_token",
   "elitescore_refresh_token",
@@ -130,17 +131,17 @@ export default function ProfilePage() {
   const [profileError, setProfileError] = useState<string | null>(null)
   const [hasExistingProfile, setHasExistingProfile] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
-  const [showChangePassword, setShowChangePassword] = useState(false)
+  const [showSetPassword, setShowSetPassword] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [settingsError, setSettingsError] = useState<string | null>(null)
   const [settingsSuccess, setSettingsSuccess] = useState<string | null>(null)
   const [isLogoutLoading, setIsLogoutLoading] = useState(false)
   const [isDeleteLoading, setIsDeleteLoading] = useState(false)
-  const [isChangePasswordLoading, setIsChangePasswordLoading] = useState(false)
+  const [isSetPasswordLoading, setIsSetPasswordLoading] = useState(false)
   const [deleteConfirmationInput, setDeleteConfirmationInput] = useState("")
-  const [currentPassword, setCurrentPassword] = useState("")
-  const [newPassword, setNewPassword] = useState("")
-  const [confirmNewPassword, setConfirmNewPassword] = useState("")
+  const [setPasswordValue, setSetPasswordValue] = useState("")
+  const [confirmSetPasswordValue, setConfirmSetPasswordValue] = useState("")
+  const [magicLinkPending, setMagicLinkPending] = useState(false)
 
   useEffect(() => {
     const token = localStorage.getItem("elitescore_access_token")
@@ -152,6 +153,18 @@ export default function ProfilePage() {
     }
     setAuthChecked(true)
   }, [router])
+
+  useEffect(() => {
+    if (!authChecked) return
+    try {
+      const flag = localStorage.getItem(MAGIC_LINK_FLAG_KEY)
+      if (flag === "true") {
+        setMagicLinkPending(true)
+      }
+    } catch {
+      // ignore storage errors
+    }
+  }, [authChecked])
 
   useEffect(() => {
     if (!authChecked) return
@@ -236,19 +249,26 @@ export default function ProfilePage() {
     setShowSettings((prev) => !prev)
   }
 
-  const handleOpenChangePassword = () => {
+  const handleOpenSetPassword = () => {
     resetSettingsMessages()
-    setCurrentPassword("")
-    setNewPassword("")
-    setConfirmNewPassword("")
-    setShowChangePassword(true)
+    setSetPasswordValue("")
+    setConfirmSetPasswordValue("")
+    setShowSetPassword(true)
   }
 
-  const handleCloseChangePassword = () => {
-    setShowChangePassword(false)
-    setCurrentPassword("")
-    setNewPassword("")
-    setConfirmNewPassword("")
+  const handleCloseSetPassword = () => {
+    setShowSetPassword(false)
+    setSetPasswordValue("")
+    setConfirmSetPasswordValue("")
+  }
+
+  const dismissMagicLinkBanner = () => {
+    setMagicLinkPending(false)
+    try {
+      localStorage.removeItem(MAGIC_LINK_FLAG_KEY)
+    } catch {
+      // ignore storage errors
+    }
   }
 
   const handleOpenDeleteConfirm = () => {
@@ -294,20 +314,16 @@ export default function ProfilePage() {
     }
   }
 
-  const handleChangePassword = async () => {
-    if (isChangePasswordLoading) return
+  const handleSetPassword = async () => {
+    if (isSetPasswordLoading) return
     resetSettingsMessages()
 
-    if (!currentPassword.trim() || !newPassword.trim() || !confirmNewPassword.trim()) {
-      setSettingsError("All password fields are required.")
+    if (!setPasswordValue.trim() || !confirmSetPasswordValue.trim()) {
+      setSettingsError("Please fill in both password fields.")
       return
     }
-    if (newPassword !== confirmNewPassword) {
-      setSettingsError("New password and confirmation do not match.")
-      return
-    }
-    if (currentPassword === newPassword) {
-      setSettingsError("New password must be different from the current password.")
+    if (setPasswordValue !== confirmSetPasswordValue) {
+      setSettingsError("Passwords do not match.")
       return
     }
 
@@ -318,33 +334,31 @@ export default function ProfilePage() {
       return
     }
 
-    setIsChangePasswordLoading(true)
+    setIsSetPasswordLoading(true)
     try {
-      const res = await fetch("/api/auth/password-reset", {
+      const res = await fetch("/api/auth/set-password", {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          old_password: currentPassword,
-          new_password: newPassword,
-        }),
+        body: JSON.stringify({ new_password: setPasswordValue }),
       })
 
       const apiMessage = await parseApiMessage(res)
       if (!res.ok) {
-        setSettingsError(apiMessage ?? "Password could not be updated.")
+        setSettingsError(apiMessage ?? "Password could not be set.")
         return
       }
 
-      setSettingsSuccess(apiMessage ?? "Password updated successfully.")
-      handleCloseChangePassword()
+      setSettingsSuccess(apiMessage ?? "Password set successfully.")
+      handleCloseSetPassword()
+      dismissMagicLinkBanner()
     } catch (error) {
-      console.error("Change password error:", error)
-      setSettingsError("Password could not be updated.")
+      console.error("Set password error:", error)
+      setSettingsError("Password could not be set.")
     } finally {
-      setIsChangePasswordLoading(false)
+      setIsSetPasswordLoading(false)
     }
   }
 
@@ -467,6 +481,22 @@ export default function ProfilePage() {
         {profileError && (
           <p className="mb-3 text-xs text-amber-700 bg-amber-50 border border-amber-200/80 rounded-xl px-3 py-2" role="status">{profileError}</p>
         )}
+        {magicLinkPending && (
+          <div className="mb-3 flex items-start gap-2 rounded-xl border border-pink-200/80 bg-pink-50 px-3 py-2.5 text-xs text-pink-800" role="status">
+            <div className="flex-1 min-w-0">
+              <p className="font-semibold">You&apos;re logged in via email link.</p>
+              <p className="mt-0.5 text-pink-700/90">Please set a new password to continue using normal login.</p>
+            </div>
+            <div className="flex items-center gap-1.5 shrink-0">
+              <Button size="sm" className="min-h-[32px] px-2.5 py-1 text-[11px] bg-pink-600 hover:bg-pink-700 text-white rounded-lg" onClick={handleOpenSetPassword}>
+                Set password
+              </Button>
+              <button type="button" onClick={dismissMagicLinkBanner} aria-label="Dismiss" className="min-h-[32px] min-w-[32px] rounded-lg text-pink-700 hover:bg-pink-100 flex items-center justify-center">
+                <X className="w-3.5 h-3.5" aria-hidden />
+              </button>
+            </div>
+          </div>
+        )}
         {/* Hero strip — matches home / leaderboard */}
         <section className="relative overflow-hidden rounded-2xl px-4 py-5 sm:px-6 sm:py-6 mb-4" style={{ background: APP_GRADIENT }} aria-labelledby="profile-heading">
           <h1 id="profile-heading" className="relative text-xl font-extrabold leading-tight text-white sm:text-2xl">Profile</h1>
@@ -542,9 +572,9 @@ export default function ProfilePage() {
                   </p>
                 ) : null}
                 <div className="space-y-1.5">
-                  <Button size="sm" variant="outline" className="w-full justify-start text-xs min-h-[44px] bg-slate-100 border-slate-200 rounded-xl touch-manipulation text-slate-700 hover:bg-slate-200/80" onClick={handleOpenChangePassword}>
+                  <Button size="sm" variant="outline" className="w-full justify-start text-xs min-h-[44px] bg-slate-100 border-slate-200 rounded-xl touch-manipulation text-slate-700 hover:bg-slate-200/80" onClick={handleOpenSetPassword}>
                     <Lock className="w-3.5 h-3.5 mr-2" aria-hidden />
-                    Change Password
+                    Set New Password
                   </Button>
                   <Button size="sm" variant="outline" className="w-full justify-start text-xs min-h-[44px] bg-slate-100 border-slate-200 rounded-xl touch-manipulation text-slate-700 hover:bg-slate-200/80" onClick={handleLogout} disabled={isLogoutLoading}>
                     <LogOut className="w-3.5 h-3.5 mr-2" aria-hidden />
@@ -558,41 +588,33 @@ export default function ProfilePage() {
               </div>
             )}
 
-            {showChangePassword && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-3 sm:p-4" role="dialog" aria-modal="true" aria-labelledby="change-password-title" onClick={handleCloseChangePassword}>
+            {showSetPassword && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-3 sm:p-4" role="dialog" aria-modal="true" aria-labelledby="set-password-title" onClick={handleCloseSetPassword}>
                 <div className={`${CARD_BASE} p-4 sm:p-6 w-full max-w-md max-h-[88dvh] overflow-y-auto`} onClick={(e) => e.stopPropagation()}>
-                  <h3 id="change-password-title" className="text-base sm:text-lg font-bold text-slate-800 mb-2">Change Password</h3>
-                  <p className="text-xs sm:text-sm text-slate-600 mb-4 sm:mb-6 leading-relaxed">Use your current password and set a new one.</p>
+                  <h3 id="set-password-title" className="text-base sm:text-lg font-bold text-slate-800 mb-2">Set New Password</h3>
+                  <p className="text-xs sm:text-sm text-slate-600 mb-4 leading-relaxed">Create a new password for your account. Use this after signing in via an email link.</p>
                   <div className="space-y-3">
                     <input
                       type="password"
-                      value={currentPassword}
-                      onChange={(event) => setCurrentPassword(event.target.value)}
-                      className="w-full min-h-[44px] rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-800"
-                      placeholder="Current password"
-                      autoComplete="current-password"
-                    />
-                    <input
-                      type="password"
-                      value={newPassword}
-                      onChange={(event) => setNewPassword(event.target.value)}
+                      value={setPasswordValue}
+                      onChange={(event) => setSetPasswordValue(event.target.value)}
                       className="w-full min-h-[44px] rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-800"
                       placeholder="New password"
                       autoComplete="new-password"
                     />
                     <input
                       type="password"
-                      value={confirmNewPassword}
-                      onChange={(event) => setConfirmNewPassword(event.target.value)}
+                      value={confirmSetPasswordValue}
+                      onChange={(event) => setConfirmSetPasswordValue(event.target.value)}
                       className="w-full min-h-[44px] rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-800"
                       placeholder="Confirm new password"
                       autoComplete="new-password"
                     />
                   </div>
                   <div className="mt-3 flex gap-2">
-                    <Button size="sm" variant="outline" className="flex-1 min-h-[40px] text-xs rounded-xl border-slate-200 touch-manipulation text-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-pink-500/30" onClick={handleCloseChangePassword} disabled={isChangePasswordLoading}>Cancel</Button>
-                    <Button size="sm" className="flex-1 min-h-[40px] bg-pink-600 hover:bg-pink-700 text-white text-xs rounded-xl touch-manipulation focus:outline-none focus-visible:ring-2 focus-visible:ring-pink-500/50" onClick={handleChangePassword} disabled={isChangePasswordLoading}>
-                      {isChangePasswordLoading ? "Updating..." : "Update Password"}
+                    <Button size="sm" variant="outline" className="flex-1 min-h-[40px] text-xs rounded-xl border-slate-200 touch-manipulation text-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-pink-500/30" onClick={handleCloseSetPassword} disabled={isSetPasswordLoading}>Cancel</Button>
+                    <Button size="sm" className="flex-1 min-h-[40px] bg-pink-600 hover:bg-pink-700 text-white text-xs rounded-xl touch-manipulation focus:outline-none focus-visible:ring-2 focus-visible:ring-pink-500/50" onClick={handleSetPassword} disabled={isSetPasswordLoading}>
+                      {isSetPasswordLoading ? "Saving..." : "Save Password"}
                     </Button>
                   </div>
                 </div>

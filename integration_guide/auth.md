@@ -102,7 +102,7 @@ Response:
 
 ---
 
-### 4) Forgot Password (public)
+### 4) Forgot Password (public) — Magic Link
 
 `POST /auth/forgot-password`
 
@@ -118,14 +118,15 @@ Response (always generic to prevent account enumeration):
 
 ```json
 {
-  "message": "If the account exists, a reset link has been sent."
+  "message": "If the account exists, a login link has been sent."
 }
 ```
 
 Notes:
+- Endpoint now sends a **magic login link** (Supabase), not a reset-token link.
+- Clicking the link logs the user in and redirects to `GET /auth/callback` on the FE, where tokens are read from `window.location.hash` and stored.
+- After arriving, FE should prompt the user to set a new password via `POST /auth/set-password`.
 - Endpoint is rate-limited.
-- Reset link host is derived from the incoming request host/proxy headers.
-- `APP_BASE_URL` is used as fallback only.
 
 ---
 
@@ -168,6 +169,27 @@ Response:
 
 ---
 
+### 6b) Set Password While Logged In (no old password)
+
+`POST /auth/set-password` (Bearer required)
+
+Used after magic-link login to set a new password without providing an old one.
+
+Request:
+
+```json
+{
+  "new_password": "NewStrongPass123!"
+}
+```
+
+Response:
+- `200` -> `{ "message": "Password updated successfully." }`
+- `400` -> validation error
+- `401` -> unauthorized
+
+---
+
 ### 7) Logout
 
 `POST /auth/logout` (Bearer required)
@@ -198,16 +220,22 @@ Frontend confirmation (typing a phrase) should be handled in UI before calling t
 
 ---
 
-### 9) Reset Password Page (public HTML)
+### 9) Reset Password Page (public HTML) — legacy
 
 `GET /reset-password?token=...`
 
-Returns a simple built-in HTML reset page which:
-- reads `token` from query string
-- takes new password + confirmation
-- calls `POST /auth/reset-password`
+Legacy token-based reset page (still served by backend). With the new magic-link flow this is no longer the primary path; prefer the magic link + `/auth/callback` + `/auth/set-password` flow.
 
-Use this URL in forgot-password emails.
+### 10) FE Auth Callback (magic link landing)
+
+`GET /auth/callback` (FE route)
+
+Behavior:
+- Parses `window.location.hash` for `access_token`, `refresh_token`, `expires_in`, `token_type`, `type`.
+- Stores tokens in local storage (same keys as normal login).
+- Clears the hash from the URL.
+- If `type=magiclink` (or `recovery`), sets a one-time flag so `/profile` can show a banner prompting the user to set a new password.
+- Redirects to `/profile` (magic-link flow) or `/home` otherwise.
 
 ---
 
@@ -259,12 +287,14 @@ Returns:
 1. Login/signup -> store `access_token` and `refresh_token`.
 2. For protected calls, send:
    - `Authorization: Bearer <access_token>`
-3. For forgot-password:
+3. For forgot-password (magic link):
    - call `POST /auth/forgot-password`
-   - user opens emailed `/reset-password?token=...`
-   - page submits `POST /auth/reset-password`
+   - user opens emailed magic link -> lands on FE `/auth/callback`
+   - FE stores tokens from URL hash, redirects to `/profile`
+   - user sets a new password via `POST /auth/set-password`
 4. For in-session password update:
-   - call `POST /auth/password-reset`
+   - call `POST /auth/password-reset` (requires old password)
+   - or `POST /auth/set-password` (no old password — used after magic link)
 5. For logout:
    - call `POST /auth/logout`
    - clear local tokens

@@ -9,6 +9,7 @@ import "../landing/landing-animations.css"
 
 const APP_GRADIENT = "linear-gradient(135deg, #db2777 0%, #ea580c 35%, #2563eb 70%, #7c3aed 100%)"
 const CARD_BASE = "rounded-2xl border border-slate-200/80 bg-white shadow-sm"
+const LEADERBOARD_PAGE_SIZE = 100
 
 type LeaderboardUser = {
   id: string
@@ -21,25 +22,29 @@ type LeaderboardUser = {
   avatarUrl?: string | null
 }
 
+type LeaderboardApiEntry = {
+  userId: string | number
+  handle?: string | null
+  displayName?: string | null
+  avatarUrl?: string | null
+  eliteScore: number
+  streakCurrent?: number | null
+  rank?: number | null
+}
+
+type LeaderboardApiResponse = {
+  entries?: LeaderboardApiEntry[]
+  page?: number
+  size?: number
+  totalUsers?: number
+  totalPages?: number
+}
+
 const getInitials = (name: string): string => {
   const parts = name.trim().split(/\s+/)
   if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
   return (parts[0]?.slice(0, 2) ?? "?").toUpperCase()
 }
-
-const LEADERBOARD_RAW: Omit<LeaderboardUser, "rank">[] = [
-  { id: "1",       name: "Jordan_Dev",      score: 8322, streak: 34, movement: 2  },
-  { id: "2",       name: "AvaCodes",         score: 8305, streak: 21, movement: 1  },
-  { id: "3",       name: "RyanW",            score: 8247, streak: 12, movement: -1 },
-  { id: "4",       name: "Maria_K",          score: 8219, streak: 9,  movement: 3  },
-  { id: "5",       name: "NoahBuilder",      score: 8208, streak: 7,  movement: 0  },
-  { id: "6",       name: "XuanVinh",         score: 8174, streak: 15, movement: -2 },
-  { id: "7",       name: "MaiLinh",          score: 8103, streak: 5,  movement: 1  },
-  { id: "8",       name: "DucAnh",           score: 7990, streak: 22, movement: 0  },
-  { id: "9",       name: "ThuHuong",         score: 7882, streak: 4,  movement: -1 },
-  { id: "10",      name: "QuangMinh",        score: 7741, streak: 8,  movement: 2  },
-  { id: "current", name: "KingRom", score: 1847, streak: 6,  movement: 23, isCurrentUser: true },
-]
 
 type UseInViewOptions = { rootMargin?: string; threshold?: number }
 const useInView = (options: UseInViewOptions = {}): [React.RefObject<HTMLElement | null>, boolean] => {
@@ -83,8 +88,10 @@ const MEDAL_EMOJI: Record<number, string> = { 1: "🥇", 2: "🥈", 3: "🥉" }
 
 export default function LeaderboardPage() {
   const [selectedProfile, setSelectedProfile] = useState<LeaderboardUser | null>(null)
+  const [leaderboard, setLeaderboard] = useState<LeaderboardUser[]>([])
+  const [loadError, setLoadError] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
   const [heroReady, setHeroReady] = useState(false)
-  const podiumRef = useInView()
   const listRef = useInView()
 
   useEffect(() => {
@@ -92,16 +99,153 @@ export default function LeaderboardPage() {
     return () => cancelAnimationFrame(t)
   }, [])
 
-  const leaderboard = useMemo<LeaderboardUser[]>(() => {
-    const others = LEADERBOARD_RAW.filter((u) => !u.isCurrentUser).sort((a, b) => b.score - a.score)
-    const ranked: LeaderboardUser[] = others.map((u, i) => ({ ...u, rank: i + 1 }))
-    const me = LEADERBOARD_RAW.find((u) => u.isCurrentUser)
-    if (me) ranked.push({ ...me, rank: 125 })
-    return ranked
+  useEffect(() => {
+    let cancelled = false
+
+    async function loadLeaderboard() {
+      setIsLoading(true)
+      setLoadError(null)
+
+      const token = localStorage.getItem("elitescore_access_token")
+      if (!token) {
+        if (!cancelled) {
+          setLoadError("Login required to view leaderboard.")
+          setLeaderboard([])
+          setIsLoading(false)
+        }
+        return
+      }
+
+      const userId = localStorage.getItem("elitescore_user_id")
+      try {
+        const headers: Record<string, string> = {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        }
+        if (userId) {
+          headers["X-User-Id"] = userId
+        }
+
+        const allEntries: LeaderboardApiEntry[] = []
+        let page = 0
+        let totalPages = 1
+
+        while (page < totalPages) {
+          const requestUrl = `/api/leaderboard?page=${page}&size=${LEADERBOARD_PAGE_SIZE}`
+          if (process.env.NODE_ENV === "development") {
+            console.debug("[leaderboard] request", {
+              url: requestUrl,
+              method: "GET",
+              headers: {
+                Authorization: "Bearer [redacted]",
+                "Content-Type": headers["Content-Type"],
+                "X-User-Id": headers["X-User-Id"] ?? null,
+              },
+            })
+          }
+
+          const res = await fetch(requestUrl, { method: "GET", headers })
+          const body: LeaderboardApiResponse = await res.json().catch(() => ({}))
+          if (process.env.NODE_ENV === "development") {
+            console.debug("[leaderboard] response", {
+              url: requestUrl,
+              ok: res.ok,
+              status: res.status,
+              page,
+              totalPagesFromApi:
+                typeof body.totalPages === "number" && Number.isFinite(body.totalPages)
+                  ? body.totalPages
+                  : null,
+              entriesCount: Array.isArray(body.entries) ? body.entries.length : 0,
+              bodyPreview: body,
+            })
+          }
+
+          if (!res.ok) {
+            const message = typeof (body as { message?: unknown })?.message === "string"
+              ? (body as { message: string }).message
+              : "Could not load leaderboard."
+            if (!cancelled) {
+              setLoadError(message)
+              setLeaderboard([])
+            }
+            return
+          }
+
+          const entries = Array.isArray(body.entries) ? body.entries : []
+          allEntries.push(...entries)
+
+          const parsedTotalPages =
+            typeof body.totalPages === "number" && Number.isFinite(body.totalPages) && body.totalPages > 0
+              ? body.totalPages
+              : page + 1
+          totalPages = parsedTotalPages
+          page += 1
+
+          // Safety guard in case upstream totalPages is malformed.
+          if (page > 200) break
+        }
+
+        const uniqueEntries = new Map<string, LeaderboardApiEntry>()
+        allEntries.forEach((entry) => {
+          uniqueEntries.set(String(entry.userId), entry)
+        })
+
+        const mapped = Array.from(uniqueEntries.values())
+          .map((entry, index): LeaderboardUser => {
+            const rank =
+              typeof entry.rank === "number" && Number.isFinite(entry.rank) && entry.rank > 0
+                ? entry.rank
+                : index + 1
+            const id = String(entry.userId)
+            const name = entry.displayName?.trim() || entry.handle?.trim() || `User #${rank}`
+            return {
+              id,
+              rank,
+              name,
+              score: entry.eliteScore ?? 0,
+              streak: entry.streakCurrent ?? 0,
+              avatarUrl: entry.avatarUrl ?? null,
+              isCurrentUser: userId != null && id === userId,
+            }
+          })
+          .sort((a, b) => a.rank - b.rank)
+
+        if (!cancelled) {
+          if (process.env.NODE_ENV === "development") {
+            console.debug("[leaderboard] mapped result", {
+              uniqueUsers: mapped.length,
+              meFound: mapped.some((entry) => entry.isCurrentUser),
+              topRanks: mapped.slice(0, 5).map((entry) => ({
+                rank: entry.rank,
+                id: entry.id,
+                name: entry.name,
+                score: entry.score,
+              })),
+            })
+          }
+          setLeaderboard(mapped)
+        }
+      } catch (error) {
+        if (!cancelled) {
+          console.error("[leaderboard] load error", error)
+          setLoadError("Could not load leaderboard.")
+          setLeaderboard([])
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLoading(false)
+        }
+      }
+    }
+
+    loadLeaderboard()
+    return () => {
+      cancelled = true
+    }
   }, [])
 
-  const top3 = useMemo(() => leaderboard.filter((u) => u.rank <= 3), [leaderboard])
-  const list4to10 = useMemo(() => leaderboard.filter((u) => u.rank >= 4 && u.rank <= 10), [leaderboard])
+  const fullList = useMemo(() => leaderboard, [leaderboard])
   const me = useMemo(() => leaderboard.find((u) => u.isCurrentUser), [leaderboard])
 
   return (
@@ -157,89 +301,29 @@ export default function LeaderboardPage() {
           </div>
         </section>
 
-        {/* Podium #2 | #1 | #3 */}
-        <section
-          ref={podiumRef[0] as React.RefObject<HTMLElement>}
-          className={`landing-scroll-in mb-5 ${podiumRef[1] ? "landing-scroll-in-visible" : ""}`}
-          aria-label="Top 3 podium"
-        >
-          <div className="grid grid-cols-3 items-end gap-2">
-            {/* #2 */}
-            {top3[1] && (
-              <button
-                type="button"
-                onClick={() => setSelectedProfile(top3[1]!)}
-                className={`landing-fade-up flex flex-col items-center rounded-2xl focus:outline-none focus-visible:ring-2 focus-visible:ring-pink-500/40 active:scale-[0.97] touch-manipulation transition-transform ${podiumRef[1] ? "landing-fade-up-visible" : ""}`}
-                style={{ transitionDelay: "80ms" }}
-                aria-label={`${top3[1].name}, rank 2`}
-              >
-                <p className="mb-1 text-lg">{MEDAL_EMOJI[2]}</p>
-                <div className="relative mb-3">
-                  <Avatar name={top3[1].name} size="lg" className="border-2 border-white shadow-md" />
-                  <span className={cn("absolute -bottom-1.5 left-1/2 -translate-x-1/2 rounded-full border px-2 py-0.5 text-[10px] font-black", MEDAL_BG[2])}>#2</span>
-                </div>
-                <div className="w-full rounded-t-xl bg-white border border-slate-200/80 border-b-0 px-2 pt-4 pb-2 text-center shadow-sm">
-                  <p className="truncate text-xs font-bold text-slate-800">{top3[1].name}</p>
-                  <p className="mt-0.5 text-base font-black text-pink-600">{top3[1].score.toLocaleString()}</p>
-                  <p className="text-[10px] text-slate-400 font-semibold">pts</p>
-                </div>
-              </button>
-            )}
+        {isLoading && (
+          <section className={`${CARD_BASE} mb-5 px-4 py-4`} aria-live="polite">
+            <p className="text-sm text-slate-500">Loading leaderboard...</p>
+          </section>
+        )}
 
-            {/* #1 — taller column */}
-            {top3[0] && (
-              <button
-                type="button"
-                onClick={() => setSelectedProfile(top3[0]!)}
-                className={`landing-fade-up flex flex-col items-center rounded-2xl focus:outline-none focus-visible:ring-2 focus-visible:ring-pink-500/40 active:scale-[0.97] touch-manipulation transition-transform ${podiumRef[1] ? "landing-fade-up-visible" : ""}`}
-                style={{ transitionDelay: "0ms" }}
-                aria-label={`${top3[0].name}, rank 1`}
-              >
-                <p className="mb-1 text-2xl">{MEDAL_EMOJI[1]}</p>
-                <div className="relative mb-3">
-                  <Avatar name={top3[0].name} size="lg" className="border-[3px] border-amber-400 shadow-lg bg-amber-50 text-amber-800" />
-                  <span className={cn("absolute -bottom-1.5 left-1/2 -translate-x-1/2 rounded-full border px-2 py-0.5 text-[10px] font-black", MEDAL_BG[1])}>#1</span>
-                </div>
-                <div
-                  className="w-full rounded-t-xl px-2 pt-5 pb-3 text-center shadow-md text-white"
-                  style={{ background: APP_GRADIENT }}
-                >
-                  <p className="truncate text-xs font-bold drop-shadow-sm">{top3[0].name}</p>
-                  <p className="mt-0.5 text-xl font-black">{top3[0].score.toLocaleString()}</p>
-                  <p className="text-[10px] text-white/80 font-semibold">EliteScore pts</p>
-                </div>
-              </button>
-            )}
+        {!isLoading && loadError && (
+          <section className={`${CARD_BASE} mb-5 border-red-200 bg-red-50 px-4 py-4`} role="alert">
+            <p className="text-sm text-red-700">{loadError}</p>
+          </section>
+        )}
 
-            {/* #3 */}
-            {top3[2] && (
-              <button
-                type="button"
-                onClick={() => setSelectedProfile(top3[2]!)}
-                className={`landing-fade-up flex flex-col items-center rounded-2xl focus:outline-none focus-visible:ring-2 focus-visible:ring-pink-500/40 active:scale-[0.97] touch-manipulation transition-transform ${podiumRef[1] ? "landing-fade-up-visible" : ""}`}
-                style={{ transitionDelay: "160ms" }}
-                aria-label={`${top3[2].name}, rank 3`}
-              >
-                <p className="mb-1 text-lg">{MEDAL_EMOJI[3]}</p>
-                <div className="relative mb-3">
-                  <Avatar name={top3[2].name} size="lg" className="border-2 border-white shadow-md" />
-                  <span className={cn("absolute -bottom-1.5 left-1/2 -translate-x-1/2 rounded-full border px-2 py-0.5 text-[10px] font-black", MEDAL_BG[3])}>#3</span>
-                </div>
-                <div className="w-full rounded-t-xl bg-white border border-slate-200/80 border-b-0 px-2 pt-4 pb-2 text-center shadow-sm">
-                  <p className="truncate text-xs font-bold text-slate-800">{top3[2].name}</p>
-                  <p className="mt-0.5 text-base font-black text-pink-600">{top3[2].score.toLocaleString()}</p>
-                  <p className="text-[10px] text-slate-400 font-semibold">pts</p>
-                </div>
-              </button>
-            )}
-          </div>
-        </section>
+        {!isLoading && !loadError && leaderboard.length === 0 && (
+          <section className={`${CARD_BASE} mb-5 px-4 py-4`}>
+            <p className="text-sm text-slate-500">No leaderboard entries available right now.</p>
+          </section>
+        )}
 
-        {/* List #4–#10 + ellipsis + current user */}
-        <section
+        {/* Full leaderboard list */}
+        {fullList.length > 0 && <section
           ref={listRef[0] as React.RefObject<HTMLElement>}
-          className={`landing-scroll-in ${CARD_BASE} overflow-hidden ${listRef[1] ? "landing-scroll-in-visible" : ""}`}
-          aria-label="Rankings 4 to 10 and your position"
+          className={`${CARD_BASE} overflow-hidden`}
+          aria-label="All leaderboard rankings"
         >
           {/* Header row */}
           <div className="flex items-center gap-3 border-b border-slate-100 px-4 py-2.5">
@@ -249,19 +333,39 @@ export default function LeaderboardPage() {
           </div>
 
           <div className="divide-y divide-slate-100">
-            {list4to10.map((user, i) => (
+            {fullList.map((user) => (
               <button
                 key={user.id}
                 type="button"
                 onClick={() => setSelectedProfile(user)}
-                className={`landing-fade-up flex w-full items-center gap-3 px-4 py-3 min-h-[52px] text-left transition-colors hover:bg-slate-50 active:bg-slate-100 touch-manipulation focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-pink-500/30 ${listRef[1] ? "landing-fade-up-visible" : ""}`}
-                style={{ transitionDelay: `${i * 40}ms` }}
+                className={cn(
+                  "flex w-full items-center gap-3 px-4 py-3 min-h-[52px] text-left transition-colors active:bg-slate-100 touch-manipulation focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-pink-500/30",
+                  user.isCurrentUser
+                    ? "bg-gradient-to-r from-pink-50/60 to-purple-50/40 hover:from-pink-50/80 hover:to-purple-50/50"
+                    : "hover:bg-slate-50",
+                )}
                 aria-label={`${user.name}, rank ${user.rank}`}
               >
-                <span className="w-8 shrink-0 text-sm font-black text-slate-400">#{user.rank}</span>
-                <Avatar name={user.name} size="sm" />
+                <span
+                  className={cn(
+                    "w-8 shrink-0 text-sm font-black",
+                    user.isCurrentUser ? "text-pink-600" : "text-slate-400",
+                  )}
+                >
+                  #{user.rank}
+                </span>
+                <Avatar
+                  name={user.name}
+                  size="sm"
+                  className={user.isCurrentUser ? "border-pink-200 bg-pink-50 text-pink-700" : undefined}
+                />
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold text-slate-800">{user.name}</p>
+                  <p className="truncate text-sm font-semibold text-slate-800">
+                    {user.name}
+                    {user.isCurrentUser ? (
+                      <span className="ml-1.5 rounded bg-pink-100 px-1 py-0.5 text-[10px] font-black text-pink-600">you</span>
+                    ) : null}
+                  </p>
                   {user.streak && (
                     <p className="flex items-center gap-0.5 text-[10px] text-slate-400">
                       <Flame className="h-3 w-3 text-orange-400" aria-hidden />
@@ -281,44 +385,7 @@ export default function LeaderboardPage() {
               </button>
             ))}
           </div>
-
-          {/* Ellipsis */}
-          <div className="flex items-center gap-3 border-t border-slate-100 px-4 py-2">
-            <span className="w-8 shrink-0" />
-            <span className="text-slate-300 text-sm tracking-widest">· · · · ·</span>
-          </div>
-
-          {/* Current user row — highlighted */}
-          {me && (
-            <div className="border-t border-slate-100 bg-gradient-to-r from-pink-50/60 to-purple-50/40">
-              <div className="flex items-center gap-3 px-4 py-3 min-h-[52px]">
-                <span className="w-8 shrink-0 text-sm font-black" style={{ backgroundImage: APP_GRADIENT, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-                  #{me.rank}
-                </span>
-                <Avatar name={me.name} size="sm" className="border-pink-200 bg-pink-50 text-pink-700" />
-                <div className="min-w-0 flex-1">
-                  <p className="flex items-center gap-1.5 truncate text-sm font-bold text-slate-800">
-                    {me.name}
-                    <span className="rounded bg-pink-100 px-1 py-0.5 text-[10px] font-black text-pink-600">you</span>
-                  </p>
-                  {me.streak && (
-                    <p className="flex items-center gap-0.5 text-[10px] text-slate-400">
-                      <Flame className="h-3 w-3 text-orange-400" aria-hidden />
-                      {me.streak}d streak
-                    </p>
-                  )}
-                </div>
-                <div className="text-right">
-                  <p className="text-sm font-black text-slate-800">{me.score.toLocaleString()}</p>
-                  <p className="text-[10px] text-slate-400">pts</p>
-                </div>
-                {(me.movement ?? 0) > 0 && (
-                  <span className="ml-1 shrink-0 text-[10px] font-bold text-emerald-600">▲{me.movement}</span>
-                )}
-              </div>
-            </div>
-          )}
-        </section>
+        </section>}
       </div>
 
       {/* Profile modal */}
