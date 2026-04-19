@@ -71,7 +71,6 @@ All errors follow [RFC 9457 Problem Details](https://www.rfc-editor.org/rfc/rfc9
 **Notes:**
 
 - Single round-trip for the home view. Recommendations exclude challenges the user has enrolled in (any status); sorted by completion rate then difficulty.
-- The `streaks` field (`streakCurrent`, `streakLongest`, `lastActiveAt`) and `leaderboardPreview` are embedded directly — no separate endpoint call is needed for these on the home screen.
 
 ---
 
@@ -187,7 +186,7 @@ Missed days and challenge failure are applied automatically by the backend (sche
 
 ### POST /api/challenges/{userChallengeId}/proofs
 
-**Summary:** Submit daily proof for the next day of an active challenge. AI verification runs synchronously.  
+**Summary:** Submit daily proof for the next day of an active challenge. The proof row is saved in a short DB transaction, then OpenAI is called **outside** that transaction; a second transaction applies the verdict (so DB connections are not held during AI latency).  
 **Auth:** required (User)  
 **Consumes:** application/json  
 **Produces:** application/json
@@ -211,64 +210,70 @@ Missed days and challenge failure are applied automatically by the backend (sche
 }
 ```
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| proofText | string | No* | Free-text proof (min 20 chars recommended) |
-| proofLink | string | No* | URL to external evidence (GitHub, Kaggle, etc.) |
-| notes | string | No | Additional context for the verifier |
-| attachments | AssetDto[] | No* | Files uploaded to Supabase Storage |
-| attachments[].url | string | Yes | Public Supabase Storage URL |
-| attachments[].assetType | string | No | `"image"` \| `"video"` \| `"file"` (default `"file"`) |
+| Field | Type | Required | Constraints / description |
+|-------|------|----------|---------------------------|
+| proofText | string | No* | Max **5000** characters. Omit or blank if you use link/attachments only. |
+| proofLink | string | No* | Max **500** characters. If present and non-blank, must start with **`http://`** or **`https://`**. |
+| notes | string | No | Max **1000** characters. |
+| attachments | AssetDto[] | No* | Max **10** elements. Each element is validated when present. |
+| attachments[].url | string | Yes† | Non-blank; max **1000** chars; must match **`http://...`** or **`https://...`**. |
+| attachments[].assetType | string | No | If present, must be exactly **`image`**, **`video`**, or **`file`** (default **`file`** when omitted). |
 
-\* At least one of `proofText`, `proofLink`, or `attachments` must be provided.
+\* At least one of `proofText`, `proofLink`, or `attachments` (non-empty list) must be provided — enforced in the service after JSON validation.
+
+† If you include an attachment object in the array, `url` is required; omit the object entirely rather than sending `{ "url": null }`.
+
+**Validation (400):** The body is validated with Bean Validation (`@Valid`). On failure, **400** returns `ProblemDetails` whose `detail` lists field errors (e.g. `proofLink: proofLink must start with http:// or https://`). This is separate from the “empty proof” rule above.
 
 **Responses:**
 
-- **201 Created** — Proof submitted; AI verdict applied Body: `ProofSubmission`
-- **400 Bad Request** — Empty proof (none of proofText/proofLink/attachments) Body: ProblemDetails
+- **201 Created** — Proof submitted; AI verdict applied. Body: `ProofSubmission`.
+  - **`aiVerdict`** (present on this response): `"accepted"` \| `"rejected"` — reflects the synchronous AI outcome only (not stored in DB; omitted on other endpoints that return `ProofSubmission` without a fresh AI run).
+- **400 Bad Request** — Empty proof (no text, link, or attachments), **or** request body failed Bean Validation (sizes, URL patterns, attachment rules). Body: `ProblemDetails`
 - **403 Forbidden** — User does not own the user challenge Body: ProblemDetails
-- **404 Not Found** — User challenge or entity not found Body: ProblemDetails
-- **409 Conflict** — Challenge not active or duplicate day Body: ProblemDetails
+- **404 Not Found** — User challenge not found Body: ProblemDetails
+- **409 Conflict** — Challenge not active, **or** a proof for that calendar day already exists in a terminal/pending state (`submitted`, `needs_review`, `verified`, or **`rejected`** after a missed day — you cannot start a new submission for the same day). Body: ProblemDetails
 - **401 Unauthorized** — Missing or invalid token Body: ProblemDetails
 
 **Notes:**
 
-- **AI verification is fully automatic — no admin involvement:**
-  - `pass` (AI confidence >= 0.75) → proof `verified`, score awarded, `currentDay` advanced immediately
-  - `rejected` (AI confidence < 0.75, or insufficient proof) → proof status `needs_review`, 24-hour resubmit window opened, AI feedback shown to user
-- If AI is temporarily unavailable (network/rate-limit) → user also gets the 24-hr resubmit window with a retry message.
+- **AI verification is binary (accept / reject only) — no admin involvement:**
+  - **Accepted** (internal AI verdict `pass`, confidence >= 0.75) → response `aiVerdict: "accepted"`, proof `verified`, score awarded, `currentDay` advanced immediately
+  - **Rejected** (internal AI verdict `rejected`, or low confidence) → response `aiVerdict: "rejected"`, proof status `needs_review` (means “try again”, not a human queue), 24-hour resubmit window, `aiFeedback` from the model
+- If AI is temporarily unavailable (network/rate-limit) → `aiVerdict: "rejected"` and the same 24-hr resubmit window with a retry message.
+- **Data integrity:** The database enforces at most one proof row per `(user_challenge_id, challenge_day)` (unique constraint). The API checks duplicate status before insert; the constraint covers race conditions.
 
 ---
 
 ### POST /api/challenges/{userChallengeId}/proofs/{submissionId}/resubmit
 
-**Summary:** Resubmit proof after AI feedback, within the 24-hour window. Same request body as submit.  
+**Summary:** Resubmit proof after AI feedback, within the 24-hour window. Same request body and validation rules as submit; OpenAI runs between DB transactions (same pattern as submit).  
 **Auth:** required (User)  
 **Consumes:** application/json  
 **Produces:** application/json
 
 **Path Params:**
 
-- `userChallengeId` (uuid) — required
+- `userChallengeId` (uuid) — required — must match the enrollment that owns this proof (`submission.user_challenge_id`). A mismatch returns **404** (“Proof does not belong to this challenge”).
 - `submissionId` (uuid) — required
 
 **Headers:** `Authorization: Bearer <token>`
 
-**Request Body:** Same as `POST /api/challenges/{userChallengeId}/proofs`
+**Request Body:** Same as `POST /api/challenges/{userChallengeId}/proofs` (including Bean Validation on sizes, URLs, and attachments).
 
 **Responses:**
 
-- **200 OK** — Resubmission processed Body: `ProofSubmission`
-- **400 Bad Request** — Empty proof Body: ProblemDetails
-- **403 Forbidden** — User does not own the user challenge Body: ProblemDetails
-- **404 Not Found** — Submission or user challenge not found Body: ProblemDetails
-- **409 Conflict** — Wrong status or challenge inactive Body: ProblemDetails
+- **200 OK** — Resubmission processed. Body: `ProofSubmission` with **`aiVerdict`**: `"accepted"` if verified; `"rejected"` if the AI rejects again (missed day applied, proof may end `rejected`).
+- **400 Bad Request** — Empty proof or Bean Validation failure Body: `ProblemDetails`
+- **403 Forbidden** — User does not own the proof Body: ProblemDetails
+- **404 Not Found** — Proof submission not found, user challenge not found, **or** `submissionId` does not belong to the given `userChallengeId` Body: ProblemDetails
+- **409 Conflict** — Proof not in `needs_review`, or challenge inactive Body: ProblemDetails
 - **410 Gone** — Resubmit window expired Body: ProblemDetails
 - **401 Unauthorized** — Missing or invalid token Body: ProblemDetails
 
 **Notes:**
 
-- Resubmit outcomes: `pass` → score awarded, day advanced; `rejected` (attempt 2) → immediate missed-day penalty applied automatically, no further retries.
+- Resubmit outcomes: AI `pass` → score awarded, day advanced; AI `rejected` (attempt 2) → immediate missed-day penalty applied automatically, no further retries.
 - If `missedDaysCount` reaches `maxMissedDays` (default 3) after this missed day, the challenge is auto-failed.
 
 ---
@@ -306,9 +311,9 @@ No admin manual actions. Everything happens automatically:
 
 | Event | What triggers it | Outcome |
 |-------|-----------------|---------|
-| **Proof approved** | AI confidence ≥ 0.75 | Score awarded, `currentDay` advances, spectators emailed |
-| **Proof rejected** | AI confidence < 0.75 or insufficient proof | `needs_review` status, 24-hr resubmit window, AI feedback shown |
-| **Resubmit rejected** | AI rejects attempt 2 | Missed-day penalty applied immediately (-8), auto-fail if 3rd miss |
+| **Proof approved** | AI confidence ≥ 0.75 | API `aiVerdict: "accepted"`, score awarded, `currentDay` advances, spectators emailed |
+| **Proof rejected** | AI confidence < 0.75 or insufficient proof | API `aiVerdict: "rejected"`, `needs_review` status, 24-hr resubmit window, AI feedback shown |
+| **Resubmit rejected** | AI rejects attempt 2 | API `aiVerdict: "rejected"`, missed-day penalty applied immediately (-8), auto-fail if 3rd miss |
 | **Resubmit window expires** | 24 hrs pass with no resubmit (MissedDayScheduler, runs every 30 min) | Missed-day penalty applied, auto-fail if 3rd miss |
 | **Challenge auto-failed** | `missedDaysCount` reaches `maxMissedDays` (default 3) | Challenge `failed`, fail penalty applied (-35), spectators emailed |
 | **User abandons** | User calls `POST .../abandon` | Challenge `abandoned`, quit penalty applied (-35), spectators emailed |
@@ -342,7 +347,49 @@ No admin manual actions. Everything happens automatically:
 **Notes:**
 
 - Ranking order: `elite_score DESC` → `streak_current DESC` → `created_at ASC` → `id ASC`.
-- For the compact rank-preview widget (your rank ± 1 peer) use the `leaderboardPreview` field returned by `GET /api/dashboard` — no separate endpoint call needed.
+
+---
+
+### GET /api/leaderboard/preview
+
+**Summary:** Dashboard preview: your rank + 1 peer above + 1 peer below.  
+**Auth:** required (User)  
+**Produces:** application/json
+
+**Headers:** `Authorization: Bearer <token>`
+
+**Responses:**
+
+- **200 OK** — Preview with summary and nearby entries Body: `LeaderboardPreviewResponse`
+  - `title`, `summary`: `{ currentRank, eliteScore, percentile }`
+  - `entries`: `{ userId, handle, displayName, avatarUrl, eliteScore, rank, isCurrentUser }[]`
+- **404 Not Found** — User not found (no leaderboard entry) Body: ProblemDetails
+- **401 Unauthorized** — Missing or invalid token Body: ProblemDetails
+
+---
+
+## Resource: StreakResource  
+**Path Prefix:** `/api/streaks`
+
+### GET /api/streaks/me
+
+**Summary:** Get the authenticated user's streak information.  
+**Auth:** required (User)  
+**Produces:** application/json
+
+**Headers:** `Authorization: Bearer <token>`
+
+**Responses:**
+
+- **200 OK** — Streak info Body: `StreakResponse`
+  - `streakCurrent`, `streakLongest`, `lastActiveAt`
+- **404 Not Found** — User not found Body: ProblemDetails
+- **401 Unauthorized** — Missing or invalid token Body: ProblemDetails
+
+**Notes:**
+
+- A streak day = any UTC calendar day with at least one `verified` proof.
+- Milestone bonuses: 7 days (+5), 14 days (+10), 21 days (+15), 30 days (+20).
 
 ---
 
@@ -564,6 +611,20 @@ curl -X POST "$BASE/api/challenges/<userChallengeId>/abandon" \
 
 ```bash
 curl -X GET "$BASE/api/leaderboard?page=0&size=20" \
+  -H "Authorization: Bearer <token>"
+```
+
+**Leaderboard preview**
+
+```bash
+curl -X GET "$BASE/api/leaderboard/preview" \
+  -H "Authorization: Bearer <token>"
+```
+
+**My streaks**
+
+```bash
+curl -X GET "$BASE/api/streaks/me" \
   -H "Authorization: Bearer <token>"
 ```
 
