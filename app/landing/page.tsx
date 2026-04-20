@@ -31,7 +31,7 @@ const CREDIBILITY = [
 ]
 
 const STEPS = [
-  { num: "1", title: "Pick a challenge", desc: "CS50, Google certs, MIT—courses you know. Now with stakes." },
+  { num: "1", title: "Pick a challenge", desc: "CS50, Google certs, MIT courses. Now with stakes." },
   { num: "2", title: "Submit proof", desc: "Screenshots, links. We verify. No proof, no points." },
   { num: "3", title: "Climb the board", desc: "Rank, streak, movement. All public. Game on." },
 ]
@@ -138,7 +138,7 @@ export default function LandingPage() {
               className={`mb-8 max-w-lg text-base text-white/90 transition-all duration-500 ease-out sm:text-lg ${heroReady ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}
               style={{ transitionDelay: "200ms" }}
             >
-              Learn from Harvard, Google & MIT. Submit proof. Climb the leaderboard. No ghosting—just receipts.
+              Learn from Harvard, Google & MIT. Submit proof. Climb the leaderboard. Finish What You Start.
             </p>
             <Link
               href="/login"
@@ -188,7 +188,7 @@ export default function LandingPage() {
         {/* Challenges – scroll-in + staggered cards, hover lift + pink shadow + play scale */}
         <section id="challenges" ref={challengesRef[0]} className={`pt-20 landing-scroll-in ${challengesRef[1] ? "landing-scroll-in-visible" : ""}`}>
           <h2 className="mb-2 text-center text-2xl font-bold text-slate-800 sm:text-3xl">Challenges with stakes</h2>
-          <p className="mb-10 text-center text-slate-600">Harvard CS50, Google certs, MIT—compete on the same courses. Proof required.</p>
+          <p className="mb-10 text-center text-slate-600">Harvard CS50, Google certs, MIT— compete on the popular courses. Proof required.</p>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {CHALLENGES.map((c, i) => {
               const thumb = getThumb(c.videoId)

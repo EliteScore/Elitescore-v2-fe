@@ -63,14 +63,44 @@ type LibraryChallenge = {
 }
 
 type HistoryChallenge = {
-  id: number
+  id: string | number
   name: string
   difficulty: number
   duration: number
   status: "completed" | "failed"
   completedDate: string
-  eliteScoreImpact: string
-  streakBonus: string
+  eliteScoreImpact?: string
+  streakBonus?: string
+}
+
+type HistoryApiItem = {
+  userChallengeId?: string
+  challengeTemplateId?: string
+  challengeName?: string
+  track?: string
+  difficulty?: number
+  durationDays?: number
+  duration_days?: number
+  status?: string
+  startDate?: string
+  endDate?: string
+  currentDay?: number
+  missedDaysCount?: number
+  createdAt?: string
+  completedAt?: string | null
+  failedAt?: string | null
+  start_date?: string
+  end_date?: string
+  current_day?: number
+  missed_days_count?: number
+  created_at?: string
+  completed_at?: string | null
+  failed_at?: string | null
+}
+
+type HistoryApiResponse = {
+  current?: HistoryApiItem[]
+  history?: HistoryApiItem[]
 }
 
 // ── Constants ──────────────────────────────────────────────────────────────
@@ -157,28 +187,7 @@ const LIBRARY: LibraryChallenge[] = [
   },
 ]
 
-const INITIAL_HISTORY: HistoryChallenge[] = [
-  {
-    id: 101,
-    name: "14-Day JavaScript Sprint",
-    difficulty: 3,
-    duration: 14,
-    status: "completed",
-    completedDate: "2025-01-10",
-    eliteScoreImpact: "+140",
-    streakBonus: "+20",
-  },
-  {
-    id: 102,
-    name: "7-Day Cold Outreach",
-    difficulty: 2,
-    duration: 7,
-    status: "failed",
-    completedDate: "2024-12-28",
-    eliteScoreImpact: "-60",
-    streakBonus: "0",
-  },
-]
+const INITIAL_HISTORY: HistoryChallenge[] = []
 
 const TABS = [
   { id: "active", label: "Active", Icon: ListTodo },
@@ -303,8 +312,31 @@ export default function ChallengesPage() {
         if (!res.ok || !Array.isArray(data)) return null
         return data as UserEnrollment[]
       }),
+      fetch("/api/challenges/my/history", { method: "GET", headers }).then(async (res) => {
+        const data = await res.json().catch(() => null)
+        if (process.env.NODE_ENV === "development") {
+          console.debug("[Challenges History] GET /api/challenges/my/history", {
+            status: res.status,
+            ok: res.ok,
+            hasCurrent: Boolean(
+              data && typeof data === "object" && Array.isArray((data as { current?: unknown }).current)
+            ),
+            hasHistory: Boolean(
+              data && typeof data === "object" && Array.isArray((data as { history?: unknown }).history)
+            ),
+          })
+        }
+        if (res.status === 401) {
+          localStorage.removeItem("elitescore_access_token")
+          localStorage.removeItem("elitescore_logged_in")
+          router.replace("/login")
+          return null
+        }
+        if (!res.ok || !data || typeof data !== "object") return null
+        return data as HistoryApiResponse
+      }),
     ])
-      .then(([templates, enrollments]) => {
+      .then(([templates, enrollments, historyPayload]) => {
         if (cancelled) return
 
         if (templates) {
@@ -395,6 +427,43 @@ export default function ChallengesPage() {
               }
             })
           setActiveChallenges(active)
+        }
+
+        if (historyPayload && Array.isArray(historyPayload.history)) {
+          const mappedHistory: HistoryChallenge[] = historyPayload.history.map((item, index) => {
+            const rawStatus = String(item.status ?? "").toLowerCase()
+            const status: HistoryChallenge["status"] = rawStatus === "completed" ? "completed" : "failed"
+            const completedDateRaw =
+              item.completedAt ??
+              item.completed_at ??
+              item.failedAt ??
+              item.failed_at ??
+              item.endDate ??
+              item.end_date ??
+              item.createdAt ??
+              item.created_at
+            const completedDate = completedDateRaw ? String(completedDateRaw).slice(0, 10) : "—"
+            const duration =
+              typeof item.durationDays === "number"
+                ? item.durationDays
+                : typeof item.duration_days === "number"
+                ? item.duration_days
+                : 0
+
+            return {
+              id: item.userChallengeId ?? `${index}-${item.challengeTemplateId ?? "history"}`,
+              name: item.challengeName ?? "Challenge",
+              difficulty: typeof item.difficulty === "number" ? item.difficulty : 0,
+              duration,
+              status,
+              completedDate,
+              eliteScoreImpact: undefined,
+              streakBonus: undefined,
+            }
+          })
+          setHistory(mappedHistory)
+        } else if (historyPayload && process.env.NODE_ENV === "development") {
+          console.debug("[Challenges History] missing history array in response", historyPayload)
         }
       })
       .catch((err) => {
@@ -1042,10 +1111,12 @@ export default function ChallengesPage() {
                     </div>
 
                     <div className="shrink-0 text-right">
-                      <p className={`text-sm font-bold ${isDone ? "text-emerald-600" : "text-red-500"}`}>
-                        {item.eliteScoreImpact} pts
-                      </p>
-                      {item.streakBonus !== "0" && (
+                      {item.eliteScoreImpact ? (
+                        <p className={`text-sm font-bold ${isDone ? "text-emerald-600" : "text-red-500"}`}>
+                          {item.eliteScoreImpact} pts
+                        </p>
+                      ) : null}
+                      {item.streakBonus && item.streakBonus !== "0" && (
                         <div className="mt-0.5 flex items-center justify-end gap-1 text-[10px] text-orange-600">
                           <Flame className="h-3 w-3" aria-hidden />
                           <span>{item.streakBonus} streak</span>

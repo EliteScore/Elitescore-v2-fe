@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import Image from "next/image"
-import { Search } from "lucide-react"
 
 const LOGO_PATH = "/gemini%20logo.png"
 
@@ -32,20 +31,7 @@ export function DashboardHeader() {
       <Link href="/home" className="flex items-center gap-2 shrink-0 md:ml-0" aria-label="EliteScore Home">
         <Image src={LOGO_PATH} alt="EliteScore" width={120} height={36} className="h-8 w-auto" priority />
       </Link>
-      <div className="flex-1 flex justify-center max-w-xl mx-auto">
-        <div className="relative w-full">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" aria-hidden />
-          <input
-            type="search"
-            placeholder="Find your friends..."
-            className="w-full h-10 rounded-xl border border-slate-200 bg-slate-50/50 pl-10 pr-10 text-sm text-slate-800 placeholder:text-slate-400 focus:border-pink-500/50 focus:outline-none focus:ring-2 focus:ring-pink-500/20"
-            aria-label="Search friends"
-          />
-          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" aria-hidden>
-            →
-          </span>
-        </div>
-      </div>
+      <div className="flex-1" />
       <div className="flex items-center gap-2 shrink-0">
         <Link
           href="/profile"

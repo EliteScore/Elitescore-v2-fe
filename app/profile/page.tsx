@@ -24,6 +24,7 @@ import {
 import { BottomNav } from "@/components/bottom-nav"
 
 const PROFILE_ME_URL = "/api/profile/me"
+const CHALLENGE_HISTORY_URL = "/api/challenges/my/history"
 const APP_GRADIENT = "linear-gradient(135deg, #db2777 0%, #ea580c 35%, #2563eb 70%, #7c3aed 100%)"
 const CARD_BASE = "rounded-2xl border border-slate-200/80 bg-white shadow-sm"
 const ACCOUNT_DELETE_CONFIRMATION = "DELETE"
@@ -62,6 +63,39 @@ type ProfileResponse = {
   linkedin_url?: string | null
   github_url?: string | null
   challenge_history?: ChallengeEnrollment[]
+}
+
+type ChallengeHistoryApiItem = {
+  userChallengeId?: string
+  challengeName?: string
+  difficulty?: number
+  durationDays?: number
+  duration_days?: number
+  status?: string
+  completedAt?: string | null
+  failedAt?: string | null
+  endDate?: string
+  createdAt?: string
+  completed_at?: string | null
+  failed_at?: string | null
+  end_date?: string
+  created_at?: string
+}
+
+type ChallengeHistoryApiResponse = {
+  current?: ChallengeHistoryApiItem[]
+  history?: ChallengeHistoryApiItem[]
+}
+
+type ProfileHistoryChallenge = {
+  id: string | number
+  name: string
+  difficulty: number
+  duration: number
+  status: "completed" | "failed"
+  completionDate?: string
+  failureDate?: string
+  proofCount: number
 }
 
 function getDisplayName(): string {
@@ -142,6 +176,7 @@ export default function ProfilePage() {
   const [setPasswordValue, setSetPasswordValue] = useState("")
   const [confirmSetPasswordValue, setConfirmSetPasswordValue] = useState("")
   const [magicLinkPending, setMagicLinkPending] = useState(false)
+  const [historyFromApi, setHistoryFromApi] = useState<ProfileHistoryChallenge[] | null>(null)
 
   useEffect(() => {
     const token = localStorage.getItem("elitescore_access_token")
@@ -238,6 +273,84 @@ export default function ProfilePage() {
       cancelled = true
     }
   }, [authChecked, router])
+
+  useEffect(() => {
+    if (!authChecked) return
+    const token = localStorage.getItem("elitescore_access_token")
+    if (!token) {
+      setHistoryFromApi([])
+      return
+    }
+
+    const userId = localStorage.getItem("elitescore_user_id")
+    const headers: HeadersInit = {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    }
+    if (userId) {
+      ;(headers as Record<string, string>)["X-User-Id"] = userId
+    }
+
+    let cancelled = false
+    fetch(CHALLENGE_HISTORY_URL, {
+      method: "GET",
+      headers,
+    })
+      .then(async (res) => {
+        const body = (await res.json().catch(() => null)) as ChallengeHistoryApiResponse | null
+        if (cancelled) return
+
+        if (process.env.NODE_ENV === "development") {
+          console.debug("[Profile GET /api/challenges/my/history]", {
+            status: res.status,
+            ok: res.ok,
+            currentCount:
+              body && Array.isArray(body.current) ? body.current.length : undefined,
+            historyCount:
+              body && Array.isArray(body.history) ? body.history.length : undefined,
+          })
+        }
+
+        if (!res.ok || !body || !Array.isArray(body.history)) {
+          return
+        }
+
+        const mapped: ProfileHistoryChallenge[] = body.history.map((item, index) => {
+          const rawStatus = String(item.status ?? "").toLowerCase()
+          const status: ProfileHistoryChallenge["status"] =
+            rawStatus === "completed" ? "completed" : "failed"
+          const duration =
+            typeof item.durationDays === "number"
+              ? item.durationDays
+              : typeof item.duration_days === "number"
+              ? item.duration_days
+              : 0
+          return {
+            id: item.userChallengeId ?? `hist-${index}`,
+            name: item.challengeName ?? "Challenge",
+            difficulty: typeof item.difficulty === "number" ? item.difficulty : 0,
+            duration,
+            status,
+            completionDate:
+              item.completedAt ?? item.completed_at ?? item.endDate ?? item.end_date ?? undefined,
+            failureDate:
+              item.failedAt ?? item.failed_at ?? item.endDate ?? item.end_date ?? item.createdAt ?? item.created_at ?? undefined,
+            proofCount: 0,
+          }
+        })
+        setHistoryFromApi(mapped)
+      })
+      .catch((err) => {
+        if (cancelled) return
+        if (process.env.NODE_ENV === "development") {
+          console.debug("[Profile] challenge history fetch error", err)
+        }
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [authChecked])
 
   const resetSettingsMessages = () => {
     setSettingsError(null)
@@ -405,11 +518,29 @@ export default function ProfilePage() {
   }
 
   const displayName = profile?.name?.trim() || getDisplayName()
-  const challengeHistory = profile?.challenge_history ?? []
-  const totalCompleted = challengeHistory.filter((c) => c.status === "completed" || c.status === "passed").length
+  const fallbackHistory = profile?.challenge_history ?? []
+  const challengeHistoryMappedFromProfile: ProfileHistoryChallenge[] = fallbackHistory.map((c) => {
+    const t = c.challenge_templates
+    const name = t?.name ?? "Challenge"
+    const difficulty = typeof t?.difficulty === "number" ? t.difficulty : 0
+    const duration = typeof t?.duration_days === "number" ? t.duration_days : 0
+    const status = c.status === "completed" || c.status === "passed" ? "completed" : "failed"
+    return {
+      id: c.id,
+      name,
+      difficulty,
+      duration,
+      status,
+      completionDate: c.completed_at ?? undefined,
+      failureDate: c.failed_at ?? undefined,
+      proofCount: 0,
+    }
+  })
+  const challengeHistory: ProfileHistoryChallenge[] =
+    historyFromApi && historyFromApi.length > 0 ? historyFromApi : challengeHistoryMappedFromProfile
+  const totalCompleted = challengeHistory.filter((c) => c.status === "completed").length
   const maxDifficulty = challengeHistory.reduce((max, c) => {
-    const d = c.challenge_templates?.difficulty
-    return typeof d === "number" && d > max ? d : max
+    return c.difficulty > max ? c.difficulty : max
   }, 0)
 
   const userData = {
@@ -427,23 +558,7 @@ export default function ProfilePage() {
       longestStreak: profile?.streak ?? 0,
       consistencyRate: 0,
     },
-    challengeHistory: challengeHistory.map((c) => {
-      const t = c.challenge_templates
-      const name = t?.name ?? "Challenge"
-      const difficulty = typeof t?.difficulty === "number" ? t.difficulty : 0
-      const duration = typeof t?.duration_days === "number" ? t.duration_days : 0
-      const status = c.status === "completed" || c.status === "passed" ? "completed" : "failed"
-      return {
-        id: c.id,
-        name,
-        difficulty,
-        duration,
-        status,
-        completionDate: c.completed_at ?? undefined,
-        failureDate: c.failed_at ?? undefined,
-        proofCount: 0,
-      }
-    }),
+    challengeHistory,
     background: {
       education: [] as Array<{ institution: string; degree: string; year: string }>,
       roles: [] as Array<{ company: string; position: string; period: string }>,

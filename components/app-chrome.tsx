@@ -6,6 +6,7 @@ import { TopHeader } from "@/components/top-header"
 import { DashboardLayout } from "@/components/dashboard-layout"
 
 const AUTH_CLASS = "auth-open"
+const DASHBOARD_CLASS = "dashboard-open"
 
 const DASHBOARD_PATHS = ["/home", "/challenges", "/leaderboard", "/community", "/profile"]
 
@@ -28,6 +29,16 @@ export function AppChrome({ children }: { children: React.ReactNode }) {
       document.documentElement.classList.remove(AUTH_CLASS)
     }
   }, [isAuth])
+
+  useEffect(() => {
+    if (!isDashboard) return
+    document.body.classList.add(DASHBOARD_CLASS)
+    document.documentElement.classList.add(DASHBOARD_CLASS)
+    return () => {
+      document.body.classList.remove(DASHBOARD_CLASS)
+      document.documentElement.classList.remove(DASHBOARD_CLASS)
+    }
+  }, [isDashboard])
 
   if (isLanding || isAuth) {
     return <>{children}</>

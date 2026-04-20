@@ -132,6 +132,14 @@ body.auth-open {
   padding-bottom: 0 !important;
 }
 
+/* Dashboard pages on mobile: keep only in-app content scrolling */
+@media (max-width: 768px) {
+  html.dashboard-open,
+  body.dashboard-open {
+    overflow: hidden;
+  }
+}
+
 /* Added glass morphism effect for EliteScore cards */
 .glass-card {
   background: rgba(255, 255, 255, 0.05);

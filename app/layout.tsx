@@ -39,8 +39,8 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className="dark">
-      <body className={`font-sans antialiased pb-20 md:pb-0`}>
+    <html lang="en" className="dark overflow-x-hidden">
+      <body className={`font-sans antialiased pb-20 md:pb-0 overflow-x-hidden`}>
         <AppChrome>
           <main>{children}</main>
         </AppChrome>

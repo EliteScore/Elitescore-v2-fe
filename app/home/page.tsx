@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
+import React, { useMemo, useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Clock, Flame, TrendingUp, Trophy, ArrowUpRight, CheckCircle2, Upload } from "lucide-react"
@@ -29,16 +29,6 @@ type LeaderboardPreview = {
   summary?: LeaderboardSummary
   entries?: LeaderboardEntry[]
 }
-type RecommendedTemplate = {
-  id?: string
-  name?: string
-  track?: string
-  difficulty?: number
-  durationDays?: number
-  completionBonus?: number
-  dailyRewardEliteScore?: number
-  description?: string
-}
 type DashboardResponse = {
   eliteScore?: number
   globalRank?: number
@@ -46,7 +36,6 @@ type DashboardResponse = {
   streaks?: DashboardStreaks
   recentScoreGains?: Array<{ eventType?: string; eliteScoreDelta?: number; createdAt?: string }>
   leaderboardPreview?: LeaderboardPreview
-  recommendedChallenges?: RecommendedTemplate[]
   [key: string]: unknown
 }
 
@@ -111,7 +100,6 @@ function parseDashboardResponse(raw: unknown): DashboardResponse | null {
         entries: Array.isArray(lp.entries) ? lp.entries as LeaderboardEntry[] : undefined,
       }
     })() : undefined,
-    recommendedChallenges: Array.isArray(d.recommendedChallenges) ? d.recommendedChallenges as RecommendedTemplate[] : undefined,
   }
 }
 
@@ -300,6 +288,7 @@ export default function HomePage() {
   const [dashboardLoading, setDashboardLoading] = useState(true)
   const [myChallenges, setMyChallenges] = useState<UserChallenge[]>([])
   const [challengeTemplatesById, setChallengeTemplatesById] = useState<Record<string, ChallengeTemplateApi>>({})
+  const [challengeLibrary, setChallengeLibrary] = useState<ChallengeTemplateApi[]>([])
   const [myChallengesLoading, setMyChallengesLoading] = useState(true)
   const [activeCategory, setActiveCategory] = useState("Top")
 
@@ -366,7 +355,6 @@ export default function HomePage() {
             percentile: parsed.percentile,
             streakCurrent: parsed.streaks?.streakCurrent,
             leaderboardEntries: parsed.leaderboardPreview?.entries?.length ?? 0,
-            recommendedCount: parsed.recommendedChallenges?.length ?? 0,
             recentScoreGainsCount: parsed.recentScoreGains?.length ?? 0,
           })
         }
@@ -393,6 +381,7 @@ export default function HomePage() {
     const token = localStorage.getItem("elitescore_access_token")
     if (!token) {
       setChallengeTemplatesById({})
+      setChallengeLibrary([])
       setMyChallenges([])
       setMyChallengesLoading(false)
       return
@@ -419,8 +408,13 @@ export default function HomePage() {
             body,
           })
         }
-        if (!res.ok) return {}
-        return parseChallengeTemplates(body)
+        if (!res.ok || !Array.isArray(body)) {
+          return { templatesMap: {}, templatesList: [] as ChallengeTemplateApi[] }
+        }
+        return {
+          templatesMap: parseChallengeTemplates(body),
+          templatesList: body as ChallengeTemplateApi[],
+        }
       }),
       fetch(CHALLENGES_MY_URL, { method: "GET", headers }).then(async (res) => {
         const body = await res.json().catch(() => null)
@@ -437,9 +431,10 @@ export default function HomePage() {
         return parseUserChallenges(body)
       }),
     ])
-      .then(([templatesMap, rows]) => {
+      .then(([templatesPayload, rows]) => {
         if (cancelled) return
-        setChallengeTemplatesById(templatesMap)
+        setChallengeTemplatesById(templatesPayload.templatesMap)
+        setChallengeLibrary(templatesPayload.templatesList)
         setMyChallenges(rows)
       })
       .catch((err) => {
@@ -448,6 +443,7 @@ export default function HomePage() {
           console.debug("[Home Active Challenges] fetch error", err)
         }
         setChallengeTemplatesById({})
+        setChallengeLibrary([])
         setMyChallenges([])
       })
       .finally(() => {
@@ -488,29 +484,44 @@ export default function HomePage() {
     members: string
     gradientClass: string
   }
-  const recommendedFromApi = dashboard?.recommendedChallenges ?? []
-  const recommendedForUi: RecommendationUi[] = recommendedFromApi.map((c) => ({
-    id: c.id ?? "",
-    title: c.name ?? "Challenge",
-    category: (c.track ?? "Top").charAt(0).toUpperCase() + (c.track ?? "").slice(1),
-    points: c.completionBonus ?? c.dailyRewardEliteScore ?? 0,
-    durationDays: c.durationDays,
-    difficulty: c.difficulty,
-    members: "",
-    gradientClass: GRADIENT_BY_TRACK[c.track ?? ""] ?? GRADIENT_BY_TRACK.default,
-  }))
-  const filteredRecommendations =
-    activeCategory === "Top"
-      ? recommendedForUi
-      : recommendedForUi.filter((c) => c.category === activeCategory)
-  const hasRecommendations = recommendedForUi.length > 0
-  const fallbackRecommendations: RecommendationUi[] = hasRecommendations ? [] : [
-    { id: "1", title: "7-Day SQL Bootcamp", category: "Tech", points: 75, members: "16.5k", gradientClass: "from-blue-500/90 to-indigo-500/90" },
-    { id: "2", title: "Prompt Engineering Sprint", category: "AI", points: 90, members: "11.2k", gradientClass: "from-violet-500/90 to-purple-500/90" },
-    { id: "3", title: "Portfolio Rebuild Challenge", category: "Career", points: 60, members: "8.3k", gradientClass: "from-pink-500/90 to-rose-500/90" },
-    { id: "4", title: "Google Data Analytics", category: "Tech", points: 80, members: "22k", gradientClass: "from-amber-500/90 to-orange-500/90" },
-  ]
-  const recommendationsToShow: RecommendationUi[] = hasRecommendations ? filteredRecommendations : fallbackRecommendations
+  const recommendedForUi: RecommendationUi[] = useMemo(
+    () =>
+      challengeLibrary.map((c, index) => {
+        const trackRaw = (c.track ?? "").toLowerCase()
+        const category = trackRaw.includes("ai")
+          ? "AI"
+          : trackRaw.includes("career")
+          ? "Career"
+          : "Tech"
+        const duration = typeof c.durationDays === "number" ? c.durationDays : undefined
+        const points =
+          typeof c.completionBonus === "number"
+            ? c.completionBonus
+            : typeof c.dailyRewardEliteScore === "number" && duration
+              ? c.dailyRewardEliteScore * duration
+              : c.dailyRewardEliteScore ?? 0
+        return {
+          id: c.id ?? `challenge-${index}`,
+          title: c.name ?? "Challenge",
+          category,
+          points,
+          durationDays: duration,
+          difficulty: c.difficulty,
+          members: "",
+          gradientClass: GRADIENT_BY_TRACK[category] ?? GRADIENT_BY_TRACK.default,
+        }
+      }),
+    [challengeLibrary]
+  )
+  const recommendationsToShow: RecommendationUi[] = useMemo(() => {
+    const pool =
+      activeCategory === "Top"
+        ? recommendedForUi
+        : recommendedForUi.filter((c) => c.category === activeCategory)
+    const candidatePool = pool.length > 0 ? pool : recommendedForUi
+    const shuffled = [...candidatePool].sort(() => Math.random() - 0.5)
+    return shuffled.slice(0, 4)
+  }, [activeCategory, recommendedForUi])
   const activeChallenges = myChallenges
     .filter((challenge) => {
       const status = (challenge.status ?? "").toLowerCase()
@@ -848,7 +859,7 @@ export default function HomePage() {
               ))}
             </div>
 
-            {/* Cards — from dashboard recommendedChallenges or fallback */}
+            {/* Cards — 4 random items from challenge library */}
             <div className="mt-4 grid gap-4 sm:grid-cols-2">
               {recommendationsToShow.map((item) => (
                 <article
