@@ -5,6 +5,7 @@ import Link from "next/link"
 import { Flame, TrendingUp, X, Trophy } from "lucide-react"
 import { BottomNav } from "@/components/bottom-nav"
 import { cn } from "@/lib/utils"
+import { ELITESCORE_SUPPORT_EMAIL, ELITESCORE_SUPPORT_MAILTO } from "@/lib/supportContact"
 import "../landing/landing-animations.css"
 
 const APP_GRADIENT = "linear-gradient(135deg, #db2777 0%, #ea580c 35%, #2563eb 70%, #7c3aed 100%)"
@@ -250,11 +251,10 @@ export default function LeaderboardPage() {
 
   return (
     <div className="min-h-[100dvh] w-full bg-[#f5f5f6] font-sans text-slate-800 antialiased pb-[max(5rem,calc(4rem+env(safe-area-inset-bottom)))]">
-      <div className="w-full px-3 pt-4 pb-6 sm:px-4 md:mx-auto md:max-w-lg">
-
-        {/* Hero strip */}
+      <div className="w-full space-y-5 max-md:-mx-4 max-md:w-[calc(100%+2rem)] max-md:px-0 pt-4 pb-6 md:mx-auto md:max-w-5xl md:px-6 lg:max-w-6xl">
+        {/* Hero strip (edge-to-edge on small screens) */}
         <section
-          className="landing-hero-gradient relative mb-5 overflow-hidden rounded-2xl px-5 py-5 sm:px-6 sm:py-6"
+          className="landing-hero-gradient relative mb-5 overflow-hidden rounded-none px-4 py-5 max-md:pl-[max(1rem,env(safe-area-inset-left))] max-md:pr-[max(1rem,env(safe-area-inset-right))] sm:rounded-2xl sm:px-6 sm:py-6 md:px-6"
           style={{ background: APP_GRADIENT, backgroundSize: "200% 200%" }}
           aria-labelledby="lb-heading"
         >
@@ -301,6 +301,7 @@ export default function LeaderboardPage() {
           </div>
         </section>
 
+        <div className="max-md:space-y-5 max-md:px-3 max-md:pl-[max(0.75rem,env(safe-area-inset-left))] max-md:pr-[max(0.75rem,env(safe-area-inset-right))] md:contents">
         {isLoading && (
           <section className={`${CARD_BASE} mb-5 px-4 py-4`} aria-live="polite">
             <p className="text-sm text-slate-500">Loading leaderboard...</p>
@@ -386,6 +387,17 @@ export default function LeaderboardPage() {
             ))}
           </div>
         </section>}
+
+        <p className="text-center text-[11px] leading-snug text-slate-500 sm:text-xs">
+          Something wrong? Contact us at{" "}
+          <a
+            href={ELITESCORE_SUPPORT_MAILTO}
+            className="font-medium text-pink-600 underline-offset-2 hover:underline break-all"
+          >
+            {ELITESCORE_SUPPORT_EMAIL}
+          </a>
+        </p>
+        </div>
       </div>
 
       {/* Profile modal */}

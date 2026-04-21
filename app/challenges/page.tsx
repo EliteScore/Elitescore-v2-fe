@@ -702,11 +702,10 @@ export default function ChallengesPage() {
   // ── Render ────────────────────────────────────────────────────────────────
 
   return (
-    <div className="w-full space-y-6 px-3 pb-10 pt-2 sm:px-4 md:mx-auto md:max-w-5xl md:px-6">
-
-      {/* Hero banner */}
+    <div className="w-full space-y-6 pb-10 pt-2 max-md:-mx-4 max-md:w-[calc(100%+2rem)] max-md:px-0 md:mx-auto md:max-w-5xl md:px-6 lg:max-w-6xl">
+      {/* Hero banner (edge-to-edge on small screens) */}
       <section
-        className="relative overflow-hidden rounded-2xl px-6 py-8 sm:px-10"
+        className="relative overflow-hidden rounded-none px-4 py-7 max-md:pl-[max(1rem,env(safe-area-inset-left))] max-md:pr-[max(1rem,env(safe-area-inset-right))] sm:rounded-2xl sm:px-10 sm:py-8 md:px-10"
         style={{ background: APP_GRADIENT }}
         aria-labelledby="challenges-heading"
       >
@@ -737,6 +736,7 @@ export default function ChallengesPage() {
         </div>
       </section>
 
+      <div className="max-md:space-y-6 max-md:px-3 max-md:pl-[max(0.75rem,env(safe-area-inset-left))] max-md:pr-[max(0.75rem,env(safe-area-inset-right))] md:contents">
       {/* Tab nav */}
       <div
         className="flex gap-1 rounded-xl border border-slate-200/80 bg-white p-1 shadow-sm"
@@ -1197,6 +1197,17 @@ export default function ChallengesPage() {
           )}
         </section>
       )}
+
+      <p className="text-center text-[11px] leading-snug text-slate-500 sm:text-xs">
+        Something wrong? Contact us at{" "}
+        <a
+          href={ELITESCORE_SUPPORT_MAILTO}
+          className="font-medium text-pink-600 underline-offset-2 hover:underline break-all"
+        >
+          {ELITESCORE_SUPPORT_EMAIL}
+        </a>
+      </p>
+      </div>
 
       {/* ── Challenge Detail Modal: one scroll region (header + hero + copy), footer fixed in card ── */}
       {selectedId && !showLockIn && (

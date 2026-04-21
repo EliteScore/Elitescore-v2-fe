@@ -614,7 +614,7 @@ export default function HomePage() {
   }
 
   return (
-    <div className="w-full space-y-6 px-3 pb-10 pt-2 sm:px-4 md:mx-auto md:max-w-5xl md:px-6">
+    <div className="w-full space-y-6 pb-10 pt-2 max-md:-mx-4 max-md:w-[calc(100%+2rem)] max-md:px-0 md:mx-auto md:max-w-5xl md:px-6 lg:max-w-6xl">
       {showOnboarding && onboardingStep ? (
         <div
           className="fixed inset-0 z-50 flex items-end bg-black/50 backdrop-blur-sm sm:items-center sm:justify-center sm:p-4"
@@ -690,9 +690,9 @@ export default function HomePage() {
         </div>
       ) : null}
 
-      {/* ── Hero banner ── */}
+      {/* ── Hero banner (edge-to-edge on small screens) ── */}
       <section
-        className="relative overflow-hidden rounded-2xl px-6 py-8 sm:px-10 sm:py-10"
+        className="relative overflow-hidden rounded-none px-4 py-7 max-md:pl-[max(1rem,env(safe-area-inset-left))] max-md:pr-[max(1rem,env(safe-area-inset-right))] sm:rounded-2xl sm:px-10 sm:py-10 md:px-10"
         style={{ background: APP_GRADIENT }}
         aria-labelledby="hero-heading"
       >
@@ -700,8 +700,8 @@ export default function HomePage() {
         <span className="pointer-events-none absolute -right-12 -top-12 h-52 w-52 rounded-full bg-white/10 blur-3xl" aria-hidden />
         <span className="pointer-events-none absolute bottom-0 left-1/3 h-36 w-36 rounded-full bg-white/10 blur-2xl" aria-hidden />
 
-        <div className="relative z-10 flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
-          <div>
+        <div className="relative z-10 flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
+          <div className="min-w-0">
             <p className="text-xs font-semibold uppercase tracking-widest text-white/70">{getGreeting()}</p>
             <h1
               id="hero-heading"
@@ -734,7 +734,7 @@ export default function HomePage() {
           </div>
 
           {/* Score badge — from dashboard */}
-          <div className="shrink-0 rounded-2xl border border-white/20 bg-white/10 px-6 py-5 text-center backdrop-blur-sm">
+          <div className="w-full shrink-0 rounded-2xl border border-white/20 bg-white/10 px-4 py-4 text-center backdrop-blur-sm sm:w-auto sm:px-6 sm:py-5">
             <p className="text-[10px] font-semibold uppercase tracking-widest text-white/70">
               EliteScore
             </p>
@@ -748,8 +748,9 @@ export default function HomePage() {
         </div>
       </section>
 
+      <div className="max-md:space-y-6 max-md:px-3 max-md:pl-[max(0.75rem,env(safe-area-inset-left))] max-md:pr-[max(0.75rem,env(safe-area-inset-right))] md:contents">
       {/* ── Stats row ── */}
-      <section aria-label="Key performance stats" className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <section aria-label="Key performance stats" className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
 
         {/* EliteScore ring — from dashboard */}
         <article className={`${CARD_BASE} flex flex-col items-center gap-2 p-4 text-center`}>
@@ -827,7 +828,7 @@ export default function HomePage() {
       </section>
 
       {/* ── Main grid ── */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+      <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-12">
 
         {/* Left column */}
         <div className="space-y-6 lg:col-span-8">
@@ -1179,6 +1180,7 @@ export default function HomePage() {
             </Link>
           </section>
         </aside>
+      </div>
       </div>
     </div>
   )

@@ -60,6 +60,64 @@ function buildYouTubeEmbedUrl(videoId: string, startSeconds?: number | null, end
   return u.toString()
 }
 
+/** Split API copy like "Watch: … Link: https://… Today is about…" into a watch row and body instructions. */
+function splitDayDescription(text: string): { watchSegment: string | null; instructions: string } {
+  const trimmed = text.trim()
+  if (!trimmed) return { watchSegment: null, instructions: "" }
+
+  const multiline = trimmed.match(
+    /^(Watch:\s*[^\n]+)\s*\n\s*Link:\s*(https?:\/\/[^\s]+)\s*\n+([\s\S]+)$/i
+  )
+  if (multiline) {
+    return {
+      watchSegment: `${multiline[1]} Link: ${multiline[2]}`.trim(),
+      instructions: multiline[3].trim(),
+    }
+  }
+
+  const singleLine = trimmed.match(
+    /^(Watch:\s*.+?)\s+Link:\s+(https?:\/\/[^\s]+)\s+([\s\S]+)$/i
+  )
+  if (singleLine) {
+    return {
+      watchSegment: `${singleLine[1]} Link: ${singleLine[2]}`.trim(),
+      instructions: singleLine[3].trim(),
+    }
+  }
+
+  const linkAfterWatch = trimmed.match(/^Watch:\s*(.+?)\s+(https?:\/\/[^\s]+)\s+([\s\S]+)$/i)
+  if (linkAfterWatch) {
+    return {
+      watchSegment: `Watch: ${linkAfterWatch[1]} ${linkAfterWatch[2]}`.trim(),
+      instructions: linkAfterWatch[3].trim(),
+    }
+  }
+
+  const watchLinkOnly = trimmed.match(/^(Watch:\s*.+?)\s+Link:\s+(https?:\/\/[^\s]+)\s*$/i)
+  if (watchLinkOnly) {
+    return {
+      watchSegment: `${watchLinkOnly[1]} Link: ${watchLinkOnly[2]}`.trim(),
+      instructions: "",
+    }
+  }
+
+  return { watchSegment: null, instructions: trimmed }
+}
+
+function firstHttpUrlInString(s: string): string | null {
+  const m = s.match(/(https?:\/\/[^\s]+)/i)
+  return m ? m[1] : null
+}
+
+/** Text after "Watch:" and before "Link:" / URL, e.g. timing range. */
+function watchTimingsLabel(watchSegment: string): string {
+  const m = watchSegment.match(/^Watch:\s*(.+?)\s+Link:\s+/i)
+  if (m) return m[1].trim()
+  const m2 = watchSegment.match(/^Watch:\s*(.+?)\s+https?:\/\//i)
+  if (m2) return m2[1].trim()
+  return watchSegment.replace(/\s*https?:\/\/\S+/gi, "").replace(/^Watch:\s*/i, "").trim() || watchSegment
+}
+
 type RoadmapTask = { id: string; title: string; completed: boolean; day: number | string }
 type RoadmapWeek = {
   id: string
@@ -943,9 +1001,13 @@ export default function ChallengeDetailPage() {
     enrollment && enrollment.status === "active" && !isViewingPastDay && !isCurrentDayLocked
   )
 
+  const dayDescParts = splitDayDescription(challenge.todayTask.description)
+  const watchUrl =
+    firstHttpUrlInString(dayDescParts.watchSegment ?? "") ?? challenge.todayTask.resourceLink ?? null
+
   return (
     <div className="min-h-screen w-full bg-[#f5f5f6] font-sans text-slate-800 antialiased">
-      <div className="mx-auto flex w-full max-w-7xl">
+      <div className="mx-auto flex w-full max-w-7xl max-md:mx-0 max-md:max-w-none">
         {/* ── Left sidebar: Course outline (desktop only) ── */}
         <aside className="hidden w-72 shrink-0 border-r border-slate-200/80 bg-white lg:block">
           <div className="sticky top-0 h-screen overflow-y-auto">
@@ -1039,8 +1101,8 @@ export default function ChallengeDetailPage() {
         </aside>
 
         {/* ── Main content ── */}
-        <main className="min-w-0 flex-1 px-3 py-6 sm:px-4 md:px-6">
-          <div className="mx-auto w-full max-w-3xl space-y-6">
+        <main className="min-w-0 flex-1 max-md:-mx-4 max-md:w-[calc(100%+2rem)] px-0 py-6 sm:px-4 md:px-6">
+          <div className="mx-auto w-full max-w-3xl space-y-6 max-md:mx-0 max-md:max-w-none max-md:px-3 max-md:pl-[max(0.75rem,env(safe-area-inset-left))] max-md:pr-[max(0.75rem,env(safe-area-inset-right))] md:px-0">
             <Link
               href="/challenges"
               className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-slate-800"
@@ -1270,17 +1332,42 @@ export default function ChallengeDetailPage() {
               </div>
             )}
 
-            {/* Challenge description card — landing style */}
-            <section className={`${CARD_BASE} p-5 sm:p-6`} aria-labelledby="challenge-desc-heading">
-              <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-500">
-                Challenge · Day {challenge.todayTask.day}
-              </p>
-              <h2 id="challenge-desc-heading" className="mt-1 text-lg font-bold text-slate-800">
-                {challenge.todayTask.title}
-              </h2>
-              <p className="mt-3 text-sm leading-relaxed text-slate-600">
-                {challenge.todayTask.description}
-              </p>
+            {/* Challenge description — watch/link + instructions in separate boxes when parsable */}
+            <section className={`${CARD_BASE} space-y-4 p-5 sm:p-6`} aria-labelledby="challenge-desc-heading">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-500">
+                  Challenge · Day {challenge.todayTask.day}
+                </p>
+                <h2 id="challenge-desc-heading" className="mt-1 text-lg font-bold text-slate-800">
+                  {challenge.todayTask.title}
+                </h2>
+              </div>
+              {dayDescParts.watchSegment ? (
+                <>
+                  <div className="rounded-xl border border-slate-200/80 bg-slate-50/90 p-4 sm:p-5">
+                    <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-500">Watch</p>
+                    <p className="mt-2 text-sm font-medium text-slate-800">{watchTimingsLabel(dayDescParts.watchSegment)}</p>
+                    {watchUrl ? (
+                      <a
+                        href={watchUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="mt-2 inline-flex max-w-full items-center gap-1.5 break-all text-sm font-semibold text-pink-600 underline-offset-2 hover:underline"
+                      >
+                        {watchUrl}
+                      </a>
+                    ) : null}
+                  </div>
+                  {dayDescParts.instructions ? (
+                    <div className="rounded-xl border border-slate-200/80 bg-white p-4 sm:p-5">
+                      <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-500">{"Today's challenge"}</p>
+                      <p className="mt-2 text-sm leading-relaxed text-slate-600">{dayDescParts.instructions}</p>
+                    </div>
+                  ) : null}
+                </>
+              ) : (
+                <p className="text-sm leading-relaxed text-slate-600">{challenge.todayTask.description}</p>
+              )}
             </section>
 
             {/* What to submit card */}
@@ -1348,6 +1435,16 @@ export default function ChallengeDetailPage() {
                 </article>
               ))}
             </div>
+
+            <p className="text-center text-[11px] leading-snug text-slate-500 sm:text-xs">
+              Something wrong? Contact us at{" "}
+              <a
+                href={ELITESCORE_SUPPORT_MAILTO}
+                className="font-medium text-pink-600 underline-offset-2 hover:underline break-all"
+              >
+                {ELITESCORE_SUPPORT_EMAIL}
+              </a>
+            </p>
           </div>
         </main>
       </div>

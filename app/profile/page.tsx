@@ -592,8 +592,8 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-[100dvh] w-full bg-[#f5f5f6] font-sans text-slate-800 antialiased pt-[max(1rem,env(safe-area-inset-top))] pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] pb-[max(5rem,calc(4rem+env(safe-area-inset-bottom)))]">
-      <div className="mx-auto w-full px-3 py-4 sm:px-4 sm:py-6 md:py-8 md:max-w-5xl">
+    <div className="w-full bg-[#f5f5f6] font-sans text-slate-800 antialiased pt-[max(1rem,env(safe-area-inset-top))] pb-[max(5rem,calc(4rem+env(safe-area-inset-bottom)))] pl-0 pr-0 max-md:pl-[max(0px,env(safe-area-inset-left))] max-md:pr-[max(0px,env(safe-area-inset-right))] md:pl-[max(1rem,env(safe-area-inset-left))] md:pr-[max(1rem,env(safe-area-inset-right))]">
+      <div className="mx-auto w-full space-y-4 max-md:-mx-4 max-md:w-[calc(100%+2rem)] max-md:px-0 py-4 sm:py-6 md:max-w-5xl md:px-6 md:py-8 lg:max-w-6xl">
         {profileError && (
           <p className="mb-3 text-xs text-amber-700 bg-amber-50 border border-amber-200/80 rounded-xl px-3 py-2" role="status">{profileError}</p>
         )}
@@ -613,13 +613,18 @@ export default function ProfilePage() {
             </div>
           </div>
         )}
-        {/* Hero strip — matches home / leaderboard */}
-        <section className="relative overflow-hidden rounded-2xl px-4 py-5 sm:px-6 sm:py-6 mb-4" style={{ background: APP_GRADIENT }} aria-labelledby="profile-heading">
+        {/* Hero strip — edge-to-edge on small screens */}
+        <section
+          className="relative mb-4 overflow-hidden rounded-none px-4 py-5 max-md:pl-[max(1rem,env(safe-area-inset-left))] max-md:pr-[max(1rem,env(safe-area-inset-right))] sm:rounded-2xl sm:px-6 sm:py-6 md:px-6"
+          style={{ background: APP_GRADIENT }}
+          aria-labelledby="profile-heading"
+        >
           <h1 id="profile-heading" className="relative text-xl font-extrabold leading-tight text-white sm:text-2xl">Profile</h1>
           <p className="relative mt-0.5 text-sm text-white/85">Identity, performance & history.</p>
           <Link href="/profile/me" className="relative mt-4 inline-flex items-center justify-center rounded-xl px-5 py-2.5 text-sm font-semibold text-white min-h-[44px] touch-manipulation transition-transform hover:scale-[1.02] bg-white/20 border border-white/30 hover:bg-white/30" aria-label={hasExistingProfile ? "Edit your profile" : "Set up your profile"}>{hasExistingProfile ? "Edit profile" : "Set up profile"}</Link>
         </section>
 
+        <div className="max-md:space-y-4 max-md:px-3 max-md:pl-[max(0.75rem,env(safe-area-inset-left))] max-md:pr-[max(0.75rem,env(safe-area-inset-right))] md:contents">
         <div className={`${CARD_BASE} overflow-hidden`}>
 
           {/* Profile Header */}
@@ -896,6 +901,7 @@ export default function ProfilePage() {
               </a>
             </p>
           </div>
+        </div>
         </div>
       </div>
 
