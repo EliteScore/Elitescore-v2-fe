@@ -259,10 +259,10 @@ export default function SignupPage() {
                 )}
               </button>
 
+              <p className="auth-footer-text signup-form-footer">
+                Already have an account? <a href="/login" className="auth-cross-link">Log in</a>
+              </p>
             </form>
-            <p className="auth-footer-text signup-form-footer auth-form-footer-pin">
-              Already have an account? <a href="/login" className="auth-cross-link">Log in</a>
-            </p>
           </div>
         </div>
       </main>

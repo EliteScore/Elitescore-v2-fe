@@ -22,6 +22,7 @@ import {
   Loader2,
 } from "lucide-react"
 import { BottomNav } from "@/components/bottom-nav"
+import { ELITESCORE_SUPPORT_EMAIL, ELITESCORE_SUPPORT_MAILTO } from "@/lib/supportContact"
 
 const PROFILE_ME_URL = "/api/profile/me"
 const CHALLENGE_HISTORY_URL = "/api/challenges/my/history"
@@ -882,6 +883,18 @@ export default function ProfilePage() {
                 )}
               </div>
             </div>
+          </div>
+
+          <div className="border-t border-slate-200/80 px-4 py-4 sm:px-6">
+            <p className="text-center text-[11px] leading-snug text-slate-500 sm:text-xs">
+              Something wrong? Contact us at{" "}
+              <a
+                href={ELITESCORE_SUPPORT_MAILTO}
+                className="font-medium text-pink-600 underline-offset-2 hover:underline break-all"
+              >
+                {ELITESCORE_SUPPORT_EMAIL}
+              </a>
+            </p>
           </div>
         </div>
       </div>

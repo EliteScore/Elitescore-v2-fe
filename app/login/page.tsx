@@ -313,10 +313,10 @@ export default function LoginPage() {
                 )}
               </button>
 
+              <p className="auth-footer-text login-form-footer">
+                No account yet? <a href="/signup" className="auth-cross-link">Sign up</a>
+              </p>
             </form>
-            <p className="auth-footer-text login-form-footer auth-form-footer-pin">
-              No account yet? <a href="/signup" className="auth-cross-link">Sign up</a>
-            </p>
           </div>
         </div>
       </main>

@@ -10,6 +10,7 @@ import {
 } from "lucide-react"
 import { resolveChallengeThumbnail } from "@/lib/challengeThumbnails"
 import { detectChallengeProvider, providerLogoUrl } from "@/lib/challengeProvider"
+import { ELITESCORE_SUPPORT_EMAIL, ELITESCORE_SUPPORT_MAILTO } from "@/lib/supportContact"
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -510,6 +511,20 @@ export default function ChallengesPage() {
   const alreadyEnrolled =
     selectedLibrary?.templateId != null &&
     activeChallenges.some((c) => c.templateId === selectedLibrary.templateId)
+
+  useEffect(() => {
+    if (selectedId == null) return
+    const html = document.documentElement
+    const body = document.body
+    const prevHtml = html.style.overflow
+    const prevBody = body.style.overflow
+    html.style.overflow = "hidden"
+    body.style.overflow = "hidden"
+    return () => {
+      html.style.overflow = prevHtml
+      body.style.overflow = prevBody
+    }
+  }, [selectedId])
 
   const filteredLibrary =
     trackFilter === "All"
@@ -1183,123 +1198,135 @@ export default function ChallengesPage() {
         </section>
       )}
 
-      {/* ── Challenge Detail Modal: from top to above nav on mobile, CTA text always visible ── */}
+      {/* ── Challenge Detail Modal: one scroll region (header + hero + copy), footer fixed in card ── */}
       {selectedId && !showLockIn && (
         <div
-          className="fixed inset-0 z-50 flex flex-col bg-black/40 backdrop-blur-sm sm:items-center sm:justify-center sm:p-4 pt-[env(safe-area-inset-top)] pr-[env(safe-area-inset-right)] pl-[env(safe-area-inset-left)] pb-[calc(4rem+env(safe-area-inset-bottom))] sm:pb-[env(safe-area-inset-bottom)]"
+          className="fixed inset-0 z-[100] flex flex-col items-stretch justify-end overflow-hidden bg-black/40 backdrop-blur-sm pt-[max(0.25rem,calc(3.5rem+env(safe-area-inset-top)-0.5rem))] pr-[env(safe-area-inset-right)] pl-[env(safe-area-inset-left)] pb-[max(0.25rem,calc(3.75rem+env(safe-area-inset-bottom)))] sm:items-center sm:justify-center sm:p-4 sm:pt-4 sm:pb-4"
           onClick={() => setSelectedId(null)}
         >
           <div
-            className="flex h-full min-h-0 w-full flex-col rounded-none border-0 border-t border-slate-200/80 bg-white shadow-xl sm:h-auto sm:max-h-[85vh] sm:min-h-0 sm:w-full sm:max-w-xl sm:rounded-2xl sm:border"
+            className="flex max-h-[calc(100svh-3.5rem-4.25rem-max(0px,env(safe-area-inset-top))-max(0px,env(safe-area-inset-bottom)))] min-h-0 w-full flex-1 flex-col overflow-hidden rounded-none border-0 border-t border-slate-200/80 bg-white shadow-xl max-md:mx-auto max-md:mb-1 max-md:w-[min(36rem,calc(100%-1.5rem)))] max-md:rounded-2xl max-md:border max-md:border-slate-200/80 max-md:shadow-xl sm:max-h-[min(85svh,44rem)] sm:flex-none sm:w-full sm:max-w-xl sm:rounded-2xl sm:border"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Header — fixed height */}
-            <div className="flex shrink-0 items-start justify-between gap-3 border-b border-slate-200/80 bg-white px-4 py-3 sm:px-6 sm:py-4">
-              <div className="min-w-0 flex-1">
-                <span className="inline-block rounded-lg bg-pink-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-pink-600">
-                  {selectedLibrary?.track}
-                </span>
-                <h2 className="mt-1 text-base font-bold leading-tight text-slate-800 sm:text-xl">{selectedLibrary?.name}</h2>
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain max-md:[scrollbar-gutter:stable]">
+              <div className="flex shrink-0 items-start justify-between gap-3 border-b border-slate-200/80 bg-white px-4 py-3 sm:px-6 sm:py-4">
+                <div className="min-w-0 flex-1">
+                  <span className="inline-block rounded-lg bg-pink-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-pink-600">
+                    {selectedLibrary?.track}
+                  </span>
+                  <h2 className="mt-1 text-base font-bold leading-tight text-slate-800 sm:text-xl">{selectedLibrary?.name}</h2>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSelectedId(null)}
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 text-slate-500 hover:bg-slate-50 active:bg-slate-100 min-h-[44px] min-w-[44px] touch-manipulation"
+                  aria-label="Close"
+                >
+                  <X className="h-5 w-5" />
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={() => setSelectedId(null)}
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 text-slate-500 hover:bg-slate-50 active:bg-slate-100 min-h-[44px] min-w-[44px] touch-manipulation"
-                aria-label="Close"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
 
-            {selectedLibrary?.thumbnailUrl ? (
-              <div className="relative h-36 w-full shrink-0 overflow-hidden bg-slate-200 sm:h-40">
-                <img
-                  src={selectedLibrary.thumbnailUrl}
-                  alt={`${selectedLibrary.name} cover`}
-                  className="h-full w-full object-cover"
-                />
-                <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/55 via-black/5 to-black/0" />
-                {selectedLibrary.providerName && selectedLibrary.providerLogoUrl ? (
-                  <div className="absolute left-3 top-3 z-10 flex max-w-[min(calc(100%-1.5rem),16rem)] items-center gap-2.5 rounded-xl bg-white/95 py-2 pl-2 pr-3 shadow-lg ring-1 ring-black/10">
-                    <img
-                      src={selectedLibrary.providerLogoUrl}
-                      alt={`${selectedLibrary.providerName} logo`}
-                      className="h-10 w-10 shrink-0 object-contain"
-                      width={40}
-                      height={40}
-                    />
-                    <span className="truncate text-xs font-bold leading-tight text-slate-800">
-                      {selectedLibrary.providerName}
-                    </span>
-                  </div>
-                ) : null}
-              </div>
-            ) : null}
+              {selectedLibrary?.thumbnailUrl ? (
+                <div className="relative h-32 w-full shrink-0 overflow-hidden bg-slate-200 sm:h-40">
+                  <img
+                    src={selectedLibrary.thumbnailUrl}
+                    alt={`${selectedLibrary.name} cover`}
+                    className="h-full w-full object-cover"
+                  />
+                  <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/55 via-black/5 to-black/0" />
+                  {selectedLibrary.providerName && selectedLibrary.providerLogoUrl ? (
+                    <div className="absolute left-3 top-3 z-10 flex max-w-[min(calc(100%-1.5rem),16rem)] items-center gap-2.5 rounded-xl bg-white/95 py-2 pl-2 pr-3 shadow-lg ring-1 ring-black/10">
+                      <img
+                        src={selectedLibrary.providerLogoUrl}
+                        alt={`${selectedLibrary.providerName} logo`}
+                        className="h-10 w-10 shrink-0 object-contain"
+                        width={40}
+                        height={40}
+                      />
+                      <span className="truncate text-xs font-bold leading-tight text-slate-800">
+                        {selectedLibrary.providerName}
+                      </span>
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
 
-            {/* Scrollable body — flex-1 min-h-0 so it fills and scrolls */}
-            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-3 sm:px-6 sm:py-4">
-              <div className="space-y-4 sm:space-y-5">
-                <section className="space-y-1">
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 sm:text-sm sm:normal-case sm:tracking-normal">Description</h3>
-                  <p className="text-sm leading-relaxed text-slate-600">
-                    {selectedLibrary?.description?.trim()
-                      ? selectedLibrary.description.trim()
-                      : "No description yet for this challenge."}
-                  </p>
-                </section>
+              <div className="px-4 py-3 sm:px-6 sm:py-4">
+                <div className="space-y-4 sm:space-y-5">
+                  <section className="space-y-1">
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 sm:text-sm sm:normal-case sm:tracking-normal">
+                      Description
+                    </h3>
+                    <p className="text-sm leading-relaxed text-slate-600">
+                      {selectedLibrary?.description?.trim()
+                        ? selectedLibrary.description.trim()
+                        : "No description yet for this challenge."}
+                    </p>
+                  </section>
 
-                <section className="space-y-1">
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 sm:text-sm sm:normal-case sm:tracking-normal">Daily requirement</h3>
-                  <div className="rounded-xl border border-slate-200/80 bg-slate-50/50 p-3 shadow-sm sm:rounded-2xl sm:p-4">
-                    <p className="text-sm leading-relaxed text-slate-700">{selectedLibrary?.description}</p>
-                  </div>
-                </section>
+                  <section className="space-y-1">
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 sm:text-sm sm:normal-case sm:tracking-normal">
+                      Daily requirement
+                    </h3>
+                    <div className="rounded-xl border border-slate-200/80 bg-slate-50/50 p-3 shadow-sm sm:rounded-2xl sm:p-4">
+                      <p className="text-sm leading-relaxed text-slate-700">{selectedLibrary?.description}</p>
+                    </div>
+                  </section>
 
-                <section className="space-y-1">
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 sm:text-sm sm:normal-case sm:tracking-normal">Proof required</h3>
-                  <p className="text-sm leading-relaxed text-slate-600">
-                    Screenshot, photo, or link. Submissions are timestamped and immutable.
-                  </p>
-                </section>
+                  <section className="space-y-1">
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 sm:text-sm sm:normal-case sm:tracking-normal">
+                      Proof required
+                    </h3>
+                    <p className="text-sm leading-relaxed text-slate-600">
+                      Screenshot, photo, or link. Submissions are timestamped and immutable.
+                    </p>
+                  </section>
 
-                <section className="space-y-1">
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 sm:text-sm sm:normal-case sm:tracking-normal">Failure conditions</h3>
-                  <ul className="space-y-1.5">
-                    {[
-                      "Missing a day without proof",
-                      "Invalid or incomplete proof",
-                      "Late (after 11:59 PM)",
-                    ].map((item) => (
-                      <li key={item} className="flex items-start gap-2 text-sm leading-snug text-slate-600">
-                        <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-red-500" aria-hidden />
-                        <span>{item}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </section>
+                  <section className="space-y-1">
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 sm:text-sm sm:normal-case sm:tracking-normal">
+                      Failure conditions
+                    </h3>
+                    <ul className="space-y-1.5">
+                      {[
+                        "Missing a day without proof",
+                        "Invalid or incomplete proof",
+                        "Late (after 11:59 PM)",
+                      ].map((item) => (
+                        <li key={item} className="flex items-start gap-2 text-sm leading-snug text-slate-600">
+                          <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-red-500" aria-hidden />
+                          <span>{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </section>
 
-                <div className="space-y-2">
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 sm:text-sm sm:normal-case sm:tracking-normal">Details</h3>
-                  <div className="grid grid-cols-2 gap-2">
-                    {[
-                      { label: "Difficulty", value: `${selectedLibrary?.difficulty}/5` },
-                      { label: "Duration", value: `${selectedLibrary?.duration} days` },
-                      { label: "Reward", value: `+${selectedLibrary?.reward} pts`, accent: true },
-                      { label: "Completion", value: `${selectedLibrary?.completionRate}%` },
-                    ].map((item) => (
-                      <div key={item.label} className="rounded-xl border border-slate-200/80 bg-slate-50/50 p-2.5 shadow-sm sm:rounded-2xl sm:p-3">
-                        <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">{item.label}</p>
-                        <p className={`mt-0.5 text-sm font-bold ${item.accent ? "text-pink-600" : "text-slate-800"}`}>
-                          {item.value}
-                        </p>
-                      </div>
-                    ))}
+                  <div className="space-y-2">
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 sm:text-sm sm:normal-case sm:tracking-normal">
+                      Details
+                    </h3>
+                    <div className="grid grid-cols-2 gap-2">
+                      {[
+                        { label: "Difficulty", value: `${selectedLibrary?.difficulty}/5` },
+                        { label: "Duration", value: `${selectedLibrary?.duration} days` },
+                        { label: "Reward", value: `+${selectedLibrary?.reward} pts`, accent: true },
+                        { label: "Completion", value: `${selectedLibrary?.completionRate}%` },
+                      ].map((item) => (
+                        <div
+                          key={item.label}
+                          className="rounded-xl border border-slate-200/80 bg-slate-50/50 p-2.5 shadow-sm sm:rounded-2xl sm:p-3"
+                        >
+                          <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">{item.label}</p>
+                          <p className={`mt-0.5 text-sm font-bold ${item.accent ? "text-pink-600" : "text-slate-800"}`}>
+                            {item.value}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Sticky footer — ends above bottom nav on mobile; button text forced visible */}
             <div className="shrink-0 border-t border-slate-200/80 bg-white px-4 py-3 sm:px-6 sm:py-4">
               {selectedLibrary?.templateId && (
                 <Link
@@ -1333,19 +1360,28 @@ export default function ChallengesPage() {
                   Complete or quit an active challenge to join a new one.
                 </p>
               )}
+              <p className="mt-3 text-center text-[11px] leading-snug text-slate-500 sm:text-xs">
+                Something wrong? Contact us at{" "}
+                <a
+                  href={ELITESCORE_SUPPORT_MAILTO}
+                  className="font-medium text-pink-600 underline-offset-2 hover:underline break-all"
+                >
+                  {ELITESCORE_SUPPORT_EMAIL}
+                </a>
+              </p>
             </div>
           </div>
         </div>
       )}
 
-      {/* ── Lock-In Modal: from top to above nav on mobile, button text visible ── */}
+      {/* ── Lock-In Modal: one scroll region above footer; clears header / bottom nav ── */}
       {showLockIn && selectedId && (
         <div
-          className="fixed inset-0 z-50 flex flex-col bg-black/50 backdrop-blur-sm sm:items-center sm:justify-center sm:p-4 pt-[env(safe-area-inset-top)] pr-[env(safe-area-inset-right)] pl-[env(safe-area-inset-left)] pb-[calc(4rem+env(safe-area-inset-bottom))] sm:pb-[env(safe-area-inset-bottom)]"
+          className="fixed inset-0 z-[100] flex flex-col items-stretch justify-end overflow-hidden bg-black/50 backdrop-blur-sm pt-[max(0.25rem,calc(3.5rem+env(safe-area-inset-top)-0.5rem))] pr-[env(safe-area-inset-right)] pl-[env(safe-area-inset-left)] pb-[max(0.25rem,calc(3.75rem+env(safe-area-inset-bottom)))] sm:items-center sm:justify-center sm:p-4 sm:pt-4 sm:pb-4"
           onClick={handleCloseLockIn}
         >
           <div
-            className={`flex h-full min-h-0 w-full flex-col overflow-hidden rounded-none border-0 border-t border-slate-200/80 bg-white shadow-xl sm:mx-auto sm:h-auto sm:max-h-[85vh] sm:min-h-0 sm:w-full sm:max-w-lg sm:rounded-2xl sm:border ${lockInStep === "success" ? "sm:max-h-[90vh]" : ""}`}
+            className={`flex max-h-[calc(100svh-3.5rem-4.25rem-max(0px,env(safe-area-inset-top))-max(0px,env(safe-area-inset-bottom)))] min-h-0 w-full flex-1 flex-col overflow-hidden rounded-none border-0 border-t border-slate-200/80 bg-white shadow-xl max-md:mx-auto max-md:mb-1 max-md:w-[min(28rem,calc(100%-1.5rem)))] max-md:rounded-2xl max-md:border max-md:border-slate-200/80 max-md:shadow-xl sm:mx-auto sm:max-h-[min(85svh,44rem)] sm:flex-none sm:w-full sm:max-w-lg sm:rounded-2xl sm:border ${lockInStep === "success" ? "sm:max-h-[min(90svh,46rem)]" : ""}`}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Progress strip */}
@@ -1359,27 +1395,27 @@ export default function ChallengesPage() {
               />
             </div>
 
-            {/* Step 1: Add spectators — scrollable body + sticky footer */}
+            {/* Step 1: Add spectators — single scroll area + sticky footer */}
             {lockInStep === "invite" && (
               <>
                 <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-                  <div className="flex shrink-0 items-start justify-between gap-3 px-4 pt-3 pb-2 sm:px-6 sm:pt-4">
-                    <div className="min-w-0 flex-1">
-                      <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Step 1 of 2</p>
-                      <h2 className="mt-0.5 text-lg font-bold text-slate-800 sm:text-xl">Who&apos;s got your back?</h2>
-                      <p className="mt-1 text-xs text-slate-600 sm:text-sm">Add at least one spectator before you lock in.</p>
+                  <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-2 pt-3 max-md:[scrollbar-gutter:stable] sm:px-6 sm:pt-4">
+                    <div className="flex shrink-0 items-start justify-between gap-3 pb-3 sm:pb-4">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Step 1 of 2</p>
+                        <h2 className="mt-0.5 text-lg font-bold text-slate-800 sm:text-xl">Who&apos;s got your back?</h2>
+                        <p className="mt-1 text-xs text-slate-600 sm:text-sm">Add at least one spectator before you lock in.</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleCloseLockIn}
+                        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 text-slate-500 hover:bg-slate-50 active:bg-slate-100 min-h-[44px] min-w-[44px] touch-manipulation"
+                        aria-label="Close"
+                      >
+                        <X className="h-5 w-5" />
+                      </button>
                     </div>
-                    <button
-                      type="button"
-                      onClick={handleCloseLockIn}
-                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 text-slate-500 hover:bg-slate-50 active:bg-slate-100 min-h-[44px] min-w-[44px] touch-manipulation"
-                      aria-label="Close"
-                    >
-                      <X className="h-5 w-5" />
-                    </button>
-                  </div>
 
-                  <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-2 sm:px-6">
                     <div className="space-y-3 sm:space-y-4">
                       <div className="relative overflow-hidden rounded-xl p-3 pr-12 text-white shadow-sm sm:rounded-2xl sm:p-4 sm:pr-14" style={{ background: APP_GRADIENT }}>
                         <p className="text-[10px] font-semibold text-white/80">You&apos;re locking in</p>
@@ -1451,7 +1487,7 @@ export default function ChallengesPage() {
                           ))}
                         </div>
                       ) : (
-                        <div className="rounded-xl border border-dashed border-slate-200/80 bg-slate-50/50 py-5 text-center sm:rounded-2xl sm:py-6">
+                        <div className="rounded-xl border border-dashed border-slate-200/80 bg-slate-50/50 py-4 text-center sm:rounded-2xl sm:py-6">
                           <Users className="mx-auto h-8 w-8 text-slate-300" aria-hidden />
                           <p className="mt-2 text-xs font-medium text-slate-600 sm:text-sm">No spectators yet</p>
                           <p className="mt-0.5 text-[10px] text-slate-500 sm:text-xs">Add at least one to continue</p>
@@ -1462,6 +1498,15 @@ export default function ChallengesPage() {
                 </div>
 
                 <div className="shrink-0 border-t border-slate-200/80 bg-white px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-6 sm:py-4">
+                  <p className="mb-2 text-center text-[10px] leading-snug text-slate-500 sm:text-xs">
+                    Something wrong? Contact us at{" "}
+                    <a
+                      href={ELITESCORE_SUPPORT_MAILTO}
+                      className="font-medium text-pink-600 underline-offset-2 hover:underline break-all"
+                    >
+                      {ELITESCORE_SUPPORT_EMAIL}
+                    </a>
+                  </p>
                   <div className="flex gap-2 sm:gap-3">
                     <button type="button" onClick={handleCloseLockIn} className="flex-1 rounded-xl border border-slate-200 bg-white py-3 text-sm font-semibold text-slate-600 hover:bg-slate-50 active:bg-slate-100 min-h-[48px] touch-manipulation">Cancel</button>
                     <button type="button" onClick={handleSendInvites} disabled={supporters.length === 0} className="flex flex-1 items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold transition-transform active:scale-[0.98] disabled:opacity-50 min-h-[48px] touch-manipulation text-white [-webkit-text-fill-color:white] [text-shadow:0_1px_2px_rgba(0,0,0,0.2)]" style={{ background: APP_GRADIENT, color: "white" }}>
@@ -1472,22 +1517,27 @@ export default function ChallengesPage() {
               </>
             )}
 
-            {/* Step 2: Confirm — scrollable body + sticky footer */}
+            {/* Step 2: Confirm — single scroll area + sticky footer */}
             {lockInStep === "confirm" && (
               <>
                 <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-                  <div className="flex shrink-0 items-start justify-between gap-3 px-4 pt-3 pb-2 sm:px-6 sm:pt-4">
-                    <div className="min-w-0 flex-1">
-                      <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Step 2 of 2</p>
-                      <h2 className="mt-0.5 text-lg font-bold text-slate-800 sm:text-xl">Final confirmation</h2>
-                      <p className="mt-1 text-xs text-slate-600 sm:text-sm">This is a serious commitment.</p>
+                  <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-2 pt-3 max-md:[scrollbar-gutter:stable] sm:px-6 sm:pt-4">
+                    <div className="flex shrink-0 items-start justify-between gap-3 pb-3 sm:pb-4">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Step 2 of 2</p>
+                        <h2 className="mt-0.5 text-lg font-bold text-slate-800 sm:text-xl">Final confirmation</h2>
+                        <p className="mt-1 text-xs text-slate-600 sm:text-sm">This is a serious commitment.</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleCloseLockIn}
+                        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 text-slate-500 hover:bg-slate-50 active:bg-slate-100 min-h-[44px] min-w-[44px] touch-manipulation"
+                        aria-label="Close"
+                      >
+                        <X className="h-5 w-5" />
+                      </button>
                     </div>
-                    <button type="button" onClick={handleCloseLockIn} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 text-slate-500 hover:bg-slate-50 active:bg-slate-100 min-h-[44px] min-w-[44px] touch-manipulation" aria-label="Close">
-                      <X className="h-5 w-5" />
-                    </button>
-                  </div>
 
-                  <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-2 sm:px-6">
                     <div className="space-y-3 sm:space-y-4">
                       <div className="rounded-xl border border-orange-200/80 bg-orange-50/50 p-3 shadow-sm sm:rounded-2xl sm:p-4">
                         <div className="flex items-center gap-2">
@@ -1535,6 +1585,15 @@ export default function ChallengesPage() {
                 </div>
 
                 <div className="shrink-0 border-t border-slate-200/80 bg-white px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-6 sm:py-4">
+                  <p className="mb-2 text-center text-[10px] leading-snug text-slate-500 sm:text-xs">
+                    Something wrong? Contact us at{" "}
+                    <a
+                      href={ELITESCORE_SUPPORT_MAILTO}
+                      className="font-medium text-pink-600 underline-offset-2 hover:underline break-all"
+                    >
+                      {ELITESCORE_SUPPORT_EMAIL}
+                    </a>
+                  </p>
                   <div className="flex gap-2 sm:gap-3">
                     <button type="button" onClick={() => setLockInStep("invite")} className="flex-1 rounded-xl border border-slate-200 bg-white py-3 text-sm font-semibold text-slate-600 hover:bg-slate-50 active:bg-slate-100 min-h-[48px] touch-manipulation">Back</button>
                     <button type="button" onClick={handleConfirmLockIn} disabled={joinInProgress} className="flex flex-1 items-center justify-center rounded-xl py-3 text-sm font-bold transition-transform active:scale-[0.98] min-h-[48px] touch-manipulation text-white [-webkit-text-fill-color:white] [text-shadow:0_1px_2px_rgba(0,0,0,0.2)] disabled:opacity-70 disabled:pointer-events-none" style={{ background: APP_GRADIENT, color: "white" }}>{joinInProgress ? "Joining…" : "I'm committed — Lock In"}</button>
@@ -1545,7 +1604,7 @@ export default function ChallengesPage() {
 
             {/* Step 3: Success — full viewport on mobile, centered */}
             {lockInStep === "success" && (
-              <div className="flex min-h-0 flex-1 flex-col items-center justify-center px-4 py-8 text-center sm:py-10">
+              <div className="flex min-h-0 flex-1 flex-col items-center justify-center overflow-y-auto overscroll-contain px-4 py-8 text-center sm:py-10">
                 <div className="relative">
                   <div className="absolute inset-0 flex items-center justify-center">
                     <div className="h-24 w-24 animate-ping rounded-full bg-emerald-500/20" aria-hidden />

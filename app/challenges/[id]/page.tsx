@@ -17,6 +17,7 @@ import {
   Target,
   Flame,
 } from "lucide-react"
+import { ELITESCORE_SUPPORT_EMAIL, ELITESCORE_SUPPORT_MAILTO } from "@/lib/supportContact"
 
 const APP_GRADIENT = "linear-gradient(135deg, #db2777 0%, #ea580c 35%, #2563eb 70%, #7c3aed 100%)"
 const CARD_BASE = "rounded-2xl border border-slate-200/80 bg-white shadow-sm"
@@ -442,6 +443,20 @@ export default function ChallengeDetailPage() {
     setShowUploadProof(false)
     resetProofModalState()
   }
+
+  useEffect(() => {
+    if (!showUploadProof) return
+    const html = document.documentElement
+    const body = document.body
+    const prevHtml = html.style.overflow
+    const prevBody = body.style.overflow
+    html.style.overflow = "hidden"
+    body.style.overflow = "hidden"
+    return () => {
+      html.style.overflow = prevHtml
+      body.style.overflow = prevBody
+    }
+  }, [showUploadProof])
 
   const getPendingSubmissionStorageKey = (userChallengeId: string) =>
     `elitescore_pending_submission_${userChallengeId}`
@@ -1337,191 +1352,210 @@ export default function ChallengeDetailPage() {
         </main>
       </div>
 
-      {/* Upload Proof Modal - light theme */}
+      {/* Upload Proof Modal - light theme (no page/overlay scroll; fits under header + bottom nav on mobile) */}
       {showUploadProof && (
         <div
-          className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 backdrop-blur-sm sm:items-center"
+          className="fixed inset-0 z-[100] flex items-center justify-center overflow-hidden bg-black/40 px-3 py-2 pt-[max(0.25rem,calc(3.5rem+env(safe-area-inset-top)-0.5rem))] pb-[max(0.25rem,calc(3.75rem+env(safe-area-inset-bottom)))] backdrop-blur-sm sm:p-4 sm:pt-4 sm:pb-4"
           onClick={closeProofModal}
         >
           <div
-            className="w-full max-w-md max-h-[90dvh] overflow-y-auto rounded-2xl bg-white p-6 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-xl"
+            className="flex w-full max-w-md max-h-[calc(100svh-3.5rem-4.25rem-max(0px,env(safe-area-inset-top))-max(0px,env(safe-area-inset-bottom)))] flex-col overflow-hidden rounded-2xl bg-white shadow-xl sm:max-h-[min(90svh,44rem)]"
             onClick={(e) => e.stopPropagation()}
             role="dialog"
             aria-modal="true"
             aria-labelledby="proof-modal-title"
           >
-            <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-500">
-              Submit proof
-            </p>
-            <h3 id="proof-modal-title" className="mt-0.5 text-lg font-bold text-slate-800">
-              {proofVerdict === "accepted"
-                ? "Proof accepted"
-                : proofVerdict === "rejected"
-                ? "AI feedback — please resubmit"
-                : "Upload your completion proof"}
-            </h3>
-
-            {enrollmentLoading && (
-              <p className="mt-2 text-xs text-slate-500">Loading your enrollment...</p>
-            )}
-            {!enrollmentLoading && !enrollment && (
-              <p className="mt-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
-                You are not enrolled in this challenge.
+            <div className="flex min-h-0 flex-1 flex-col px-4 pb-3 pt-3 sm:px-6 sm:pb-4 sm:pt-4">
+              <p className="shrink-0 text-[10px] font-semibold uppercase tracking-widest text-slate-500">
+                Submit proof
               </p>
-            )}
+              <h3
+                id="proof-modal-title"
+                className="mt-0.5 shrink-0 text-base font-bold text-slate-800 sm:text-lg"
+              >
+                {proofVerdict === "accepted"
+                  ? "Proof accepted"
+                  : proofVerdict === "rejected"
+                  ? "AI feedback — please resubmit"
+                  : "Upload your completion proof"}
+              </h3>
 
-            <div className="mt-4 space-y-4">
-              {proofVerdict !== "accepted" && (
-                <>
-                  <div>
-                    <p className="mb-2 text-xs font-semibold text-slate-700">Proof type</p>
-                    <div className="grid grid-cols-2 gap-2">
-                      {(["text", "link"] as const).map((mode) => (
-                        <button
-                          key={mode}
-                          type="button"
-                          onClick={() => setProofMode(mode)}
-                          className={`rounded-xl border px-3 py-2 text-xs font-semibold transition-colors ${
-                            proofMode === mode
-                              ? "border-pink-500/60 bg-pink-50 text-pink-600"
-                              : "border-slate-200/80 bg-white text-slate-600 hover:bg-slate-50"
-                          }`}
-                          aria-pressed={proofMode === mode}
-                        >
-                          {mode === "text" ? "Text" : "Link"}
-                        </button>
-                      ))}
+              {enrollmentLoading && (
+                <p className="mt-2 shrink-0 text-xs text-slate-500">Loading your enrollment...</p>
+              )}
+              {!enrollmentLoading && !enrollment && (
+                <p className="mt-2 shrink-0 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
+                  You are not enrolled in this challenge.
+                </p>
+              )}
+
+              <div className="mt-3 flex min-h-0 flex-1 flex-col gap-2 sm:mt-4 sm:gap-4">
+                {proofVerdict !== "accepted" && (
+                  <>
+                    <div className="shrink-0">
+                      <p className="mb-1.5 text-xs font-semibold text-slate-700 sm:mb-2">Proof type</p>
+                      <div className="grid grid-cols-2 gap-2">
+                        {(["text", "link"] as const).map((mode) => (
+                          <button
+                            key={mode}
+                            type="button"
+                            onClick={() => setProofMode(mode)}
+                            className={`rounded-xl border px-3 py-1.5 text-xs font-semibold transition-colors sm:py-2 ${
+                              proofMode === mode
+                                ? "border-pink-500/60 bg-pink-50 text-pink-600"
+                                : "border-slate-200/80 bg-white text-slate-600 hover:bg-slate-50"
+                            }`}
+                            aria-pressed={proofMode === mode}
+                          >
+                            {mode === "text" ? "Text" : "Link"}
+                          </button>
+                        ))}
+                      </div>
                     </div>
-                  </div>
 
-                  {proofMode === "text" ? (
-                    <div>
-                      <label htmlFor="proof-text" className="mb-1 block text-xs font-medium text-slate-700">
-                        Proof text <span className="text-slate-400">({proofText.length}/5000)</span>
+                    {proofMode === "text" ? (
+                      <div className="flex min-h-0 flex-1 flex-col">
+                        <label htmlFor="proof-text" className="mb-1 block text-xs font-medium text-slate-700">
+                          Proof text <span className="text-slate-400">({proofText.length}/5000)</span>
+                        </label>
+                        <textarea
+                          id="proof-text"
+                          value={proofText}
+                          onChange={(e) => setProofText(e.target.value)}
+                          placeholder="Describe what you completed in detail. Include key takeaways."
+                          maxLength={5000}
+                          rows={4}
+                          className="min-h-0 w-full flex-1 resize-none rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:border-pink-500/50 focus:outline-none focus:ring-2 focus:ring-pink-500/20 max-md:max-h-[6.5rem] sm:max-h-none sm:min-h-[9.5rem] sm:flex-none sm:px-4 sm:py-3"
+                          disabled={proofSubmitting}
+                        />
+                      </div>
+                    ) : (
+                      <div className="shrink-0">
+                        <label htmlFor="proof-link" className="mb-1 block text-xs font-medium text-slate-700">
+                          Public proof URL
+                        </label>
+                        <input
+                          id="proof-link"
+                          type="url"
+                          value={proofLink}
+                          onChange={(e) => setProofLink(e.target.value)}
+                          placeholder="https://github.com/you/project or any public URL"
+                          maxLength={500}
+                          className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:border-pink-500/50 focus:outline-none focus:ring-2 focus:ring-pink-500/20 sm:py-2.5"
+                          disabled={proofSubmitting}
+                        />
+                        <p className="mt-1 text-[11px] text-slate-400">Must start with http:// or https://</p>
+                      </div>
+                    )}
+
+                    <div className="shrink-0">
+                      <label htmlFor="proof-notes" className="mb-1 block text-xs font-medium text-slate-700">
+                        Notes <span className="font-normal text-slate-400">(optional, {proofNotes.length}/1000)</span>
                       </label>
                       <textarea
-                        id="proof-text"
-                        value={proofText}
-                        onChange={(e) => setProofText(e.target.value)}
-                        placeholder="Describe what you completed in detail. Include key takeaways."
-                        maxLength={5000}
-                        rows={5}
-                        className="w-full resize-none rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 focus:border-pink-500/50 focus:outline-none focus:ring-2 focus:ring-pink-500/20"
+                        id="proof-notes"
+                        value={proofNotes}
+                        onChange={(e) => setProofNotes(e.target.value)}
+                        placeholder="Anything else the verifier should know..."
+                        maxLength={1000}
+                        rows={2}
+                        className="w-full resize-none rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-1.5 text-xs leading-snug text-slate-800 placeholder:text-slate-400 focus:border-pink-500/50 focus:outline-none focus:ring-2 focus:ring-pink-500/20 max-md:min-h-0 sm:px-4 sm:py-3 sm:text-sm sm:leading-normal"
                         disabled={proofSubmitting}
                       />
                     </div>
-                  ) : (
-                    <div>
-                      <label htmlFor="proof-link" className="mb-1 block text-xs font-medium text-slate-700">
-                        Public proof URL
-                      </label>
-                      <input
-                        id="proof-link"
-                        type="url"
-                        value={proofLink}
-                        onChange={(e) => setProofLink(e.target.value)}
-                        placeholder="https://github.com/you/project or any public URL"
-                        maxLength={500}
-                        className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:border-pink-500/50 focus:outline-none focus:ring-2 focus:ring-pink-500/20"
-                        disabled={proofSubmitting}
-                      />
-                      <p className="mt-1 text-[11px] text-slate-400">
-                        Must start with http:// or https://
-                      </p>
-                    </div>
-                  )}
+                  </>
+                )}
 
-                  <div>
-                    <label htmlFor="proof-notes" className="mb-1 block text-xs font-medium text-slate-700">
-                      Notes <span className="font-normal text-slate-400">(optional, {proofNotes.length}/1000)</span>
-                    </label>
-                    <textarea
-                      id="proof-notes"
-                      value={proofNotes}
-                      onChange={(e) => setProofNotes(e.target.value)}
-                      placeholder="Anything else the verifier should know..."
-                      maxLength={1000}
-                      rows={2}
-                      className="w-full resize-none rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 focus:border-pink-500/50 focus:outline-none focus:ring-2 focus:ring-pink-500/20"
-                      disabled={proofSubmitting}
-                    />
+                {proofVerdict === "accepted" && proofFeedback && (
+                  <div className="shrink-0 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs leading-relaxed text-emerald-800 sm:py-2.5">
+                    <p className="font-semibold">AI verdict: accepted</p>
+                    <p className="mt-1 whitespace-pre-wrap break-words max-md:line-clamp-6">{proofFeedback}</p>
                   </div>
-                </>
-              )}
-
-              {proofVerdict === "accepted" && proofFeedback && (
-                <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-xs leading-relaxed text-emerald-800">
-                  <p className="font-semibold">AI verdict: accepted</p>
-                  <p className="mt-1 whitespace-pre-wrap">{proofFeedback}</p>
-                </div>
-              )}
-              {proofVerdict === "rejected" && proofFeedback && (
-                <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-xs leading-relaxed text-red-800">
-                  <p className="font-semibold">AI feedback</p>
-                  <p className="mt-1 whitespace-pre-wrap">{proofFeedback}</p>
-                  <p className="mt-2 text-[11px] text-red-700/80">
-                    You can edit your inputs above and click Resubmit. You have a 24-hour window.
-                  </p>
-                </div>
-              )}
-              {missedDayNotice && (
-                <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs text-amber-800" role="status">
-                  {missedDayNotice}
-                </div>
-              )}
-              {proofError && (
-                <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-xs text-red-700" role="alert">
-                  {proofError}
-                </div>
-              )}
-
-              <div className="sticky bottom-0 -mx-6 mt-2 border-t border-slate-100 bg-white px-6 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-                {proofSubmitting && (
-                  <p className="mb-2 text-center text-xs text-slate-500">
-                    Processing your proof. This may take up to one minute.
-                  </p>
                 )}
-                <div className="flex gap-3">
-                <button
-                  type="button"
-                  onClick={closeProofModal}
-                  className="flex-1 rounded-xl border border-slate-200 bg-white py-3 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-50"
-                  disabled={proofSubmitting}
-                >
-                  {proofVerdict === "accepted" ? "Close" : "Cancel"}
-                </button>
-                {proofVerdict === "accepted" ? (
-                  <button
-                    type="button"
-                    onClick={closeProofModal}
-                    className="flex flex-1 items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold text-white transition-transform hover:scale-[1.02]"
-                    style={{ background: APP_GRADIENT }}
-                  >
-                    <Check className="h-4 w-4" aria-hidden /> Continue
-                  </button>
-                ) : proofAttempt === 2 && lastSubmissionId ? (
-                  <button
-                    type="button"
-                    onClick={resubmitProof}
-                    disabled={proofSubmitting || !enrollment || isCurrentDayLocked}
-                    className="flex flex-1 items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold text-white transition-transform hover:scale-[1.02] disabled:opacity-60"
-                    style={{ background: APP_GRADIENT }}
-                  >
-                    <Upload className="h-4 w-4" aria-hidden />
-                    {proofSubmitting ? "Resubmitting..." : "Resubmit"}
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={submitProof}
-                    disabled={proofSubmitting || !enrollment || isCurrentDayLocked}
-                    className="flex flex-1 items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold text-white transition-transform hover:scale-[1.02] disabled:opacity-60"
-                    style={{ background: APP_GRADIENT }}
-                  >
-                    <Upload className="h-4 w-4" aria-hidden />
-                    {proofSubmitting ? "Submitting..." : "Submit"}
-                  </button>
+                {proofVerdict === "rejected" && proofFeedback && (
+                  <div className="min-h-0 shrink-0 overflow-hidden rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs leading-relaxed text-red-800 sm:py-2.5">
+                    <p className="font-semibold">AI feedback</p>
+                    <p className="mt-1 whitespace-pre-wrap break-words max-md:line-clamp-5">{proofFeedback}</p>
+                    <p className="mt-2 text-[11px] text-red-700/80 max-md:line-clamp-2">
+                      You can edit your inputs above and click Resubmit. You have a 24-hour window.
+                    </p>
+                  </div>
                 )}
+                {missedDayNotice && (
+                  <div
+                    className="shrink-0 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800 max-md:line-clamp-4 sm:py-2.5"
+                    role="status"
+                  >
+                    {missedDayNotice}
+                  </div>
+                )}
+                {proofError && (
+                  <div
+                    className="shrink-0 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700 max-md:line-clamp-4 sm:py-2.5"
+                    role="alert"
+                  >
+                    {proofError}
+                  </div>
+                )}
+
+                <p className="mt-2 shrink-0 text-center text-[11px] leading-snug text-slate-500 sm:text-xs">
+                  Something wrong? Contact us at{" "}
+                  <a
+                    href={ELITESCORE_SUPPORT_MAILTO}
+                    className="font-medium text-pink-600 underline-offset-2 hover:underline break-all"
+                  >
+                    {ELITESCORE_SUPPORT_EMAIL}
+                  </a>
+                </p>
+
+                <div className="mt-auto shrink-0 border-t border-slate-100 pt-2 sm:-mx-6 sm:mx-0 sm:mt-2 sm:border-t sm:px-6 sm:pt-3 sm:pb-[max(0.25rem,env(safe-area-inset-bottom))]">
+                  {proofSubmitting && (
+                    <p className="mb-2 text-center text-xs text-slate-500 max-md:line-clamp-2 sm:line-clamp-none">
+                      Processing your proof. This may take up to one minute.
+                    </p>
+                  )}
+                  <div className="flex gap-2 sm:gap-3">
+                    <button
+                      type="button"
+                      onClick={closeProofModal}
+                      className="flex-1 rounded-xl border border-slate-200 bg-white py-2 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-50 sm:py-3"
+                      disabled={proofSubmitting}
+                    >
+                      {proofVerdict === "accepted" ? "Close" : "Cancel"}
+                    </button>
+                    {proofVerdict === "accepted" ? (
+                      <button
+                        type="button"
+                        onClick={closeProofModal}
+                        className="flex flex-1 items-center justify-center gap-2 rounded-xl py-2 text-sm font-bold text-white transition-transform hover:scale-[1.02] sm:py-3"
+                        style={{ background: APP_GRADIENT }}
+                      >
+                        <Check className="h-4 w-4" aria-hidden /> Continue
+                      </button>
+                    ) : proofAttempt === 2 && lastSubmissionId ? (
+                      <button
+                        type="button"
+                        onClick={resubmitProof}
+                        disabled={proofSubmitting || !enrollment || isCurrentDayLocked}
+                        className="flex flex-1 items-center justify-center gap-2 rounded-xl py-2 text-sm font-bold text-white transition-transform hover:scale-[1.02] disabled:opacity-60 sm:py-3"
+                        style={{ background: APP_GRADIENT }}
+                      >
+                        <Upload className="h-4 w-4" aria-hidden />
+                        {proofSubmitting ? "Resubmitting..." : "Resubmit"}
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={submitProof}
+                        disabled={proofSubmitting || !enrollment || isCurrentDayLocked}
+                        className="flex flex-1 items-center justify-center gap-2 rounded-xl py-2 text-sm font-bold text-white transition-transform hover:scale-[1.02] disabled:opacity-60 sm:py-3"
+                        style={{ background: APP_GRADIENT }}
+                      >
+                        <Upload className="h-4 w-4" aria-hidden />
+                        {proofSubmitting ? "Submitting..." : "Submit"}
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>

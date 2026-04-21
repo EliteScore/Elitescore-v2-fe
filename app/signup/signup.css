@@ -81,7 +81,7 @@
   background: var(--white);
   padding: 1rem 1.25rem;
   overflow-x: hidden;
-  overflow-y: hidden;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   min-height: 0;
@@ -93,10 +93,8 @@
 }
 
 .signup-split-right .signup-form {
-  flex: 1;
+  flex: 0 1 auto;
   min-height: 0;
-  overflow-y: auto;
-  overflow-x: hidden;
 }
 
 .signup-form-title {
@@ -196,6 +194,7 @@
   margin: 0.5rem 0 0;
   font-size: 0.6875rem;
   color: var(--gray);
+  text-align: center;
 }
 
 .signup-form-footer a {
@@ -312,21 +311,17 @@
     flex: 1 1 0;
     min-height: 0;
     padding: 1.1rem 1.1rem max(1.1rem, env(safe-area-inset-bottom));
-    overflow: hidden;
-    -webkit-overflow-scrolling: auto;
-  }
-
-  /* Use a single scroll container on mobile (the form). */
-  .signup-split-right .signup-form {
-    overflow-y: auto;
     overflow-x: hidden;
+    overflow-y: auto;
     -webkit-overflow-scrolling: touch;
-    min-height: 0;
-    flex: 1 1 auto;
   }
 
-  .signup-split-right::-webkit-scrollbar:horizontal,
-  .signup-split-right .signup-form::-webkit-scrollbar:horizontal {
+  .signup-split-right .signup-form {
+    flex: 0 1 auto;
+    min-height: 0;
+  }
+
+  .signup-split-right::-webkit-scrollbar:horizontal {
     height: 0;
   }
 
