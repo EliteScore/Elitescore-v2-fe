@@ -1,8 +1,8 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useEffect, useState } from "react"
 import Link from "next/link"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useRouter } from "next/navigation"
 import { Eye, EyeOff } from "lucide-react"
 
 import "../auth.css"
@@ -27,8 +27,7 @@ async function parseApiMessage(res: Response): Promise<string | null> {
 
 export default function ResetPasswordPage() {
   const router = useRouter()
-  const searchParams = useSearchParams()
-  const token = useMemo(() => searchParams.get("token")?.trim() ?? "", [searchParams])
+  const [token, setToken] = useState("")
   const [newPassword, setNewPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
   const [showNewPassword, setShowNewPassword] = useState(false)
@@ -38,6 +37,12 @@ export default function ResetPasswordPage() {
   const [success, setSuccess] = useState<string | null>(null)
 
   const isTokenMissing = token.length === 0
+
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    const value = new URLSearchParams(window.location.search).get("token")?.trim() ?? ""
+    setToken(value)
+  }, [])
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
