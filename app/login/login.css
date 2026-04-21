@@ -258,14 +258,21 @@
   vertical-align: -0.2em;
 }
 
-/* Mobile: stacked layout — brand strip on top, form scrollable below */
-@media (max-width: 768px) {
+/* Stacked layout: phones and tablets — full device width (not centered 75vw card) */
+@media (max-width: 1023px) {
   .login-page {
     overflow: auto;
     -webkit-overflow-scrolling: touch;
+    width: 100%;
+    max-width: 100%;
+    left: 0;
+    right: 0;
   }
 
   .login-page .auth-main {
+    width: 100%;
+    max-width: none;
+    margin: 0;
     padding: 0;
     align-items: stretch;
     justify-content: flex-start;
@@ -275,8 +282,10 @@
 
   .login-split-card {
     flex-direction: column;
+    align-self: stretch;
     width: 100%;
     max-width: 100%;
+    min-width: 0;
     height: 100dvh;
     height: 100vh;
     min-height: 0;
@@ -287,7 +296,7 @@
   .login-split-left {
     flex: 0 0 auto;
     min-height: 0;
-    padding: max(1.25rem, env(safe-area-inset-top)) 1.25rem 1.5rem;
+    padding: max(1.25rem, env(safe-area-inset-top)) max(1.25rem, env(safe-area-inset-right)) 1.5rem max(1.25rem, env(safe-area-inset-left));
     text-align: center;
   }
 
@@ -311,7 +320,7 @@
   .login-split-right {
     flex: 1 1 0;
     min-height: 0;
-    padding: 1.5rem 1.25rem max(1.5rem, env(safe-area-inset-bottom));
+    padding: 1.5rem max(1.25rem, env(safe-area-inset-right)) max(1.5rem, env(safe-area-inset-bottom)) max(1.25rem, env(safe-area-inset-left));
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
   }

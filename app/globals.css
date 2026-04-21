@@ -132,6 +132,16 @@ body.auth-open {
   padding-bottom: 0 !important;
 }
 
+/* Root layout <main> is full-bleed on auth so login/signup cards can use the full device width */
+html.auth-open body > main {
+  display: block;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  min-height: 0;
+}
+
 /* Dashboard pages on mobile: keep only in-app content scrolling */
 @media (max-width: 768px) {
   html.dashboard-open,
