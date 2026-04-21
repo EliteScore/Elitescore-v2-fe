@@ -3,9 +3,13 @@
 import React, { useState, useRef, useEffect } from "react"
 import Link from "next/link"
 import Image from "next/image"
+import { providerLogoUrl } from "@/lib/challengeProvider"
+import { resolveChallengeThumbnail } from "@/lib/challengeThumbnails"
 import "./landing-animations.css"
 
 const APP_GRADIENT = "linear-gradient(135deg, #db2777 0%, #ea580c 35%, #2563eb 70%, #7c3aed 100%)"
+
+const HERO_PARTNERS = ["Harvard", "Google", "MIT", "Microsoft"] as const
 
 type UseInViewOptions = { rootMargin?: string; threshold?: number }
 
@@ -31,22 +35,122 @@ const CREDIBILITY = [
 ]
 
 const STEPS = [
-  { num: "1", title: "Pick a challenge", desc: "CS50, Google certs, MIT courses. Now with stakes." },
-  { num: "2", title: "Submit proof", desc: "Screenshots, links. We verify. No proof, no points." },
-  { num: "3", title: "Climb the board", desc: "Rank, streak, movement. All public. Game on." },
+  {
+    num: "1",
+    title: "Pick a challenge",
+    desc: "CS50, Google certs, MIT courses. Now with stakes.",
+    icon: (
+      <svg className="h-8 w-8 text-pink-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} aria-hidden>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
+      </svg>
+    ),
+  },
+  {
+    num: "2",
+    title: "Submit proof",
+    desc: "Screenshots, links. We verify. No proof, no points.",
+    icon: (
+      <svg className="h-8 w-8 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} aria-hidden>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+      </svg>
+    ),
+  },
+  {
+    num: "3",
+    title: "Climb the board",
+    desc: "Rank, streak, movement. All public. Game on.",
+    icon: (
+      <svg className="h-8 w-8 text-violet-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} aria-hidden>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 18.75h-9m9 0a3 3 0 013 3h-15a3 3 0 013-3m9 0v-3.375c0-.621-.503-1.125-1.125-1.125h-.871M7.5 18.75v-3.375c0-.621.504-1.125 1.125-1.125h.872m5.007 0H9.497m5.007 0a7.454 7.454 0 01-.982-3.172M9.497 14.25a7.454 7.454 0 00.981-3.172M5.25 4.236c-.982.143-1.954.317-2.916.52A6.003 6.003 0 007.5 9.75v6.906m8.25-2.847a6.003 6.003 0 00-8.25-2.847m0 0V9.75m0 0V9.75A6.003 6.003 0 0012 6.75v6.906" />
+      </svg>
+    ),
+  },
 ]
 
-const CHALLENGES = [
-  { title: "Harvard CS50 — Intro to CS", tag: "Harvard", level: "Beginner", url: "https://www.youtube.com/playlist?list=PLWKjhJtqVAbmGw5fN5BQlwuug-8bDmabi", videoId: null, gradient: "from-pink-500/90 to-orange-500/90" },
-  { title: "Google Data Analytics", tag: "Google", level: "Beginner", url: "https://youtube.com/playlist?list=PLBgogxgQVM9tcNYUyRL2jvFNm7jsYlyPv", videoId: null, gradient: "from-blue-500/90 to-indigo-500/90" },
-  { title: "Harvard CS50 AI with Python", tag: "Harvard", level: "Advanced", url: "https://youtu.be/5NgNicANyqM", videoId: "5NgNicANyqM", gradient: "from-violet-500/90 to-purple-500/90" },
-  { title: "MIT 6.S191 — Deep Learning", tag: "MIT", level: "Advanced", url: "https://www.youtube.com/playlist?list=PLtBw6njQRU-rwp5__7C0oIVt26ZgjG9NI", videoId: null, gradient: "from-pink-500/90 to-rose-500/90" },
-  { title: "Google IT Automation", tag: "Google", level: "Intermediate", url: "https://www.youtube.com/playlist?list=PLTZYG7bZ1u6qck0rYNHO2Yfjzq5ZRRTCe", videoId: null, gradient: "from-amber-500/90 to-orange-500/90" },
-  { title: "Harvard CS50 Cybersecurity", tag: "Harvard", level: "Intermediate", url: "https://youtu.be/9HOpanT0GRs", videoId: "9HOpanT0GRs", gradient: "from-emerald-500/90 to-teal-500/90" },
+type LandingChallenge = {
+  title: string
+  tag: string
+  level: string
+  url: string
+  videoId: string | null
+  gradient: string
+  description: string
+}
+
+const CHALLENGES: LandingChallenge[] = [
+  {
+    title: "Harvard CS50 — Intro to CS",
+    tag: "Harvard",
+    level: "Beginner",
+    url: "https://www.youtube.com/playlist?list=PLWKjhJtqVAbmGw5fN5BQlwuug-8bDmabi",
+    videoId: null,
+    gradient: "from-pink-500/90 to-orange-500/90",
+    description: "Harvard University CS50 introduction to computer science, algorithms, and programming fundamentals.",
+  },
+  {
+    title: "Google Data Analytics",
+    tag: "Google",
+    level: "Beginner",
+    url: "https://youtube.com/playlist?list=PLBgogxgQVM9tcNYUyRL2jvFNm7jsYlyPv",
+    videoId: null,
+    gradient: "from-blue-500/90 to-indigo-500/90",
+    description: "Google Career Certificate in data analytics, spreadsheets, SQL, and visualization.",
+  },
+  {
+    title: "Harvard CS50 AI with Python",
+    tag: "Harvard",
+    level: "Advanced",
+    url: "https://youtu.be/5NgNicANyqM",
+    videoId: "5NgNicANyqM",
+    gradient: "from-violet-500/90 to-purple-500/90",
+    description: "Harvard CS50 artificial intelligence with Python, machine learning, and neural networks.",
+  },
+  {
+    title: "MIT 6.S191 — Introduction to Deep Learning",
+    tag: "MIT",
+    level: "Advanced",
+    url: "https://www.youtube.com/playlist?list=PLtBw6njQRU-rwp5__7C0oIVt26ZgjG9NI",
+    videoId: null,
+    gradient: "from-pink-500/90 to-rose-500/90",
+    description: "MIT introduction to deep learning, neural networks, and TensorFlow.",
+  },
+  {
+    title: "MIT — The Missing Semester",
+    tag: "MIT",
+    level: "Intermediate",
+    url: "https://missing.csail.mit.edu/",
+    videoId: null,
+    gradient: "from-slate-600/90 to-slate-800/90",
+    description: "MIT Missing Semester — shell, editors, Git, debugging, and command-line tools for CS students.",
+  },
+  {
+    title: "Google IT Automation",
+    tag: "Google",
+    level: "Intermediate",
+    url: "https://www.youtube.com/playlist?list=PLTZYG7bZ1u6qck0rYNHO2Yfjzq5ZRRTCe",
+    videoId: null,
+    gradient: "from-amber-500/90 to-orange-500/90",
+    description: "Google IT Automation with Python Professional Certificate — Git, Python, and automation.",
+  },
+  {
+    title: "Harvard CS50 Cybersecurity",
+    tag: "Harvard",
+    level: "Intermediate",
+    url: "https://youtu.be/9HOpanT0GRs",
+    videoId: "9HOpanT0GRs",
+    gradient: "from-emerald-500/90 to-teal-500/90",
+    description: "Harvard CS50 cybersecurity track — threats, cryptography, and secure systems.",
+  },
 ]
 
 const getThumb = (videoId: string | null): string | null =>
   videoId ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg` : null
+
+function challengeCoverSrc(c: LandingChallenge): string {
+  const yt = getThumb(c.videoId)
+  if (yt) return yt
+  return resolveChallengeThumbnail(c.title, c.tag, c.description, c.tag)
+}
 
 export default function LandingPage() {
   const [menuOpen, setMenuOpen] = useState(false)
@@ -147,6 +251,24 @@ export default function LandingPage() {
             >
               Sign up for free
             </Link>
+            <div
+              className={`mt-10 flex flex-wrap items-center justify-center gap-4 transition-all duration-500 ease-out sm:gap-6 ${heroReady ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}
+              style={{ transitionDelay: "450ms" }}
+              aria-label="Partner institutions"
+            >
+              {HERO_PARTNERS.map((name) => {
+                const src = providerLogoUrl(name)
+                if (!src) return null
+                return (
+                  <div
+                    key={name}
+                    className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/95 shadow-md ring-1 ring-white/40 sm:h-14 sm:w-14"
+                  >
+                    <img src={src} alt={`${name} logo`} className="h-8 w-8 object-contain sm:h-9 sm:w-9" width={36} height={36} />
+                  </div>
+                )
+              })}
+            </div>
           </div>
         </section>
 
@@ -154,16 +276,24 @@ export default function LandingPage() {
         <section ref={credibilityRef[0]} className="pt-16">
           <p className="mb-6 text-center text-xs font-semibold uppercase tracking-widest text-slate-500">Learn from the best</p>
           <div className="flex flex-wrap items-center justify-center gap-6 sm:gap-10">
-            {CREDIBILITY.map((item, i) => (
-              <div
-                key={item.name}
-                className={`landing-fade-up flex flex-col items-center rounded-xl border border-slate-200/80 bg-white px-6 py-4 shadow-sm ${credibilityRef[1] ? "landing-fade-up-visible" : ""}`}
-                style={{ transitionDelay: `${i * 80}ms` }}
-              >
-                <span className="text-sm font-bold text-slate-800">{item.name}</span>
-                <span className="text-xs text-slate-500">{item.sub}</span>
-              </div>
-            ))}
+            {CREDIBILITY.map((item, i) => {
+              const logo = providerLogoUrl(item.name)
+              return (
+                <div
+                  key={item.name}
+                  className={`landing-fade-up flex flex-col items-center rounded-xl border border-slate-200/80 bg-white px-6 py-4 shadow-sm ${credibilityRef[1] ? "landing-fade-up-visible" : ""}`}
+                  style={{ transitionDelay: `${i * 80}ms` }}
+                >
+                  {logo ? (
+                    <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-lg bg-slate-50">
+                      <img src={logo} alt={`${item.name} logo`} className="h-8 w-8 object-contain" width={32} height={32} />
+                    </div>
+                  ) : null}
+                  <span className="text-sm font-bold text-slate-800">{item.name}</span>
+                  <span className="text-xs text-slate-500">{item.sub}</span>
+                </div>
+              )
+            })}
           </div>
         </section>
 
@@ -177,7 +307,10 @@ export default function LandingPage() {
                 className={`landing-step-card landing-fade-up rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm ${stepsRef[1] ? "landing-fade-up-visible" : ""}`}
                 style={{ transitionDelay: `${100 + i * 80}ms` }}
               >
-                <span className="mb-3 block text-2xl font-bold text-slate-800">{step.num}</span>
+                <div className="mb-3 flex items-center gap-3">
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-50">{step.icon}</span>
+                  <span className="text-2xl font-bold text-slate-800">{step.num}</span>
+                </div>
                 <h3 className="mb-2 text-lg font-semibold text-slate-800">{step.title}</h3>
                 <p className="text-sm text-slate-600">{step.desc}</p>
               </article>
@@ -191,7 +324,8 @@ export default function LandingPage() {
           <p className="mb-10 text-center text-slate-600">Harvard CS50, Google certs, MIT— compete on the popular courses. Proof required.</p>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {CHALLENGES.map((c, i) => {
-              const thumb = getThumb(c.videoId)
+              const coverSrc = challengeCoverSrc(c)
+              const brandLogo = providerLogoUrl(c.tag)
               return (
                 <a
                   key={i}
@@ -203,11 +337,28 @@ export default function LandingPage() {
                   aria-label={`Open ${c.title}`}
                 >
                   <div className={`relative aspect-video bg-gradient-to-br ${c.gradient}`}>
-                    {thumb && <img src={thumb} alt="" className="absolute inset-0 h-full w-full object-cover opacity-80" />}
-                    <span className="landing-play-btn absolute left-1/2 top-1/2 flex h-12 w-12 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-slate-800" aria-hidden>
+                    <img
+                      src={coverSrc}
+                      alt=""
+                      className="absolute inset-0 h-full w-full object-cover opacity-90 mix-blend-normal"
+                    />
+                    <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-black/10" />
+                    {brandLogo ? (
+                      <div className="absolute left-2 top-2 z-10 flex max-w-[min(100%-1rem,13rem)] items-center gap-2 rounded-xl bg-white/95 py-1.5 pl-1.5 pr-2.5 shadow-md ring-1 ring-black/10">
+                        <img
+                          src={brandLogo}
+                          alt={`${c.tag} logo`}
+                          className="h-8 w-8 shrink-0 object-contain"
+                          width={32}
+                          height={32}
+                        />
+                        <span className="truncate text-[10px] font-bold leading-tight text-slate-800">{c.tag}</span>
+                      </div>
+                    ) : null}
+                    <span className="landing-play-btn absolute left-1/2 top-1/2 z-10 flex h-12 w-12 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-slate-800 shadow-md" aria-hidden>
                       <svg className="ml-0.5 h-5 w-5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
                     </span>
-                    <span className="absolute bottom-2 left-2 rounded-lg bg-white/90 px-2 py-0.5 text-xs font-semibold text-slate-700">{c.tag}</span>
+                    <span className="absolute bottom-2 left-2 z-10 rounded-lg bg-white/90 px-2 py-0.5 text-xs font-semibold text-slate-700">{c.level}</span>
                   </div>
                   <div className="p-4">
                     <h3 className="font-semibold text-slate-800 group-hover:text-pink-600">{c.title}</h3>
@@ -278,7 +429,7 @@ export default function LandingPage() {
               Sign up for free
             </Link>
           </div>
-          <p className="mt-4 text-[10px] text-slate-400">© 2025 EliteScore</p>
+          <p className="mt-4 text-[10px] text-slate-400">© 2026 EliteScore</p>
         </footer>
       </main>
     </div>

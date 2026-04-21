@@ -8,6 +8,8 @@ import {
   Flame, AlertTriangle, ChevronRight, History, Users, Mail, X, Check,
   Send, UserPlus, ListTodo, BookOpen, ArrowUpRight,
 } from "lucide-react"
+import { resolveChallengeThumbnail } from "@/lib/challengeThumbnails"
+import { detectChallengeProvider, providerLogoUrl } from "@/lib/challengeProvider"
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -60,6 +62,9 @@ type LibraryChallenge = {
   description: string
   gradientClass: string
   templateId?: string
+  thumbnailUrl?: string
+  providerName?: string
+  providerLogoUrl?: string
 }
 
 type HistoryChallenge = {
@@ -197,6 +202,19 @@ const TABS = [
 
 const TRACK_FILTERS = ["All", "Technical Skills", "Career Development", "Wellness", "Learning"]
 
+function enrichLibraryChallenge(challenge: LibraryChallenge): LibraryChallenge {
+  const providerName =
+    challenge.providerName ?? detectChallengeProvider(challenge.name, challenge.track, challenge.description)
+  return {
+    ...challenge,
+    providerName,
+    providerLogoUrl: challenge.providerLogoUrl ?? providerLogoUrl(providerName),
+    thumbnailUrl:
+      challenge.thumbnailUrl ??
+      resolveChallengeThumbnail(challenge.name, challenge.track, challenge.description, providerName),
+  }
+}
+
 // ── Sub-components ──────────────────────────────────────────────────────────
 
 function DifficultyDots({ level, max = 5 }: { level: number; max?: number }) {
@@ -235,7 +253,9 @@ export default function ChallengesPage() {
   const [emailError, setEmailError] = useState("")
   const [joinInProgress, setJoinInProgress] = useState(false)
 
-  const [libraryChallenges, setLibraryChallenges] = useState<LibraryChallenge[]>(LIBRARY)
+  const [libraryChallenges, setLibraryChallenges] = useState<LibraryChallenge[]>(
+    () => LIBRARY.map((challenge) => enrichLibraryChallenge(challenge))
+  )
   const [libraryLoading, setLibraryLoading] = useState(false)
 
   type ChallengeTemplateApi = {
@@ -352,6 +372,7 @@ export default function ChallengesPage() {
               typeof t.completionRateCached === "number" ? Math.round(t.completionRateCached) : 0
 
             const track = t.track ?? "General"
+            const description = t.description ?? ""
             const lowerTrack = track.toLowerCase()
             let gradientClass = "from-amber-500/90 to-orange-500/90"
             if (lowerTrack.includes("sql") || lowerTrack.includes("data")) {
@@ -362,7 +383,7 @@ export default function ChallengesPage() {
               gradientClass = "from-emerald-500/90 to-teal-500/90"
             }
 
-            return {
+            return enrichLibraryChallenge({
               id: index + 1,
               name: t.name ?? "Challenge",
               track,
@@ -370,10 +391,10 @@ export default function ChallengesPage() {
               duration,
               reward,
               completionRate,
-              description: t.description ?? "",
+              description,
               gradientClass,
               templateId: t.id,
-            }
+            })
           })
           if (mapped.length > 0) setLibraryChallenges(mapped)
         }
@@ -988,9 +1009,35 @@ export default function ChallengesPage() {
               >
                 {/* Gradient thumbnail — same style as landing page challenge cards */}
                 <div
-                  className={`relative flex h-24 items-center justify-center bg-gradient-to-br ${challenge.gradientClass}`}
+                  className={`relative h-24 overflow-hidden bg-gradient-to-br ${challenge.gradientClass}`}
                 >
-                  <Lock className="h-7 w-7 text-white/50" aria-hidden />
+                  {challenge.thumbnailUrl ? (
+                    <img
+                      src={challenge.thumbnailUrl}
+                      alt={`${challenge.name} cover`}
+                      className="h-full w-full object-cover"
+                      loading="lazy"
+                    />
+                  ) : null}
+                  <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/45 via-black/10 to-black/0" />
+                  <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                    <Lock className="h-7 w-7 text-white/60" aria-hidden />
+                  </div>
+                  {challenge.providerName && challenge.providerLogoUrl ? (
+                    <div className="absolute left-2 top-2 z-10 flex max-w-[min(100%-1rem,14rem)] items-center gap-2 rounded-xl bg-white/95 py-1.5 pl-1.5 pr-2.5 shadow-md ring-1 ring-black/10">
+                      <img
+                        src={challenge.providerLogoUrl}
+                        alt={`${challenge.providerName} logo`}
+                        className="h-8 w-8 shrink-0 object-contain"
+                        width={32}
+                        height={32}
+                        loading="lazy"
+                      />
+                      <span className="truncate text-[10px] font-bold leading-tight text-slate-800">
+                        {challenge.providerName}
+                      </span>
+                    </div>
+                  ) : null}
                   <span className="absolute bottom-2 left-2 rounded-lg bg-white/90 px-2 py-0.5 text-[10px] font-semibold text-slate-700">
                     {challenge.track}
                   </span>
@@ -1164,13 +1211,40 @@ export default function ChallengesPage() {
               </button>
             </div>
 
+            {selectedLibrary?.thumbnailUrl ? (
+              <div className="relative h-36 w-full shrink-0 overflow-hidden bg-slate-200 sm:h-40">
+                <img
+                  src={selectedLibrary.thumbnailUrl}
+                  alt={`${selectedLibrary.name} cover`}
+                  className="h-full w-full object-cover"
+                />
+                <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/55 via-black/5 to-black/0" />
+                {selectedLibrary.providerName && selectedLibrary.providerLogoUrl ? (
+                  <div className="absolute left-3 top-3 z-10 flex max-w-[min(calc(100%-1.5rem),16rem)] items-center gap-2.5 rounded-xl bg-white/95 py-2 pl-2 pr-3 shadow-lg ring-1 ring-black/10">
+                    <img
+                      src={selectedLibrary.providerLogoUrl}
+                      alt={`${selectedLibrary.providerName} logo`}
+                      className="h-10 w-10 shrink-0 object-contain"
+                      width={40}
+                      height={40}
+                    />
+                    <span className="truncate text-xs font-bold leading-tight text-slate-800">
+                      {selectedLibrary.providerName}
+                    </span>
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
+
             {/* Scrollable body — flex-1 min-h-0 so it fills and scrolls */}
             <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-3 sm:px-6 sm:py-4">
               <div className="space-y-4 sm:space-y-5">
                 <section className="space-y-1">
                   <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 sm:text-sm sm:normal-case sm:tracking-normal">Description</h3>
                   <p className="text-sm leading-relaxed text-slate-600">
-                    {selectedLibrary?.description} This challenge will push you to develop consistency and discipline while building skills that matter.
+                    {selectedLibrary?.description?.trim()
+                      ? selectedLibrary.description.trim()
+                      : "No description yet for this challenge."}
                   </p>
                 </section>
 

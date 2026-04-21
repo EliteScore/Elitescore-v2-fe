@@ -893,6 +893,7 @@ export default function ChallengeDetailPage() {
   const activeUiDay = enrollment
     ? mapEnrollmentProgressToUiDay(enrollment.currentDay, challenge.duration)
     : null
+  const displayDay = activeUiDay ?? challenge.todayTask.day
   const isViewingPastDay = activeUiDay != null && challenge.todayTask.day < activeUiDay
   const canSubmitToday = Boolean(
     enrollment && enrollment.status === "active" && !isViewingPastDay
@@ -949,16 +950,20 @@ export default function ChallengeDetailPage() {
                   {isExpanded && !isLocked && (
                     <ul className="pb-2 pl-5 pr-3">
                       {week.tasks.map((task) => {
-                        const isCurrent =
-                          task.day === challenge.todayTask.day ||
-                          (typeof task.day === "number" && task.day === challenge.currentDay)
+                        const taskDayNumber =
+                          typeof task.day === "number" ? task.day : Number.parseInt(String(task.day), 10)
+                        const hasDayNumber = Number.isFinite(taskDayNumber)
+                        const isFuture = hasDayNumber ? taskDayNumber > displayDay : false
+                        const isCurrent = hasDayNumber ? taskDayNumber === displayDay : false
                         return (
                           <li key={task.id}>
                             <div
                               className={`flex items-center gap-2.5 rounded-xl px-2 py-2 text-sm transition-colors ${
                                 isCurrent
                                   ? "bg-pink-50 font-semibold text-pink-700"
-                                  : "text-slate-600 hover:bg-slate-50"
+                                  : isFuture
+                                    ? "cursor-default text-slate-400"
+                                    : "cursor-default text-slate-600"
                               }`}
                             >
                               <span
@@ -973,9 +978,10 @@ export default function ChallengeDetailPage() {
                               >
                                 {task.completed && <Check className="h-3 w-3" />}
                               </span>
-                              <span className="min-w-0 truncate">
+                              <span className={`min-w-0 truncate ${isFuture ? "opacity-80" : ""}`}>
                                 Day {task.day}: {task.title}
                               </span>
+                              {isFuture ? <Lock className="ml-auto h-3.5 w-3.5 shrink-0 text-slate-300" aria-hidden /> : null}
                             </div>
                           </li>
                         )
@@ -1026,13 +1032,18 @@ export default function ChallengeDetailPage() {
                 <ul className="border-t border-slate-100 px-5 pb-4 pt-3 space-y-1">
                   {challenge.roadmap.flatMap((week) =>
                     week.tasks.map((task) => {
-                      const isCurrent = task.day === challenge.todayTask.day
+                      const taskDayNumber =
+                        typeof task.day === "number" ? task.day : Number.parseInt(String(task.day), 10)
+                      const hasDayNumber = Number.isFinite(taskDayNumber)
+                      const isFuture = hasDayNumber ? taskDayNumber > displayDay : false
+                      const isCurrent = hasDayNumber ? taskDayNumber === displayDay : false
                       return (
-                        <li key={task.id} className={`flex items-center gap-2.5 rounded-xl px-2 py-1.5 text-sm ${isCurrent ? "bg-pink-50 font-semibold text-pink-700" : "text-slate-600"}`}>
+                        <li key={task.id} className={`flex items-center gap-2.5 rounded-xl px-2 py-1.5 text-sm ${isCurrent ? "bg-pink-50 font-semibold text-pink-700" : isFuture ? "text-slate-400" : "text-slate-600"}`}>
                           <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full ${task.completed ? "bg-emerald-500 text-white" : "border border-slate-200 bg-white"}`} aria-hidden>
                             {task.completed && <Check className="h-3 w-3" />}
                           </span>
                           <span className="truncate">{task.title}</span>
+                          {isFuture ? <Lock className="ml-auto h-3.5 w-3.5 shrink-0 text-slate-300" aria-hidden /> : null}
                         </li>
                       )
                     })

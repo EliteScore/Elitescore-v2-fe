@@ -12,6 +12,8 @@ import "../auth.css"
 import "./signup.css"
 
 const AUTH_BASE_URL = "https://elitescore-auth-jh8f8.ondigitalocean.app"
+const ONBOARDING_PENDING_KEY = "elitescore_onboarding_pending"
+const ONBOARDING_DONE_KEY = "elitescore_onboarding_done"
 
 const signupSchema = z
   .object({
@@ -123,6 +125,8 @@ export default function SignupPage() {
       localStorage.setItem("elitescore_full_name", data.fullName)
       localStorage.setItem("elitescore_username", username)
       localStorage.setItem("elitescore_email", email)
+      localStorage.removeItem(ONBOARDING_DONE_KEY)
+      localStorage.setItem(ONBOARDING_PENDING_KEY, "true")
       router.replace("/home")
     } catch (error) {
       console.error("Signup error:", error)

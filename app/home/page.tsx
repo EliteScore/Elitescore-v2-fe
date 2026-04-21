@@ -3,13 +3,15 @@
 import React, { useMemo, useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { Clock, Flame, TrendingUp, Trophy, ArrowUpRight, CheckCircle2, Upload } from "lucide-react"
+import { Clock, Flame, TrendingUp, Trophy, ArrowUpRight, CheckCircle2, Upload, ChevronRight, X } from "lucide-react"
 
 const DASHBOARD_URL = "/api/dashboard"
 const CHALLENGES_MY_URL = "/api/challenges/my"
 const CHALLENGES_URL = "/api/challenges"
 const APP_GRADIENT = "linear-gradient(135deg, #db2777 0%, #ea580c 35%, #2563eb 70%, #7c3aed 100%)"
 const CARD_BASE = "rounded-2xl border border-slate-200/80 bg-white shadow-sm"
+const ONBOARDING_PENDING_KEY = "elitescore_onboarding_pending"
+const ONBOARDING_DONE_KEY = "elitescore_onboarding_done"
 
 type DashboardStreaks = { streakCurrent?: number; streakLongest?: number; lastActiveAt?: string | null }
 type LeaderboardSummary = { currentRank?: number; eliteScore?: number; percentile?: number }
@@ -76,6 +78,13 @@ type ActiveChallengeUi = {
   difficulty: number
   durationDays: number
   rewardPoints: number
+}
+
+type OnboardingStep = {
+  title: string
+  description: string
+  actionLabel?: string
+  actionHref?: string
 }
 
 function parseDashboardResponse(raw: unknown): DashboardResponse | null {
@@ -291,6 +300,46 @@ export default function HomePage() {
   const [challengeLibrary, setChallengeLibrary] = useState<ChallengeTemplateApi[]>([])
   const [myChallengesLoading, setMyChallengesLoading] = useState(true)
   const [activeCategory, setActiveCategory] = useState("Top")
+  const [showOnboarding, setShowOnboarding] = useState(false)
+  const [onboardingStepIndex, setOnboardingStepIndex] = useState(0)
+
+  const onboardingSteps: OnboardingStep[] = [
+    {
+      title: "Join your first challenge",
+      description:
+        "Start in Challenges and lock in one challenge. This unlocks your daily tasks and score gains.",
+      actionLabel: "Open Challenges",
+      actionHref: "/challenges",
+    },
+    {
+      title: "Add one accountability friend",
+      description:
+        "When you lock in, add at least one friend email. They keep you accountable and can follow your progress.",
+      actionLabel: "Invite from Challenges",
+      actionHref: "/challenges",
+    },
+    {
+      title: "Open your challenge and read today's task",
+      description:
+        "Go to your active challenge and check the day task before you submit anything.",
+      actionLabel: "View My Challenges",
+      actionHref: "/challenges",
+    },
+    {
+      title: "Submit proof correctly",
+      description:
+        "Proof must be valid and on time. Late, invalid, or missing proof can fail the day and hurt your streak.",
+      actionLabel: "See Proof Flow",
+      actionHref: "/challenges",
+    },
+    {
+      title: "Track EliteScore and leaderboard",
+      description:
+        "EliteScore, streak, and weekly gains move your rank. Stay consistent to climb the leaderboard faster.",
+      actionLabel: "Open Leaderboard",
+      actionHref: "/leaderboard",
+    },
+  ]
 
   useEffect(() => {
     const token = localStorage.getItem("elitescore_access_token")
@@ -303,6 +352,16 @@ export default function HomePage() {
     setDisplayName(getDisplayName())
     setAuthChecked(true)
   }, [router])
+
+  useEffect(() => {
+    if (!authChecked) return
+    const onboardingPending = localStorage.getItem(ONBOARDING_PENDING_KEY) === "true"
+    const onboardingDone = localStorage.getItem(ONBOARDING_DONE_KEY) === "true"
+    if (onboardingPending && !onboardingDone) {
+      setOnboardingStepIndex(0)
+      setShowOnboarding(true)
+    }
+  }, [authChecked])
 
   useEffect(() => {
     if (!authChecked) return
@@ -530,6 +589,21 @@ export default function HomePage() {
     .map((challenge) => mapToActiveChallengeUi(challenge, challengeTemplatesById))
 
   const handleCategoryClick = (cat: string) => setActiveCategory(cat)
+  const onboardingStep = onboardingSteps[onboardingStepIndex]
+
+  const closeOnboarding = () => {
+    setShowOnboarding(false)
+    localStorage.setItem(ONBOARDING_DONE_KEY, "true")
+    localStorage.removeItem(ONBOARDING_PENDING_KEY)
+  }
+
+  const handleOnboardingNext = () => {
+    if (onboardingStepIndex >= onboardingSteps.length - 1) {
+      closeOnboarding()
+      return
+    }
+    setOnboardingStepIndex((current) => current + 1)
+  }
 
   if (!authChecked) {
     return (
@@ -541,6 +615,80 @@ export default function HomePage() {
 
   return (
     <div className="w-full space-y-6 px-3 pb-10 pt-2 sm:px-4 md:mx-auto md:max-w-5xl md:px-6">
+      {showOnboarding && onboardingStep ? (
+        <div
+          className="fixed inset-0 z-50 flex items-end bg-black/50 backdrop-blur-sm sm:items-center sm:justify-center sm:p-4"
+          onClick={closeOnboarding}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="onboarding-title"
+        >
+          <div
+            className="w-full rounded-t-2xl border border-slate-200 bg-white p-5 shadow-2xl sm:max-w-xl sm:rounded-2xl sm:p-6"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-500">
+                  Quick onboarding · Step {onboardingStepIndex + 1} of {onboardingSteps.length}
+                </p>
+                <h2 id="onboarding-title" className="mt-1 text-lg font-bold text-slate-800">
+                  {onboardingStep.title}
+                </h2>
+              </div>
+              <button
+                type="button"
+                onClick={closeOnboarding}
+                className="rounded-xl border border-slate-200 p-2 text-slate-500 transition-colors hover:bg-slate-50"
+                aria-label="Close onboarding"
+              >
+                <X className="h-4 w-4" aria-hidden />
+              </button>
+            </div>
+
+            <p className="mt-3 text-sm leading-relaxed text-slate-600">{onboardingStep.description}</p>
+
+            {onboardingStep.actionHref && onboardingStep.actionLabel ? (
+              <Link
+                href={onboardingStep.actionHref}
+                className="mt-4 inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-50"
+              >
+                {onboardingStep.actionLabel}
+                <ArrowUpRight className="h-3.5 w-3.5" aria-hidden />
+              </Link>
+            ) : null}
+
+            <div className="mt-5 h-1.5 overflow-hidden rounded-full bg-slate-100" aria-hidden>
+              <div
+                className="h-full rounded-full transition-all duration-300"
+                style={{
+                  width: `${((onboardingStepIndex + 1) / onboardingSteps.length) * 100}%`,
+                  background: APP_GRADIENT,
+                }}
+              />
+            </div>
+
+            <div className="mt-5 flex items-center justify-between gap-2">
+              <button
+                type="button"
+                onClick={closeOnboarding}
+                className="rounded-xl px-3 py-2 text-xs font-semibold text-slate-500 hover:bg-slate-50"
+              >
+                Skip
+              </button>
+              <button
+                type="button"
+                onClick={handleOnboardingNext}
+                className="inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-bold text-white"
+                style={{ background: APP_GRADIENT }}
+              >
+                {onboardingStepIndex === onboardingSteps.length - 1 ? "Finish" : "Next"}
+                <ChevronRight className="h-3.5 w-3.5" aria-hidden />
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {/* ── Hero banner ── */}
       <section
