@@ -224,6 +224,7 @@ export default function ChallengeDetailPage() {
   const [lastSubmissionId, setLastSubmissionId] = useState<string | null>(null)
   const [proofAttempt, setProofAttempt] = useState<ProofAttempt>(1)
   const [missedDayNotice, setMissedDayNotice] = useState<string | null>(null)
+  const [lockedProofDay, setLockedProofDay] = useState<number | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -400,9 +401,11 @@ export default function ChallengeDetailPage() {
         }
         setEnrollment(info)
         if (info?.status === "failed") {
-          setChallengeFailedBanner(
-            "This challenge has been auto-failed (max missed days reached)."
-          )
+          if (info.missedDaysCount >= 3) {
+            setChallengeFailedBanner("Missed 3/3 days: you have failed the challenge.")
+          } else {
+            setChallengeFailedBanner("This challenge has been auto-failed (max missed days reached).")
+          }
         }
       })
       .finally(() => {
@@ -474,6 +477,12 @@ export default function ChallengeDetailPage() {
     if (activeUiDay != null && challenge && challenge.todayTask.day < activeUiDay) {
       setDayAdvanceBanner(`Day ${challenge.todayTask.day} is already completed. Continue from Day ${activeUiDay}.`)
       router.replace(`/challenges/${rawId}?day=${activeUiDay}`)
+      return
+    }
+    if (challenge && lockedProofDay === challenge.todayTask.day) {
+      setMissedDayNotice(
+        `Day ${challenge.todayTask.day} is marked missed. Upload is locked for this day. Continue to the next day.`
+      )
       return
     }
 
@@ -818,16 +827,35 @@ export default function ChallengeDetailPage() {
         await advanceAfterSuccess(completedDay, earnedEliteScore)
       } else {
         // Attempt 2 rejected: backend auto-applies missed-day penalty.
+        const justMissedDay = challenge?.todayTask.day ?? null
+        if (justMissedDay != null) {
+          setLockedProofDay(justMissedDay)
+        }
         const info = await fetchEnrollment()
         const newMissed = info?.missedDaysCount ?? enrollment.missedDaysCount + 1
         const isFailed = info?.status === "failed"
-        if (info) setEnrollment(info)
-
-        if (isFailed) {
-          setChallengeFailedBanner(
-            "This challenge has been auto-failed (max missed days reached)."
+        const shouldFailChallenge = isFailed || newMissed >= 3
+        if (info) {
+          setEnrollment({
+            ...info,
+            status: shouldFailChallenge ? "failed" : info.status,
+            missedDaysCount: shouldFailChallenge ? Math.max(3, info.missedDaysCount) : info.missedDaysCount,
+          })
+        } else {
+          setEnrollment((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  status: shouldFailChallenge ? "failed" : prev.status,
+                  missedDaysCount: shouldFailChallenge ? Math.max(3, newMissed) : newMissed,
+                }
+              : prev
           )
-          setMissedDayNotice("Challenge auto-failed after this missed day.")
+        }
+
+        if (shouldFailChallenge) {
+          setChallengeFailedBanner("Missed 3/3 days: you have failed the challenge.")
+          setMissedDayNotice("Missed 3/3 days: you have failed the challenge.")
         } else {
           setMissedDayNotice(
             `Day marked as missed (${newMissed}/3). Moving to the next day.`
@@ -895,8 +923,9 @@ export default function ChallengeDetailPage() {
     : null
   const displayDay = activeUiDay ?? challenge.todayTask.day
   const isViewingPastDay = activeUiDay != null && challenge.todayTask.day < activeUiDay
+  const isCurrentDayLocked = lockedProofDay === challenge.todayTask.day
   const canSubmitToday = Boolean(
-    enrollment && enrollment.status === "active" && !isViewingPastDay
+    enrollment && enrollment.status === "active" && !isViewingPastDay && !isCurrentDayLocked
   )
 
   return (
@@ -1185,7 +1214,11 @@ export default function ChallengeDetailPage() {
                 style={{ background: APP_GRADIENT }}
               >
                 <Check className="h-4 w-4" aria-hidden />
-                {isViewingPastDay ? "Already completed" : "Submit & Complete"}
+                {isViewingPastDay
+                  ? "Already completed"
+                  : isCurrentDayLocked
+                  ? "Day marked missed"
+                  : "Submit & Complete"}
               </button>
             </div>
 
@@ -1214,6 +1247,11 @@ export default function ChallengeDetailPage() {
             {isViewingPastDay && (
               <div className="mb-2 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-xs text-blue-800">
                 Day {challenge.todayTask.day} is already completed. Submit proof on Day {activeUiDay}.
+              </div>
+            )}
+            {isCurrentDayLocked && (
+              <div className="mb-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800">
+                Day {challenge.todayTask.day} is marked missed after failed resubmission. Upload is locked for this day.
               </div>
             )}
 
@@ -1263,7 +1301,11 @@ export default function ChallengeDetailPage() {
                 style={{ background: APP_GRADIENT }}
               >
                 <Upload className="h-4 w-4" aria-hidden />
-                {isViewingPastDay ? "Day already completed" : "Upload Proof"}
+                {isViewingPastDay
+                  ? "Day already completed"
+                  : isCurrentDayLocked
+                  ? "Day marked missed"
+                  : "Upload Proof"}
               </button>
             </section>
 
@@ -1461,7 +1503,7 @@ export default function ChallengeDetailPage() {
                   <button
                     type="button"
                     onClick={resubmitProof}
-                    disabled={proofSubmitting || !enrollment}
+                    disabled={proofSubmitting || !enrollment || isCurrentDayLocked}
                     className="flex flex-1 items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold text-white transition-transform hover:scale-[1.02] disabled:opacity-60"
                     style={{ background: APP_GRADIENT }}
                   >
@@ -1472,7 +1514,7 @@ export default function ChallengeDetailPage() {
                   <button
                     type="button"
                     onClick={submitProof}
-                    disabled={proofSubmitting || !enrollment}
+                    disabled={proofSubmitting || !enrollment || isCurrentDayLocked}
                     className="flex flex-1 items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold text-white transition-transform hover:scale-[1.02] disabled:opacity-60"
                     style={{ background: APP_GRADIENT }}
                   >
