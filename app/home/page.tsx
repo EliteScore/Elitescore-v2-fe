@@ -3,7 +3,8 @@
 import React, { useMemo, useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { Clock, Flame, TrendingUp, Trophy, ArrowUpRight, CheckCircle2, Upload, ChevronRight, X } from "lucide-react"
+import { Clock, Flame, TrendingUp, Trophy, ArrowUpRight, CheckCircle2, Upload, ChevronRight, X, Sparkles } from "lucide-react"
+import { difficultyToLabel, isFeaturedChallenge } from "@/lib/challengeDifficulty"
 
 const DASHBOARD_URL = "/api/dashboard"
 const CHALLENGES_MY_URL = "/api/challenges/my"
@@ -61,6 +62,7 @@ type ChallengeTemplateApi = {
   durationDays?: number
   dailyRewardEliteScore?: number
   completionBonus?: number
+  featured?: boolean
 }
 
 type ActiveChallengeUi = {
@@ -76,8 +78,10 @@ type ActiveChallengeUi = {
   challengeTemplateIdLabel: string
   trackLabel: string
   difficulty: number
+  difficultyLabel: string
   durationDays: number
   rewardPoints: number
+  featured: boolean
 }
 
 type OnboardingStep = {
@@ -235,6 +239,7 @@ function parseChallengeTemplates(raw: unknown): Record<string, ChallengeTemplate
       durationDays: typeof row.durationDays === "number" ? row.durationDays : undefined,
       dailyRewardEliteScore: typeof row.dailyRewardEliteScore === "number" ? row.dailyRewardEliteScore : undefined,
       completionBonus: typeof row.completionBonus === "number" ? row.completionBonus : undefined,
+      featured: typeof row.featured === "boolean" ? row.featured : undefined,
     }
   })
   return map
@@ -284,8 +289,10 @@ function mapToActiveChallengeUi(
     challengeTemplateIdLabel: shortTemplateId(templateId),
     trackLabel: template?.track?.trim() || "General",
     difficulty,
+    difficultyLabel: difficultyToLabel(difficulty),
     durationDays,
     rewardPoints,
+    featured: isFeaturedChallenge({ name: template?.name, featured: template?.featured }),
   }
 }
 
@@ -540,6 +547,8 @@ export default function HomePage() {
     points: number
     durationDays?: number
     difficulty?: number
+    difficultyLabel: string
+    featured: boolean
     members: string
     gradientClass: string
   }
@@ -559,6 +568,7 @@ export default function HomePage() {
             : typeof c.dailyRewardEliteScore === "number" && duration
               ? c.dailyRewardEliteScore * duration
               : c.dailyRewardEliteScore ?? 0
+        const d = typeof c.difficulty === "number" ? c.difficulty : 3
         return {
           id: c.id ?? `challenge-${index}`,
           title: c.name ?? "Challenge",
@@ -566,6 +576,8 @@ export default function HomePage() {
           points,
           durationDays: duration,
           difficulty: c.difficulty,
+          difficultyLabel: difficultyToLabel(d),
+          featured: isFeaturedChallenge({ name: c.name, featured: c.featured }),
           members: "",
           gradientClass: GRADIENT_BY_TRACK[category] ?? GRADIENT_BY_TRACK.default,
         }
@@ -893,6 +905,17 @@ export default function HomePage() {
                           {challenge.statusLabel}
                         </span>
                       </div>
+                      <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                        {challenge.featured ? (
+                          <span className="inline-flex items-center gap-0.5 rounded-md bg-amber-100 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-amber-800">
+                            <Sparkles className="h-2.5 w-2.5" aria-hidden />
+                            Featured
+                          </span>
+                        ) : null}
+                        <span className="inline-flex items-center rounded-md bg-slate-100 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-slate-600">
+                          {challenge.difficultyLabel}
+                        </span>
+                      </div>
                       <p className="mt-1 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
                         {challenge.trackLabel} · Template #{challenge.challengeTemplateIdLabel}
                       </p>
@@ -900,6 +923,7 @@ export default function HomePage() {
                       <p className="mt-1 text-[11px] text-slate-500">
                         {challenge.durationDays > 0 ? `${challenge.durationDays} days` : "Duration —"}
                         {challenge.rewardPoints > 0 ? ` · ${challenge.rewardPoints} pts` : ""}
+                        {` · ${challenge.difficultyLabel} (${challenge.difficulty}/5)`}
                       </p>
                       <div className="mt-3">
                         <div className="flex items-center justify-between text-xs">
@@ -1018,6 +1042,12 @@ export default function HomePage() {
                   <div
                     className={`relative flex h-20 items-center justify-center bg-gradient-to-br ${item.gradientClass}`}
                   >
+                    {item.featured ? (
+                      <span className="absolute right-2 top-2 z-10 inline-flex items-center gap-0.5 rounded-md bg-amber-400/95 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-amber-950 shadow ring-1 ring-amber-500/30">
+                        <Sparkles className="h-3 w-3 shrink-0" aria-hidden />
+                        Featured
+                      </span>
+                    ) : null}
                     <span className="absolute bottom-2 left-2 rounded-lg bg-white/90 px-2 py-0.5 text-[10px] font-semibold text-slate-700">
                       {item.category}
                     </span>
@@ -1027,9 +1057,11 @@ export default function HomePage() {
                       {item.title}
                     </h3>
                     <p className="mt-0.5 text-xs text-slate-500">
+                      <span className="font-semibold text-slate-700">{item.difficultyLabel}</span>
+                      {" · "}
                       {item.points} pts
                       {item.durationDays != null && ` · ${item.durationDays} days`}
-                      {item.difficulty != null && ` · ${item.difficulty}/5 difficulty`}
+                      {item.difficulty != null && ` · ${item.difficulty}/5`}
                       {item.members ? ` · ${item.members} members` : ""}
                     </p>
                     <Link

@@ -6,10 +6,11 @@ import { useRouter } from "next/navigation"
 import {
   Trophy, Target, Calendar, Clock, Lock, Upload, CheckCircle2, XCircle,
   Flame, AlertTriangle, ChevronRight, History, Users, Mail, X, Check,
-  Send, UserPlus, ListTodo, BookOpen, ArrowUpRight,
+  Send, UserPlus, ListTodo, BookOpen, ArrowUpRight, Sparkles,
 } from "lucide-react"
 import { resolveChallengeThumbnail } from "@/lib/challengeThumbnails"
 import { detectChallengeProvider, providerLogoUrl } from "@/lib/challengeProvider"
+import { difficultyToLabel, isFeaturedChallenge } from "@/lib/challengeDifficulty"
 import { ELITESCORE_SUPPORT_EMAIL, ELITESCORE_SUPPORT_MAILTO } from "@/lib/supportContact"
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -66,6 +67,8 @@ type LibraryChallenge = {
   thumbnailUrl?: string
   providerName?: string
   providerLogoUrl?: string
+  /** Shown as a “Featured” badge; from API or name heuristics (see isFeaturedChallenge). */
+  featured?: boolean
 }
 
 type HistoryChallenge = {
@@ -208,6 +211,7 @@ function enrichLibraryChallenge(challenge: LibraryChallenge): LibraryChallenge {
     challenge.providerName ?? detectChallengeProvider(challenge.name, challenge.track, challenge.description)
   return {
     ...challenge,
+    featured: isFeaturedChallenge({ name: challenge.name, featured: challenge.featured }),
     providerName,
     providerLogoUrl: challenge.providerLogoUrl ?? providerLogoUrl(providerName),
     thumbnailUrl:
@@ -269,6 +273,7 @@ export default function ChallengesPage() {
     dailyRewardEliteScore?: number
     completionBonus?: number
     completionRateCached?: number | null
+    featured?: boolean
   }
 
   useEffect(() => {
@@ -395,6 +400,7 @@ export default function ChallengesPage() {
               description,
               gradientClass,
               templateId: t.id,
+              featured: t.featured,
             })
           })
           if (mapped.length > 0) setLibraryChallenges(mapped)
@@ -1053,6 +1059,12 @@ export default function ChallengesPage() {
                       </span>
                     </div>
                   ) : null}
+                  {challenge.featured ? (
+                    <div className="absolute right-2 top-2 z-10 flex items-center gap-0.5 rounded-lg bg-amber-400/95 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-950 shadow-md ring-1 ring-amber-500/30">
+                      <Sparkles className="h-3 w-3 shrink-0" aria-hidden />
+                      Featured
+                    </div>
+                  ) : null}
                   <span className="absolute bottom-2 left-2 rounded-lg bg-white/90 px-2 py-0.5 text-[10px] font-semibold text-slate-700">
                     {challenge.track}
                   </span>
@@ -1063,11 +1075,14 @@ export default function ChallengesPage() {
                     {challenge.name}
                   </h3>
 
-                  <div className="mt-1.5 flex items-center gap-3 text-xs text-slate-500">
+                  <div className="mt-1.5 flex flex-wrap items-center gap-2 text-xs text-slate-500">
                     <span className="flex items-center gap-1">
                       <Calendar className="h-3 w-3" aria-hidden /> {challenge.duration}d
                     </span>
-                    <span className="flex items-center gap-1">
+                    <span className="inline-flex items-center gap-1 rounded-md bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-slate-600">
+                      {difficultyToLabel(challenge.difficulty)}
+                    </span>
+                    <span className="flex items-center gap-1" title={`Level ${challenge.difficulty} of 5`}>
                       <Target className="h-3 w-3" aria-hidden /> {challenge.difficulty}/5
                     </span>
                   </div>
@@ -1222,9 +1237,17 @@ export default function ChallengesPage() {
             <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain max-md:[scrollbar-gutter:stable]">
               <div className="flex shrink-0 items-start justify-between gap-3 border-b border-slate-200/80 bg-white px-4 py-3 sm:px-6 sm:py-4">
                 <div className="min-w-0 flex-1">
-                  <span className="inline-block rounded-lg bg-pink-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-pink-600">
-                    {selectedLibrary?.track}
-                  </span>
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <span className="inline-block rounded-lg bg-pink-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-pink-600">
+                      {selectedLibrary?.track}
+                    </span>
+                    {selectedLibrary?.featured ? (
+                      <span className="inline-flex items-center gap-0.5 rounded-lg bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-800">
+                        <Sparkles className="h-3 w-3" aria-hidden />
+                        Featured
+                      </span>
+                    ) : null}
+                  </div>
                   <h2 className="mt-1 text-base font-bold leading-tight text-slate-800 sm:text-xl">{selectedLibrary?.name}</h2>
                 </div>
                 <button
@@ -1257,6 +1280,12 @@ export default function ChallengesPage() {
                       <span className="truncate text-xs font-bold leading-tight text-slate-800">
                         {selectedLibrary.providerName}
                       </span>
+                    </div>
+                  ) : null}
+                  {selectedLibrary.featured ? (
+                    <div className="absolute right-3 top-3 z-10 flex items-center gap-0.5 rounded-lg bg-amber-400/95 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-amber-950 shadow-md ring-1 ring-amber-500/30">
+                      <Sparkles className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                      Featured
                     </div>
                   ) : null}
                 </div>
@@ -1317,7 +1346,12 @@ export default function ChallengesPage() {
                     </h3>
                     <div className="grid grid-cols-2 gap-2">
                       {[
-                        { label: "Difficulty", value: `${selectedLibrary?.difficulty}/5` },
+                        {
+                          label: "Level",
+                          value: selectedLibrary
+                            ? `${difficultyToLabel(selectedLibrary.difficulty)} (${selectedLibrary.difficulty}/5)`
+                            : "—",
+                        },
                         { label: "Duration", value: `${selectedLibrary?.duration} days` },
                         { label: "Reward", value: `+${selectedLibrary?.reward} pts`, accent: true },
                         { label: "Completion", value: `${selectedLibrary?.completionRate}%` },
