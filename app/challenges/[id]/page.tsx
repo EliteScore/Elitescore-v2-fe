@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { Suspense, useEffect, useState } from "react"
 import { useParams, useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import {
@@ -169,20 +169,20 @@ function resolveGoogleDataAnalyticsStarterPack(
   if (dayNum === 1) {
     return {
       label: "Day 1 starter pack",
-      href: "/starter-packs/glowcart_day_1_8_starter_pack.zip",
+      href: "/api/downloads/glowcart-day-1-8-starter-pack",
       filename: "glowcart_day_1_8_starter_pack.zip",
     }
   }
   if (dayNum === 9) {
     return {
       label: "Day 9 starter pack",
-      href: "/starter-packs/glowcart_day_9_16_starter_pack.zip",
+      href: "/api/downloads/glowcart-day-9-16-starter-pack",
       filename: "glowcart_day_9_16_starter_pack.zip",
     }
   }
   return {
     label: "Day 17 starter pack",
-    href: "/starter-packs/glowcart_day_17_25_starter_pack.zip",
+    href: "/api/downloads/glowcart-day-17-25-starter-pack",
     filename: "glowcart_day_17_25_starter_pack.zip",
   }
 }
@@ -455,7 +455,15 @@ function mapEnrollmentProgressToUiDay(progressDay: number | null | undefined, du
   return typeof duration === "number" && duration > 0 ? Math.min(mapped, duration) : mapped
 }
 
-export default function ChallengeDetailPage() {
+function ChallengeDetailPageFallback() {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-[#f5f5f6] px-4">
+      <p className="text-sm text-slate-500">Loading challenge...</p>
+    </div>
+  )
+}
+
+function ChallengeDetailPage() {
   const params = useParams()
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -1433,7 +1441,7 @@ export default function ChallengeDetailPage() {
     challenge.todayTask.day,
     `${challenge.description}\n${challenge.todayTask.title}\n${challenge.todayTask.description}\n${challenge.todayTask.requirements.join("\n")}`,
   )
-  const sqlStarterDownloadHref = "/starter-packs/skillsprint_sql_starter_pack.zip"
+  const sqlStarterDownloadHref = "/api/downloads/skillsprint-sql-starter-pack"
   const googleAnalyticsStarterPack = resolveGoogleDataAnalyticsStarterPack(
     challenge.name,
     challenge.todayTask.day,
@@ -2310,5 +2318,13 @@ export default function ChallengeDetailPage() {
         </div>
       )}
     </div>
+  )
+}
+
+export default function ChallengeDetailPageRoot() {
+  return (
+    <Suspense fallback={<ChallengeDetailPageFallback />}>
+      <ChallengeDetailPage />
+    </Suspense>
   )
 }
