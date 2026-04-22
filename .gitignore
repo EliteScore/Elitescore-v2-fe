@@ -16,8 +16,12 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files
+# env files (commit `.env.example` only)
 .env*
+!.env.example
+
+# E2E temp artifacts
+scripts/.e2e-tmp
 
 # vercel
 .vercel

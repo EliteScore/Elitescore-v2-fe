@@ -8,6 +8,7 @@ import {
   ChevronDown,
   ChevronUp,
   Check,
+  Download,
   Lock,
   Upload,
   Heart,
@@ -18,6 +19,7 @@ import {
   Flame,
 } from "lucide-react"
 import { ELITESCORE_SUPPORT_EMAIL, ELITESCORE_SUPPORT_MAILTO } from "@/lib/supportContact"
+import { ensureSupabaseSession, getSupabaseBrowserClient } from "@/lib/supabaseClient"
 
 const APP_GRADIENT = "linear-gradient(135deg, #db2777 0%, #ea580c 35%, #2563eb 70%, #7c3aed 100%)"
 const CARD_BASE = "rounded-2xl border border-slate-200/80 bg-white shadow-sm"
@@ -60,10 +62,211 @@ function buildYouTubeEmbedUrl(videoId: string, startSeconds?: number | null, end
   return u.toString()
 }
 
+/** Project build days in "AI with Python" — copy uses Watch + multiple Link: Name: url … then Today… */
+const AI_PYTHON_PROJECT_DAYS = new Set([3, 6, 9, 12, 15, 18, 21])
+
+function normalizeChallengeDay(day: number | string | undefined | null): number | null {
+  if (day == null) return null
+  const d = typeof day === "number" && Number.isFinite(day) ? day : Number.parseInt(String(day), 10)
+  return Number.isFinite(d) ? d : null
+}
+
+/**
+ * One UI row per submission line. Supports newline lists and single blocks with multiple "•" items
+ * (e.g. cybersecurity templates pasted as one paragraph).
+ */
+function splitExpectedProofIntoRequirementRows(expectedProof: string | null | undefined): string[] {
+  const raw = (expectedProof ?? "").replace(/\r\n/g, "\n").trim()
+  if (!raw) return []
+
+  const splitTargetLengthLine = (segment: string): string[] => {
+    const s = segment.trim()
+    const m = s.match(/^(.+?)(\s+Target\s+length:\s*.+)$/i)
+    if (m && m[1].trim().length >= 4) return [m[1].trim(), m[2].trim()]
+    return [s]
+  }
+  const normalizeLeadMarker = (line: string): string =>
+    line
+      .replace(/^\s*(?:\d+[\)\.\:\-]?\s+)/, "")
+      .replace(/^\s*[•●▪◦\-]\s*/, "")
+      .trim()
+
+  // Turn inline bullets into separate lines, e.g. "Include: • x • y"
+  const expandedRaw = raw.replace(/\s+[•●▪◦]\s+/g, "\n• ")
+  const lines = expandedRaw.split("\n").map((s) => s.trim()).filter(Boolean)
+
+  const startsNewItem = (line: string): boolean =>
+    /^\s*(?:\d+[\)\.\:\-]?\s+|[•●▪◦\-]\s+)/.test(line)
+
+  const grouped: string[] = []
+  for (const line of lines) {
+    if (startsNewItem(line)) {
+      const cleaned = normalizeLeadMarker(line)
+      if (cleaned) grouped.push(cleaned)
+      continue
+    }
+    if (grouped.length === 0) {
+      grouped.push(line)
+    } else {
+      grouped[grouped.length - 1] = `${grouped[grouped.length - 1]} ${line}`.replace(/\s+/g, " ").trim()
+    }
+  }
+
+  // If no explicit markers were found, keep each newline row.
+  const baseRows = grouped.length > 0 ? grouped : lines
+
+  return baseRows
+    .map((row) => normalizeLeadMarker(row))
+    .filter(Boolean)
+    .flatMap(splitTargetLengthLine)
+}
+
+function isAiWithPythonProjectDay(challengeName: string, day: number): boolean {
+  if (!AI_PYTHON_PROJECT_DAYS.has(day)) return false
+  const n = challengeName.toLowerCase()
+  if (n.includes("ai with python")) return true
+  if (n.includes("cs50") && n.includes("ai")) return true
+  if (n.includes("ai") && n.includes("python")) return true
+  return false
+}
+
+function isIntroDbSqlDayOne(challengeName: string, day: number | string, extraContext?: string): boolean {
+  const dayNum = normalizeChallengeDay(day)
+  if (dayNum !== 1) return false
+  const n = challengeName.toLowerCase()
+  const baseNameMatch =
+    (n.includes("intro") && n.includes("db") && n.includes("sql")) ||
+    (n.includes("introduction") && n.includes("database") && n.includes("sql"))
+  if (baseNameMatch) return true
+
+  const ctx = (extraContext ?? "").toLowerCase()
+  // Fallback for starter SQL day copy where the challenge title can vary by provider.
+  return (
+    ctx.includes("courses_feed") ||
+    ctx.includes("sqlite") ||
+    ctx.includes("select and limit") ||
+    ctx.includes("skillsprint") ||
+    ctx.includes("first queries and your first table") ||
+    ctx.includes(".sql file")
+  )
+}
+
+function resolveGoogleDataAnalyticsStarterPack(
+  challengeName: string,
+  day: number | string,
+  extraContext?: string
+): { label: string; href: string; filename: string } | null {
+  const dayNum = normalizeChallengeDay(day)
+  if (dayNum == null) return null
+  if (dayNum !== 1 && dayNum !== 9 && dayNum !== 17) return null
+
+  const haystack = `${challengeName}\n${extraContext ?? ""}`.toLowerCase()
+  const isGoogleDataAnalytics =
+    ((haystack.includes("google") || haystack.includes("glowcart")) && haystack.includes("data")) ||
+    haystack.includes("analytics")
+  if (!isGoogleDataAnalytics) return null
+
+  if (dayNum === 1) {
+    return {
+      label: "Day 1 starter pack",
+      href: "/starter-packs/glowcart_day_1_8_starter_pack.zip",
+      filename: "glowcart_day_1_8_starter_pack.zip",
+    }
+  }
+  if (dayNum === 9) {
+    return {
+      label: "Day 9 starter pack",
+      href: "/starter-packs/glowcart_day_9_16_starter_pack.zip",
+      filename: "glowcart_day_9_16_starter_pack.zip",
+    }
+  }
+  return {
+    label: "Day 17 starter pack",
+    href: "/starter-packs/glowcart_day_17_25_starter_pack.zip",
+    filename: "glowcart_day_17_25_starter_pack.zip",
+  }
+}
+
+function isCs50IntroBeforeBeginDayOne(challengeName: string, day: number | string, extraContext?: string): boolean {
+  const dayNum = normalizeChallengeDay(day)
+  if (dayNum !== 1) return false
+  const name = challengeName.toLowerCase()
+  const ctx = (extraContext ?? "").toLowerCase()
+  return (
+    (name.includes("cs50") && (name.includes("computer science") || name.includes("introduction"))) ||
+    (ctx.includes("harvard") && ctx.includes("cs50") && ctx.includes("computer science"))
+  )
+}
+
+function isMitDeepLearningBeforeBeginDayOne(
+  challengeName: string,
+  day: number | string,
+  extraContext?: string
+): boolean {
+  const dayNum = normalizeChallengeDay(day)
+  if (dayNum !== 1) return false
+  const name = challengeName.toLowerCase()
+  const ctx = (extraContext ?? "").toLowerCase()
+  return (
+    (name.includes("mit") && name.includes("6.s191") && name.includes("deep learning")) ||
+    (name.includes("mit") && name.includes("introduction") && name.includes("deep learning")) ||
+    (ctx.includes("mit") && ctx.includes("6.s191") && ctx.includes("deep learning"))
+  )
+}
+
+type DayDescriptionParts = {
+  watchSegment: string | null
+  instructions: string
+  namedLinks?: { label: string; url: string }[]
+}
+
+/**
+ * CS50-style project day: "Watch: Practice day Link: Knights: https://… Link: Minesweeper: https://… Today is…"
+ * Splits on the first "Today" that starts the narrative (allows zero whitespace before Today after a URL).
+ */
+function splitAiPythonProjectDayDescription(trimmed: string): DayDescriptionParts | null {
+  if (!/^Watch:/i.test(trimmed)) return null
+  const bodyMatch = trimmed.match(/^(Watch:[\s\S]*?)(\s*Today\b[\s\S]*)$/i)
+  if (!bodyMatch) return null
+  const preamble = bodyMatch[1].trim()
+  const instructions = bodyMatch[2].trim()
+  if (!/^Today\b/i.test(instructions)) return null
+  if (!/https?:\/\//i.test(preamble)) return null
+
+  const namedLinks: { label: string; url: string }[] = []
+  const labeledRe = /Link:\s*([^:\n]+?):\s*(https?:\/\/\S+)/gi
+  let m: RegExpExecArray | null
+  while ((m = labeledRe.exec(preamble)) !== null) {
+    namedLinks.push({ label: m[1].trim(), url: m[2].trim() })
+  }
+  if (namedLinks.length === 0) {
+    const plainRe = /Link:\s*(https?:\/\/\S+)/gi
+    while ((m = plainRe.exec(preamble)) !== null) {
+      namedLinks.push({ label: "Resource", url: m[1].trim() })
+    }
+  }
+  if (namedLinks.length === 0) return null
+
+  return { watchSegment: preamble, instructions, namedLinks }
+}
+
 /** Split API copy like "Watch: … Link: https://… Today is about…" into a watch row and body instructions. */
-function splitDayDescription(text: string): { watchSegment: string | null; instructions: string } {
+function splitDayDescription(text: string, challengeName?: string, day?: number): DayDescriptionParts {
   const trimmed = text.trim()
   if (!trimmed) return { watchSegment: null, instructions: "" }
+
+  const dayNum = normalizeChallengeDay(day)
+  const nameStr = challengeName ?? ""
+  const project = splitAiPythonProjectDayDescription(trimmed)
+  const hasHarvardCs50Links = /cs50\.harvard\.edu/i.test(trimmed)
+  if (
+    project &&
+    project.namedLinks &&
+    project.namedLinks.length >= 2 &&
+    (hasHarvardCs50Links || (dayNum != null && isAiWithPythonProjectDay(nameStr, dayNum)))
+  ) {
+    return project
+  }
 
   const multiline = trimmed.match(
     /^(Watch:\s*[^\n]+)\s*\n\s*Link:\s*(https?:\/\/[^\s]+)\s*\n+([\s\S]+)$/i
@@ -272,10 +475,12 @@ export default function ChallengeDetailPage() {
   const [dayAdvanceBanner, setDayAdvanceBanner] = useState<string | null>(null)
 
   // Proof modal state
-  const [proofMode, setProofMode] = useState<"text" | "link">("text")
+  const [proofMode, setProofMode] = useState<"text" | "link" | "upload">("text")
   const [proofText, setProofText] = useState("")
   const [proofLink, setProofLink] = useState("")
+  const [proofFiles, setProofFiles] = useState<File[]>([])
   const [proofNotes, setProofNotes] = useState("")
+  const [proofUploading, setProofUploading] = useState(false)
   const [proofSubmitting, setProofSubmitting] = useState(false)
   const [proofError, setProofError] = useState<string | null>(null)
   const [proofVerdict, setProofVerdict] = useState<ProofVerdict | null>(null)
@@ -361,17 +566,13 @@ export default function ChallengeDetailPage() {
 
         const stepForDay =
           requestedDay != null && !Number.isNaN(requestedDay)
-            ? steps.find((s) => s.day === requestedDay)
+            ? steps.find((s) => normalizeChallengeDay(s.day) === requestedDay)
             : null
         const firstStep = stepForDay ?? steps[0]
-        const todayDay = firstStep?.day ?? requestedDay ?? 1
+        const todayDay = normalizeChallengeDay(firstStep?.day ?? requestedDay ?? 1) ?? 1
         const xp = typeof firstStep?.rewardEliteScore === "number" ? firstStep.rewardEliteScore : 0
         const description = firstStep?.instructions ?? "Daily task for this challenge."
-        const requirements: string[] =
-          (firstStep?.expectedProof ?? "")
-            .split(/\r?\n/)
-            .map((s) => s.trim())
-            .filter(Boolean) || []
+        const requirements: string[] = splitExpectedProofIntoRequirementRows(firstStep?.expectedProof)
 
         const ui: UiChallenge = {
           id: rawId,
@@ -487,7 +688,9 @@ export default function ChallengeDetailPage() {
   const resetProofModalState = () => {
     setProofText("")
     setProofLink("")
+    setProofFiles([])
     setProofNotes("")
+    setProofUploading(false)
     setProofMode("text")
     setProofError(null)
     setProofVerdict(null)
@@ -615,13 +818,92 @@ export default function ChallengeDetailPage() {
     }
   }
 
-  const buildProofBody = (): { ok: true; body: Record<string, unknown> } | { ok: false; message: string } => {
+  const MAX_PROOF_FILES = 10
+  const MAX_PROOF_FILE_SIZE_BYTES = 15 * 1024 * 1024
+  const PROOF_STORAGE_BUCKET = "proofs"
+  const ACCEPTED_PROOF_FILE_EXTENSIONS = [
+    ".png",
+    ".jpg",
+    ".jpeg",
+    ".webp",
+    ".gif",
+    ".pdf",
+    ".doc",
+    ".docx",
+    ".ppt",
+    ".pptx",
+    ".txt",
+    ".md",
+    ".csv",
+    ".json",
+    ".py",
+    ".js",
+    ".ts",
+    ".tsx",
+    ".java",
+    ".c",
+    ".cpp",
+    ".ipynb",
+    ".zip",
+  ]
+
+  const formatBytes = (bytes: number): string => {
+    if (!Number.isFinite(bytes) || bytes <= 0) return "0 B"
+    const units = ["B", "KB", "MB", "GB"]
+    let size = bytes
+    let unitIndex = 0
+    while (size >= 1024 && unitIndex < units.length - 1) {
+      size /= 1024
+      unitIndex += 1
+    }
+    return `${size.toFixed(unitIndex === 0 ? 0 : 1)} ${units[unitIndex]}`
+  }
+
+  const fileHasAcceptedExtension = (fileName: string): boolean => {
+    const lower = fileName.toLowerCase()
+    return ACCEPTED_PROOF_FILE_EXTENSIONS.some((ext) => lower.endsWith(ext))
+  }
+
+  const handleProofFilesSelected = (files: FileList | null) => {
+    if (!files || files.length === 0) return
+    setProofError(null)
+    setProofFiles((prev) => {
+      const next = [...prev]
+      for (const file of Array.from(files)) {
+        const duplicate = next.some((f) => f.name === file.name && f.size === file.size && f.type === file.type)
+        if (duplicate) continue
+        if (next.length >= MAX_PROOF_FILES) break
+        next.push(file)
+      }
+      return next
+    })
+  }
+
+  const removeProofFileAtIndex = (idx: number) => {
+    setProofFiles((prev) => prev.filter((_, i) => i !== idx))
+  }
+
+  type ProofAttachment = { url: string; assetType: "image" | "video" | "file" }
+
+  const detectAttachmentAssetType = (file: File): ProofAttachment["assetType"] => {
+    if (file.type.startsWith("image/")) return "image"
+    if (file.type.startsWith("video/")) return "video"
+    return "file"
+  }
+
+  const validateProofInputs = ():
+    | { ok: true; text: string; link: string; notes: string; files: File[] }
+    | { ok: false; message: string } => {
     const text = proofText.trim()
     const link = proofLink.trim()
     const notes = proofNotes.trim()
+    const files = proofFiles
 
-    if (!text && !link) {
-      return { ok: false, message: "Add proof text or a public link before submitting." }
+    if (!text && !link && files.length === 0) {
+      return {
+        ok: false,
+        message: "Add proof text, a public link, or at least one file before submitting.",
+      }
     }
     if (link && !(link.startsWith("http://") || link.startsWith("https://"))) {
       return { ok: false, message: "Proof link must start with http:// or https://" }
@@ -635,12 +917,102 @@ export default function ChallengeDetailPage() {
     if (notes.length > 1000) {
       return { ok: false, message: "Notes are too long (max 1000 characters)." }
     }
+    if (files.length > MAX_PROOF_FILES) {
+      return { ok: false, message: `Too many files. Max ${MAX_PROOF_FILES} files allowed.` }
+    }
+    for (const file of files) {
+      if (!fileHasAcceptedExtension(file.name)) {
+        return {
+          ok: false,
+          message:
+            "One or more files have unsupported format. Use screenshots, docs, slides, PDF, text/code, CSV, JSON, notebook, or ZIP.",
+        }
+      }
+      if (file.size > MAX_PROOF_FILE_SIZE_BYTES) {
+        return {
+          ok: false,
+          message: `${file.name} is too large (${formatBytes(file.size)}). Max ${formatBytes(
+            MAX_PROOF_FILE_SIZE_BYTES
+          )} per file.`,
+        }
+      }
+    }
 
+    return { ok: true, text, link, notes, files }
+  }
+
+  /**
+   * Uploads selected files directly to Supabase Storage (bucket "proofs") and
+   * returns metadata that the backend accepts. The path is
+   * `${userId}/${userChallengeId}/${timestamp}-${sanitizedName}` so Storage RLS
+   * policies (which require auth.uid() as the first folder) pass.
+   */
+  const uploadProofFilesToStorage = async (
+    files: File[],
+    userChallengeId: string
+  ): Promise<{ ok: true; attachments: ProofAttachment[] } | { ok: false; message: string }> => {
+    if (files.length === 0) return { ok: true, attachments: [] }
+
+    const client = getSupabaseBrowserClient()
+    if (!client) {
+      return {
+        ok: false,
+        message:
+          "File upload is not configured. Please set NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY.",
+      }
+    }
+
+    const session = await ensureSupabaseSession(client)
+    const userId = session.userId
+    if (!userId) {
+      return {
+        ok: false,
+        message: session.error ?? "Could not confirm your Supabase session for file upload.",
+      }
+    }
+
+    const uploaded: ProofAttachment[] = []
+    for (const file of files) {
+      const safeName = file.name.replace(/[^\w.\-]+/g, "_")
+      const path = `${userId}/${userChallengeId}/${Date.now()}-${safeName}`
+      const { error: uploadError } = await client.storage
+        .from(PROOF_STORAGE_BUCKET)
+        .upload(path, file, { contentType: file.type || "application/octet-stream", upsert: false })
+
+      if (uploadError) {
+        return {
+          ok: false,
+          message: `Failed to upload "${file.name}": ${uploadError.message}`,
+        }
+      }
+
+      const { data: publicUrlData } = client.storage.from(PROOF_STORAGE_BUCKET).getPublicUrl(path)
+      const publicUrl = publicUrlData?.publicUrl
+      if (!publicUrl || !/^https?:\/\//i.test(publicUrl)) {
+        return {
+          ok: false,
+          message: `Upload succeeded but could not resolve a public URL for "${file.name}".`,
+        }
+      }
+
+      uploaded.push({ url: publicUrl, assetType: detectAttachmentAssetType(file) })
+    }
+
+    return { ok: true, attachments: uploaded }
+  }
+
+  const buildProofBodyJson = (
+    text: string,
+    link: string,
+    notes: string,
+    attachments: ProofAttachment[]
+  ): Record<string, unknown> => {
     const body: Record<string, unknown> = {}
     if (text) body.proofText = text
     if (link) body.proofLink = link
     if (notes) body.notes = notes
-    return { ok: true, body }
+    if (attachments.length) body.attachments = attachments
+    return body
   }
 
   const buildAuthHeaders = (): HeadersInit | null => {
@@ -677,9 +1049,9 @@ export default function ChallengeDetailPage() {
       return
     }
 
-    const built = buildProofBody()
-    if (!built.ok) {
-      setProofError(built.message)
+    const validation = validateProofInputs()
+    if (!validation.ok) {
+      setProofError(validation.message)
       return
     }
 
@@ -691,16 +1063,39 @@ export default function ChallengeDetailPage() {
 
     setProofSubmitting(true)
     try {
+      let attachments: ProofAttachment[] = []
+      if (validation.files.length > 0) {
+        setProofUploading(true)
+        const uploadResult = await uploadProofFilesToStorage(
+          validation.files,
+          enrollment.userChallengeId
+        )
+        setProofUploading(false)
+        if (!uploadResult.ok) {
+          setProofError(uploadResult.message)
+          return
+        }
+        attachments = uploadResult.attachments
+      }
+
+      const body = buildProofBodyJson(
+        validation.text,
+        validation.link,
+        validation.notes,
+        attachments
+      )
+
       if (process.env.NODE_ENV === "development") {
         console.debug("[Proof submit] request", {
           userChallengeId: enrollment.userChallengeId,
-          bodyKeys: Object.keys(built.body),
+          bodyKeys: Object.keys(body),
+          attachmentCount: attachments.length,
         })
       }
       const res = await fetch(`/api/challenges/${enrollment.userChallengeId}/proofs`, {
         method: "POST",
         headers,
-        body: JSON.stringify(built.body),
+        body: JSON.stringify(body),
       })
       const data = (await res.json().catch(() => ({}))) as ProofResponse & ProblemDetails
       if (process.env.NODE_ENV === "development") {
@@ -792,6 +1187,7 @@ export default function ChallengeDetailPage() {
       setProofError("Network error — could not reach the proof service.")
     } finally {
       setProofSubmitting(false)
+      setProofUploading(false)
     }
   }
 
@@ -809,9 +1205,9 @@ export default function ChallengeDetailPage() {
       return
     }
 
-    const built = buildProofBody()
-    if (!built.ok) {
-      setProofError(built.message)
+    const validation = validateProofInputs()
+    if (!validation.ok) {
+      setProofError(validation.message)
       return
     }
 
@@ -823,11 +1219,34 @@ export default function ChallengeDetailPage() {
 
     setProofSubmitting(true)
     try {
+      let attachments: ProofAttachment[] = []
+      if (validation.files.length > 0) {
+        setProofUploading(true)
+        const uploadResult = await uploadProofFilesToStorage(
+          validation.files,
+          enrollment.userChallengeId
+        )
+        setProofUploading(false)
+        if (!uploadResult.ok) {
+          setProofError(uploadResult.message)
+          return
+        }
+        attachments = uploadResult.attachments
+      }
+
+      const body = buildProofBodyJson(
+        validation.text,
+        validation.link,
+        validation.notes,
+        attachments
+      )
+
       if (process.env.NODE_ENV === "development") {
         console.debug("[Proof resubmit] request", {
           userChallengeId: enrollment.userChallengeId,
           submissionId: lastSubmissionId,
-          bodyKeys: Object.keys(built.body),
+          bodyKeys: Object.keys(body),
+          attachmentCount: attachments.length,
         })
       }
       const res = await fetch(
@@ -835,7 +1254,7 @@ export default function ChallengeDetailPage() {
         {
           method: "POST",
           headers,
-          body: JSON.stringify(built.body),
+          body: JSON.stringify(body),
         }
       )
       const data = (await res.json().catch(() => ({}))) as ProofResponse & ProblemDetails
@@ -954,6 +1373,7 @@ export default function ChallengeDetailPage() {
       setProofError("Network error — could not reach the proof service.")
     } finally {
       setProofSubmitting(false)
+      setProofUploading(false)
     }
   }
 
@@ -1001,9 +1421,34 @@ export default function ChallengeDetailPage() {
     enrollment && enrollment.status === "active" && !isViewingPastDay && !isCurrentDayLocked
   )
 
-  const dayDescParts = splitDayDescription(challenge.todayTask.description)
+  const dayDescParts = splitDayDescription(
+    challenge.todayTask.description,
+    challenge.name,
+    challenge.todayTask.day,
+  )
   const watchUrl =
     firstHttpUrlInString(dayDescParts.watchSegment ?? "") ?? challenge.todayTask.resourceLink ?? null
+  const showSqlBeforeBegin = isIntroDbSqlDayOne(
+    challenge.name,
+    challenge.todayTask.day,
+    `${challenge.description}\n${challenge.todayTask.title}\n${challenge.todayTask.description}\n${challenge.todayTask.requirements.join("\n")}`,
+  )
+  const sqlStarterDownloadHref = "/starter-packs/skillsprint_sql_starter_pack.zip"
+  const googleAnalyticsStarterPack = resolveGoogleDataAnalyticsStarterPack(
+    challenge.name,
+    challenge.todayTask.day,
+    `${challenge.description}\n${challenge.todayTask.title}\n${challenge.todayTask.description}\n${challenge.todayTask.requirements.join("\n")}`,
+  )
+  const showCs50BeforeBegin = isCs50IntroBeforeBeginDayOne(
+    challenge.name,
+    challenge.todayTask.day,
+    `${challenge.description}\n${challenge.todayTask.title}\n${challenge.todayTask.description}\n${challenge.todayTask.requirements.join("\n")}`,
+  )
+  const showMitBeforeBegin = isMitDeepLearningBeforeBeginDayOne(
+    challenge.name,
+    challenge.todayTask.day,
+    `${challenge.description}\n${challenge.todayTask.title}\n${challenge.todayTask.description}\n${challenge.todayTask.requirements.join("\n")}`,
+  )
 
   return (
     <div className="min-h-screen w-full bg-[#f5f5f6] font-sans text-slate-800 antialiased">
@@ -1332,6 +1777,132 @@ export default function ChallengeDetailPage() {
               </div>
             )}
 
+            {showSqlBeforeBegin && (
+              <section className={`${CARD_BASE} p-5 sm:p-6`} aria-labelledby="before-begin-heading">
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-500">Before you begin</p>
+                <h2 id="before-begin-heading" className="mt-1 text-lg font-bold text-slate-800">
+                  Intro to DB and SQL: setup
+                </h2>
+                <p className="mt-3 text-sm leading-relaxed text-slate-600">
+                  Use one SQLite database from start to finish so your work builds naturally over time. The easiest
+                  setup is SQLite Online in the browser, then load the starter schema and seed data before Day 1.
+                </p>
+                <ul className="mt-4 list-disc space-y-2 pl-5 text-sm leading-relaxed text-slate-700">
+                  <li>
+                    Run <code className="rounded bg-slate-100 px-1.5 py-0.5 text-[12px]">skillsprint_schema.sql</code>{" "}
+                    to create the database structure.
+                  </li>
+                  <li>
+                    Run <code className="rounded bg-slate-100 px-1.5 py-0.5 text-[12px]">skillsprint_seed.sql</code> to
+                    load sample data.
+                  </li>
+                  <li>
+                    Test with{" "}
+                    <code className="rounded bg-slate-100 px-1.5 py-0.5 text-[12px]">
+                      SELECT * FROM courses_feed LIMIT 5;
+                    </code>
+                  </li>
+                  <li>
+                    If SQLite Online supports imports, you can try{" "}
+                    <code className="rounded bg-slate-100 px-1.5 py-0.5 text-[12px]">skillsprint_starter.db</code>,
+                    but schema + seed is the safer default.
+                  </li>
+                </ul>
+                <p className="mt-4 text-sm leading-relaxed text-slate-600">
+                  Day focus: Days 1-3 use <code className="rounded bg-slate-100 px-1.5 py-0.5 text-[12px]">courses_feed</code>.
+                  Days 4-6 use <code className="rounded bg-slate-100 px-1.5 py-0.5 text-[12px]">users</code>,{" "}
+                  <code className="rounded bg-slate-100 px-1.5 py-0.5 text-[12px]">courses</code>,{" "}
+                  <code className="rounded bg-slate-100 px-1.5 py-0.5 text-[12px]">lessons</code>, and{" "}
+                  <code className="rounded bg-slate-100 px-1.5 py-0.5 text-[12px]">enrollments</code>. Day 7 inspects{" "}
+                  <code className="rounded bg-slate-100 px-1.5 py-0.5 text-[12px]">messy_courses</code>. From Day 8,
+                  continue improving the same SkillSprint DB (schema, data, views, query optimization, and final
+                  project).
+                </p>
+                <a
+                  href={sqlStarterDownloadHref}
+                  className="mt-5 inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100"
+                >
+                  <Download className="h-4 w-4" aria-hidden />
+                  Download `skillsprint_sql_starter_pack.zip`
+                </a>
+              </section>
+            )}
+
+            {googleAnalyticsStarterPack && (
+              <section className={`${CARD_BASE} p-5 sm:p-6`} aria-labelledby="before-begin-gda-heading">
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-500">Before you begin</p>
+                <h2 id="before-begin-gda-heading" className="mt-1 text-lg font-bold text-slate-800">
+                  Google Data Analytics starter pack
+                </h2>
+                <p className="mt-3 text-sm leading-relaxed text-slate-600">
+                  Download the starter files for this milestone day before starting your task.
+                </p>
+                <a
+                  href={googleAnalyticsStarterPack.href}
+                  className="mt-5 inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100"
+                >
+                  <Download className="h-4 w-4" aria-hidden />
+                  {googleAnalyticsStarterPack.label}: `{googleAnalyticsStarterPack.filename}`
+                </a>
+              </section>
+            )}
+
+            {showCs50BeforeBegin && (
+              <section className={`${CARD_BASE} p-5 sm:p-6`} aria-labelledby="before-begin-cs50-heading">
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-500">Before we begin</p>
+                <h2 id="before-begin-cs50-heading" className="mt-1 text-lg font-bold text-slate-800">
+                  CS50 setup for Day 1
+                </h2>
+                <p className="mt-3 text-sm leading-relaxed text-slate-600">
+                  Before starting Day 1, keep the setup simple. You do not need a big starter pack or complicated
+                  bundle for this challenge.
+                </p>
+                <p className="mt-3 text-sm leading-relaxed text-slate-600">
+                  What you do need is one coding workspace and one place to keep proof of your work. The easiest option
+                  is to use CS50&apos;s browser-based environment (CS50 Sandbox or CS50.dev), so you can start coding
+                  quickly without setup friction.
+                </p>
+                <p className="mt-3 text-sm leading-relaxed text-slate-600">
+                  If you prefer local development, use VS Code and create one main folder for the whole challenge. Keep
+                  a notes document in Google Docs, Word, or Notion for reflections and writeups, and make sure your
+                  GitHub account is ready for saving or sharing work.
+                </p>
+                <p className="mt-3 text-sm leading-relaxed text-slate-600">
+                  Keep proof simple and organized each day: screenshots, short reflections, code files, or repo links
+                  depending on the task. The goal is not only to watch the course, but to build, test, and submit
+                  something each day.
+                </p>
+              </section>
+            )}
+
+            {showMitBeforeBegin && (
+              <section className={`${CARD_BASE} p-5 sm:p-6`} aria-labelledby="before-begin-mit-heading">
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-500">Before we begin</p>
+                <h2 id="before-begin-mit-heading" className="mt-1 text-lg font-bold text-slate-800">
+                  MIT 6.S191 setup for Day 1
+                </h2>
+                <p className="mt-3 text-sm leading-relaxed text-slate-600">
+                  Before starting Day 1, make sure you have a Google account and can open Google Colab in your browser,
+                  because the MIT software labs are designed to run there.
+                </p>
+                <p className="mt-3 text-sm leading-relaxed text-slate-600">
+                  You do not need a heavy starter pack for this challenge, but you should be comfortable opening
+                  notebooks, running Python 3 code, and saving screenshots or notes from your work.
+                </p>
+                <p className="mt-3 text-sm leading-relaxed text-slate-600">
+                  If your device allows it, enable GPU in Colab for the lab days, since MIT recommends it when
+                  available.
+                </p>
+                <p className="mt-3 text-sm leading-relaxed text-slate-600">
+                  Keep one folder or document for notes, reflections, diagrams, and screenshots so submissions stay
+                  organized throughout the challenge.
+                </p>
+                <p className="mt-3 text-sm leading-relaxed text-slate-600">
+                  Main resources: the MIT 6.S191 playlist and linked lab repositories on GitHub.
+                </p>
+              </section>
+            )}
+
             {/* Challenge description — watch/link + instructions in separate boxes when parsable */}
             <section className={`${CARD_BASE} space-y-4 p-5 sm:p-6`} aria-labelledby="challenge-desc-heading">
               <div>
@@ -1345,9 +1916,34 @@ export default function ChallengeDetailPage() {
               {dayDescParts.watchSegment ? (
                 <>
                   <div className="rounded-xl border border-slate-200/80 bg-slate-50/90 p-4 sm:p-5">
-                    <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-500">Watch</p>
-                    <p className="mt-2 text-sm font-medium text-slate-800">{watchTimingsLabel(dayDescParts.watchSegment)}</p>
-                    {watchUrl ? (
+                    <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-500">
+                      {dayDescParts.namedLinks && dayDescParts.namedLinks.length > 1
+                        ? "Watch & project links"
+                        : "Watch"}
+                    </p>
+                    <p className="mt-2 text-sm font-medium text-slate-800">
+                      {watchTimingsLabel(dayDescParts.watchSegment)}
+                    </p>
+                    {dayDescParts.namedLinks && dayDescParts.namedLinks.length > 0 ? (
+                      <ul className="mt-3 list-none space-y-2.5 p-0">
+                        {dayDescParts.namedLinks.map((row) => (
+                          <li
+                            key={row.url}
+                            className="rounded-lg border border-slate-200/80 bg-white px-3 py-2.5 shadow-sm"
+                          >
+                            <a
+                              href={row.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-sm font-semibold text-pink-600 underline-offset-2 hover:underline"
+                            >
+                              {row.label}
+                            </a>
+                            <p className="mt-1 break-all text-[11px] leading-snug text-slate-500">{row.url}</p>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : watchUrl ? (
                       <a
                         href={watchUrl}
                         target="_blank"
@@ -1378,23 +1974,22 @@ export default function ChallengeDetailPage() {
               <h2 id="submit-heading" className="mt-1 text-lg font-bold text-slate-800">
                 What to submit
               </h2>
-              <ul className="mt-4 space-y-3">
-                {challenge.todayTask.requirements.map((req, i) => (
-                  <li
-                    key={i}
-                    className="flex items-start gap-3 rounded-xl border border-slate-200/80 bg-slate-50/50 px-4 py-3"
-                  >
-                    <span
-                      className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white"
-                      style={{ background: APP_GRADIENT }}
-                      aria-hidden
-                    >
-                      {i + 1}
-                    </span>
-                    <span className="text-sm leading-relaxed text-slate-700">{req}</span>
-                  </li>
-                ))}
-              </ul>
+              <div className="mt-4 overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm">
+                <ul className="list-none divide-y divide-slate-200/80 p-0">
+                  {challenge.todayTask.requirements.map((req, i) => (
+                    <li key={i} className="flex items-start gap-3 px-4 py-3.5 sm:px-5 sm:py-4">
+                      <span
+                        className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-bold text-white shadow-sm"
+                        style={{ background: APP_GRADIENT }}
+                        aria-hidden
+                      >
+                        {i + 1}
+                      </span>
+                      <span className="min-w-0 text-sm leading-relaxed text-slate-700">{req}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
               <button
                 type="button"
                 onClick={openProofModal}
@@ -1452,11 +2047,11 @@ export default function ChallengeDetailPage() {
       {/* Upload Proof Modal - light theme (no page/overlay scroll; fits under header + bottom nav on mobile) */}
       {showUploadProof && (
         <div
-          className="fixed inset-0 z-[100] flex items-center justify-center overflow-hidden bg-black/40 px-3 py-2 pt-[max(0.25rem,calc(3.5rem+env(safe-area-inset-top)-0.5rem))] pb-[max(0.25rem,calc(3.75rem+env(safe-area-inset-bottom)))] backdrop-blur-sm sm:p-4 sm:pt-4 sm:pb-4"
+          className="fixed inset-0 z-[100] flex items-center justify-center overflow-hidden bg-black/40 px-3 py-2 pt-[max(0.25rem,calc(3.5rem+env(safe-area-inset-top)-0.5rem))] pb-[max(0.25rem,calc(3.75rem+env(safe-area-inset-bottom)))] backdrop-blur-sm sm:p-3 sm:pt-3 sm:pb-3"
           onClick={closeProofModal}
         >
           <div
-            className="flex w-full max-w-md max-h-[calc(100svh-3.5rem-4.25rem-max(0px,env(safe-area-inset-top))-max(0px,env(safe-area-inset-bottom)))] flex-col overflow-hidden rounded-2xl bg-white shadow-xl sm:max-h-[min(90svh,44rem)]"
+            className="flex w-full max-w-[42rem] max-h-[calc(100svh-7.75rem)] flex-col overflow-hidden rounded-2xl bg-white shadow-xl sm:max-h-[min(96svh,52rem)]"
             onClick={(e) => e.stopPropagation()}
             role="dialog"
             aria-modal="true"
@@ -1486,13 +2081,13 @@ export default function ChallengeDetailPage() {
                 </p>
               )}
 
-              <div className="mt-3 flex min-h-0 flex-1 flex-col gap-2 sm:mt-4 sm:gap-4">
+              <div className="mt-3 flex min-h-0 flex-1 flex-col gap-2 sm:mt-4 sm:gap-3">
                 {proofVerdict !== "accepted" && (
                   <>
                     <div className="shrink-0">
                       <p className="mb-1.5 text-xs font-semibold text-slate-700 sm:mb-2">Proof type</p>
-                      <div className="grid grid-cols-2 gap-2">
-                        {(["text", "link"] as const).map((mode) => (
+                      <div className="grid grid-cols-3 gap-2">
+                        {(["text", "link", "upload"] as const).map((mode) => (
                           <button
                             key={mode}
                             type="button"
@@ -1504,10 +2099,13 @@ export default function ChallengeDetailPage() {
                             }`}
                             aria-pressed={proofMode === mode}
                           >
-                            {mode === "text" ? "Text" : "Link"}
+                            {mode === "text" ? "Text" : mode === "link" ? "Link" : "Upload"}
                           </button>
                         ))}
                       </div>
+                      <p className="mt-1.5 text-[11px] text-slate-500">
+                        Supports screenshots, docs, slides, PDF, code files, GitHub/public links.
+                      </p>
                     </div>
 
                     {proofMode === "text" ? (
@@ -1526,7 +2124,7 @@ export default function ChallengeDetailPage() {
                           disabled={proofSubmitting}
                         />
                       </div>
-                    ) : (
+                    ) : proofMode === "link" ? (
                       <div className="shrink-0">
                         <label htmlFor="proof-link" className="mb-1 block text-xs font-medium text-slate-700">
                           Public proof URL
@@ -1542,6 +2140,48 @@ export default function ChallengeDetailPage() {
                           disabled={proofSubmitting}
                         />
                         <p className="mt-1 text-[11px] text-slate-400">Must start with http:// or https://</p>
+                      </div>
+                    ) : (
+                      <div className="shrink-0 space-y-3">
+                        <div>
+                          <label htmlFor="proof-files" className="mb-1 block text-xs font-medium text-slate-700">
+                            Upload files
+                          </label>
+                          <input
+                            id="proof-files"
+                            type="file"
+                            multiple
+                            accept=".png,.jpg,.jpeg,.webp,.gif,.pdf,.doc,.docx,.ppt,.pptx,.txt,.md,.csv,.json,.py,.js,.ts,.tsx,.java,.c,.cpp,.ipynb,.zip"
+                            onChange={(e) => handleProofFilesSelected(e.target.files)}
+                            className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700 file:mr-3 file:rounded-lg file:border-0 file:bg-slate-100 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-slate-700 hover:file:bg-slate-200"
+                            disabled={proofSubmitting}
+                          />
+                          <p className="mt-1 text-[11px] text-slate-400">
+                            Max {MAX_PROOF_FILES} files, {formatBytes(MAX_PROOF_FILE_SIZE_BYTES)} each.
+                          </p>
+                        </div>
+                        {proofFiles.length > 0 && (
+                          <ul className="max-h-28 overflow-y-auto rounded-xl border border-slate-200/80 bg-slate-50/60 p-2">
+                            {proofFiles.map((file, idx) => (
+                              <li key={`${file.name}-${idx}`} className="flex items-center justify-between gap-2 py-1 text-xs text-slate-700">
+                                <span className="truncate">
+                                  {file.name} <span className="text-slate-400">({formatBytes(file.size)})</span>
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => removeProofFileAtIndex(idx)}
+                                  className="rounded-md px-2 py-0.5 text-[11px] font-semibold text-slate-500 hover:bg-slate-200 hover:text-slate-700"
+                                  disabled={proofSubmitting}
+                                >
+                                  Remove
+                                </button>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                        <p className="text-[11px] text-slate-500">
+                          Need to submit only a URL? Use the <span className="font-semibold">Link</span> tab.
+                        </p>
                       </div>
                     )}
 
@@ -1605,10 +2245,12 @@ export default function ChallengeDetailPage() {
                   </a>
                 </p>
 
-                <div className="mt-auto shrink-0 border-t border-slate-100 pt-2 sm:-mx-6 sm:mx-0 sm:mt-2 sm:border-t sm:px-6 sm:pt-3 sm:pb-[max(0.25rem,env(safe-area-inset-bottom))]">
+                <div className="mt-2 shrink-0 border-t border-slate-100 bg-white pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] sm:-mx-6 sm:mx-0 sm:border-t sm:px-6 sm:pt-3 sm:pb-[max(0.5rem,env(safe-area-inset-bottom))]">
                   {proofSubmitting && (
                     <p className="mb-2 text-center text-xs text-slate-500 max-md:line-clamp-2 sm:line-clamp-none">
-                      Processing your proof. This may take up to one minute.
+                      {proofUploading
+                        ? "Uploading files to secure storage..."
+                        : "Processing your proof. This may take up to one minute."}
                     </p>
                   )}
                   <div className="flex gap-2 sm:gap-3">
@@ -1638,7 +2280,11 @@ export default function ChallengeDetailPage() {
                         style={{ background: APP_GRADIENT }}
                       >
                         <Upload className="h-4 w-4" aria-hidden />
-                        {proofSubmitting ? "Resubmitting..." : "Resubmit"}
+                        {proofUploading
+                          ? "Uploading..."
+                          : proofSubmitting
+                          ? "Resubmitting..."
+                          : "Resubmit"}
                       </button>
                     ) : (
                       <button
@@ -1649,7 +2295,11 @@ export default function ChallengeDetailPage() {
                         style={{ background: APP_GRADIENT }}
                       >
                         <Upload className="h-4 w-4" aria-hidden />
-                        {proofSubmitting ? "Submitting..." : "Submit"}
+                        {proofUploading
+                          ? "Uploading..."
+                          : proofSubmitting
+                          ? "Submitting..."
+                          : "Submit"}
                       </button>
                     )}
                   </div>
