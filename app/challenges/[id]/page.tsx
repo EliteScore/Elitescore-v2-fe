@@ -20,6 +20,7 @@ import {
 } from "lucide-react"
 import { ELITESCORE_SUPPORT_EMAIL, ELITESCORE_SUPPORT_MAILTO } from "@/lib/supportContact"
 import { ensureSupabaseSession, getSupabaseBrowserClient } from "@/lib/supabaseClient"
+import { proofUploadDebug, shortIdForLog, supabaseUrlHost } from "@/lib/proofUploadDebug"
 
 const APP_GRADIENT = "linear-gradient(135deg, #db2777 0%, #ea580c 35%, #2563eb 70%, #7c3aed 100%)"
 const CARD_BASE = "rounded-2xl border border-slate-200/80 bg-white shadow-sm"
@@ -838,16 +839,30 @@ function ChallengeDetailPage() {
   const MAX_PROOF_FILE_SIZE_BYTES = 15 * 1024 * 1024
   const PROOF_STORAGE_BUCKET = "proofs"
 
-  /** Remove objects we uploaded when proof was not accepted (keeps bucket aligned with “accepted only”). */
+  /**
+   * Remove objects when proof was not accepted. Requires Storage DELETE policy matching INSERT
+   * (same first-segment = auth.uid()); otherwise remove() fails silently in production (dev logs).
+   */
   const removeProofFilesFromSupabase = async (paths: string[]): Promise<void> => {
     if (paths.length === 0) return
+    proofUploadDebug("removeProofFilesFromSupabase: start", { pathCount: paths.length })
     const client = getSupabaseBrowserClient()
-    if (!client) return
+    if (!client) {
+      proofUploadDebug("removeProofFilesFromSupabase: no Supabase client, skip")
+      return
+    }
     const session = await ensureSupabaseSession(client)
-    if (session.error || !session.userId) return
+    if (session.error || !session.userId) {
+      proofUploadDebug("removeProofFilesFromSupabase: no session, skip", {
+        err: session.error,
+      })
+      return
+    }
     const { error } = await client.storage.from(PROOF_STORAGE_BUCKET).remove(paths)
-    if (error && process.env.NODE_ENV === "development") {
-      console.debug("[proof storage cleanup]", paths.length, "object(s):", error.message)
+    if (error) {
+      proofUploadDebug("removeProofFilesFromSupabase: error", { message: error.message })
+    } else {
+      proofUploadDebug("removeProofFilesFromSupabase: ok", { pathCount: paths.length })
     }
   }
   const ACCEPTED_PROOF_FILE_EXTENSIONS = [
@@ -971,10 +986,9 @@ function ChallengeDetailPage() {
   }
 
   /**
-   * Uploads selected files directly to Supabase Storage (bucket "proofs") and
-   * returns metadata that the backend accepts. The path is
-   * `${userId}/${userChallengeId}/${timestamp}-${sanitizedName}` so Storage RLS
-   * policies (which require auth.uid() as the first folder) pass.
+   * Uploads to Storage bucket "proofs". Path must be
+   * `{userId}/{userChallengeId}/{uniqueName}` (first folder = auth.uid() for RLS).
+   * getPublicUrl only builds a URL; backend must be able to GET that URL (public bucket or signed URLs).
    */
   const uploadProofFilesToStorage = async (
     files: File[],
@@ -985,8 +999,15 @@ function ChallengeDetailPage() {
   > => {
     if (files.length === 0) return { ok: true, attachments: [], storagePaths: [] }
 
+    proofUploadDebug("uploadProofFilesToStorage: start", {
+      fileCount: files.length,
+      userChallengeId: shortIdForLog(userChallengeId, 10),
+      files: files.map((f) => ({ name: f.name, size: f.size, type: f.type })),
+    })
+
     const client = getSupabaseBrowserClient()
     if (!client) {
+      proofUploadDebug("uploadProofFilesToStorage: getSupabaseBrowserClient returned null")
       return {
         ok: false,
         message:
@@ -997,11 +1018,17 @@ function ChallengeDetailPage() {
     const session = await ensureSupabaseSession(client)
     const userId = session.userId
     if (!userId) {
+      proofUploadDebug("uploadProofFilesToStorage: no userId after ensureSupabaseSession", {
+        error: session.error,
+      })
       return {
         ok: false,
         message: session.error ?? "Could not confirm your Supabase session for file upload.",
       }
     }
+    proofUploadDebug("uploadProofFilesToStorage: session ok", {
+      userId: shortIdForLog(userId),
+    })
 
     const uploaded: ProofAttachment[] = []
     const storagePaths: string[] = []
@@ -1010,12 +1037,25 @@ function ChallengeDetailPage() {
       const file = files[i]
       const safeName = file.name.replace(/[^\w.\-]+/g, "_")
       const path = `${userId}/${userChallengeId}/${Date.now()}-${i}-${safeName}`
-      const { error: uploadError } = await client.storage
+      proofUploadDebug("uploadProofFilesToStorage: uploading", {
+        index: i,
+        objectKeyTail: `…/${String(userChallengeId).slice(0, 6)}…/${safeName}`,
+        bytes: file.size,
+      })
+      const { error: uploadError, data: uploadData } = await client.storage
         .from(PROOF_STORAGE_BUCKET)
         .upload(path, file, { contentType: file.type || "application/octet-stream", upsert: false })
 
       if (uploadError) {
+        proofUploadDebug("uploadProofFilesToStorage: storage.upload error", {
+          fileName: file.name,
+          message: uploadError.message,
+          name: (uploadError as { name?: string }).name,
+        })
         if (storagePaths.length > 0) {
+          proofUploadDebug("uploadProofFilesToStorage: rolling back prior uploads", {
+            toRemove: storagePaths.length,
+          })
           await client.storage.from(PROOF_STORAGE_BUCKET).remove(storagePaths)
         }
         const raw = uploadError.message
@@ -1029,9 +1069,15 @@ function ChallengeDetailPage() {
         }
       }
 
+      proofUploadDebug("uploadProofFilesToStorage: storage upload ok", {
+        fileName: file.name,
+        hasPath: Boolean((uploadData as { path?: string } | null)?.path),
+      })
+
       const { data: publicUrlData } = client.storage.from(PROOF_STORAGE_BUCKET).getPublicUrl(path)
       const publicUrl = publicUrlData?.publicUrl
       if (!publicUrl || !/^https?:\/\//i.test(publicUrl)) {
+        proofUploadDebug("uploadProofFilesToStorage: getPublicUrl invalid", { fileName: file.name })
         await client.storage.from(PROOF_STORAGE_BUCKET).remove([path])
         if (storagePaths.length > 0) {
           await client.storage.from(PROOF_STORAGE_BUCKET).remove(storagePaths)
@@ -1042,10 +1088,16 @@ function ChallengeDetailPage() {
         }
       }
 
+      proofUploadDebug("uploadProofFilesToStorage: public url host", {
+        host: supabaseUrlHost(publicUrl),
+      })
       storagePaths.push(path)
       uploaded.push({ url: publicUrl, assetType: detectAttachmentAssetType(file) })
     }
 
+    proofUploadDebug("uploadProofFilesToStorage: all files ok", {
+      attachmentCount: uploaded.length,
+    })
     return { ok: true, attachments: uploaded, storagePaths }
   }
 
@@ -1110,6 +1162,10 @@ function ChallengeDetailPage() {
     }
 
     setProofSubmitting(true)
+    proofUploadDebug("submitProof: start", {
+      fileCount: validation.files.length,
+      userChallengeId: shortIdForLog(enrollment.userChallengeId, 10),
+    })
     let uploadedStoragePaths: string[] = []
     try {
       let attachments: ProofAttachment[] = []
@@ -1126,6 +1182,10 @@ function ChallengeDetailPage() {
         }
         attachments = uploadResult.attachments
         uploadedStoragePaths = uploadResult.storagePaths
+        proofUploadDebug("submitProof: storage upload done", {
+          attachmentCount: attachments.length,
+          storagePathCount: uploadedStoragePaths.length,
+        })
       }
 
       const body = buildProofBodyJson(
@@ -1135,36 +1195,27 @@ function ChallengeDetailPage() {
         attachments
       )
 
-      if (process.env.NODE_ENV === "development") {
-        console.debug("[Proof submit] request", {
-          userChallengeId: enrollment.userChallengeId,
-          bodyKeys: Object.keys(body),
-          attachmentCount: attachments.length,
-        })
-      }
+      proofUploadDebug("submitProof: POST /proofs", {
+        userChallengeId: shortIdForLog(enrollment.userChallengeId, 10),
+        bodyKeys: Object.keys(body),
+        attachmentCount: attachments.length,
+      })
       const res = await fetch(`/api/challenges/${enrollment.userChallengeId}/proofs`, {
         method: "POST",
         headers,
         body: JSON.stringify(body),
       })
       const data = (await res.json().catch(() => ({}))) as ProofResponse & ProblemDetails
-      if (process.env.NODE_ENV === "development") {
-        if (!res.ok) {
-          console.debug("[Proof submit] response (error)", {
-            status: res.status,
-            ok: res.ok,
-            body: data,
-          })
-        } else {
-          console.debug("[Proof submit] response", {
-            status: res.status,
-            ok: res.ok,
-            aiVerdict: data.aiVerdict,
-            aiFeedbackLength: typeof data.aiFeedback === "string" ? data.aiFeedback.length : 0,
-            submissionId: data.id,
-          })
-        }
-      }
+      proofUploadDebug(
+        "submitProof: response",
+        res.ok
+          ? {
+              status: res.status,
+              aiVerdict: data.aiVerdict,
+              hasSubmissionId: Boolean(data && typeof data === "object" && "id" in data && (data as { id?: string }).id),
+            }
+          : { status: res.status, errorShape: data }
+      )
 
       if (!res.ok) {
         const detail = typeof data.detail === "string" ? data.detail : ""
@@ -1245,9 +1296,7 @@ function ChallengeDetailPage() {
         setProofError(null)
       }
     } catch (err) {
-      if (process.env.NODE_ENV === "development") {
-        console.debug("[Proof submit] fetch error", err)
-      }
+      proofUploadDebug("submitProof: fetch/throw error", err)
       await removeProofFilesFromSupabase(uploadedStoragePaths)
       setProofAttempt(1)
       setLastSubmissionId(null)
@@ -1285,6 +1334,11 @@ function ChallengeDetailPage() {
     }
 
     setProofSubmitting(true)
+    proofUploadDebug("resubmitProof: start", {
+      fileCount: validation.files.length,
+      userChallengeId: shortIdForLog(enrollment.userChallengeId, 10),
+      submissionId: shortIdForLog(lastSubmissionId, 10),
+    })
     let uploadedStoragePaths: string[] = []
     try {
       let attachments: ProofAttachment[] = []
@@ -1301,6 +1355,9 @@ function ChallengeDetailPage() {
         }
         attachments = uploadResult.attachments
         uploadedStoragePaths = uploadResult.storagePaths
+        proofUploadDebug("resubmitProof: storage upload done", {
+          attachmentCount: attachments.length,
+        })
       }
 
       const body = buildProofBodyJson(
@@ -1310,14 +1367,12 @@ function ChallengeDetailPage() {
         attachments
       )
 
-      if (process.env.NODE_ENV === "development") {
-        console.debug("[Proof resubmit] request", {
-          userChallengeId: enrollment.userChallengeId,
-          submissionId: lastSubmissionId,
-          bodyKeys: Object.keys(body),
-          attachmentCount: attachments.length,
-        })
-      }
+      proofUploadDebug("resubmitProof: POST /proofs/.../resubmit", {
+        userChallengeId: shortIdForLog(enrollment.userChallengeId, 10),
+        submissionId: shortIdForLog(lastSubmissionId, 10),
+        bodyKeys: Object.keys(body),
+        attachmentCount: attachments.length,
+      })
       const res = await fetch(
         `/api/challenges/${enrollment.userChallengeId}/proofs/${lastSubmissionId}/resubmit`,
         {
@@ -1327,22 +1382,12 @@ function ChallengeDetailPage() {
         }
       )
       const data = (await res.json().catch(() => ({}))) as ProofResponse & ProblemDetails
-      if (process.env.NODE_ENV === "development") {
-        if (!res.ok) {
-          console.debug("[Proof resubmit] response (error)", {
-            status: res.status,
-            ok: res.ok,
-            body: data,
-          })
-        } else {
-          console.debug("[Proof resubmit] response", {
-            status: res.status,
-            ok: res.ok,
-            aiVerdict: data.aiVerdict,
-            aiFeedbackLength: typeof data.aiFeedback === "string" ? data.aiFeedback.length : 0,
-          })
-        }
-      }
+      proofUploadDebug(
+        "resubmitProof: response",
+        res.ok
+          ? { status: res.status, aiVerdict: data.aiVerdict }
+          : { status: res.status, errorShape: data }
+      )
 
       if (!res.ok) {
         await removeProofFilesFromSupabase(uploadedStoragePaths)
@@ -1439,9 +1484,7 @@ function ChallengeDetailPage() {
         setProofAttempt(1)
       }
     } catch (err) {
-      if (process.env.NODE_ENV === "development") {
-        console.debug("[Proof resubmit] fetch error", err)
-      }
+      proofUploadDebug("resubmitProof: fetch/throw error", err)
       await removeProofFilesFromSupabase(uploadedStoragePaths)
       setLastSubmissionId(null)
       setProofAttempt(1)
