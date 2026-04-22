@@ -450,6 +450,14 @@ function extractProblemMessage(body: unknown, fallback: string): string {
   return fallback
 }
 
+function readSubmissionIdFromBody(body: unknown): string | null {
+  if (body && typeof body === "object" && "id" in body) {
+    const id = (body as { id: unknown }).id
+    if (typeof id === "string" && id.trim()) return id.trim()
+  }
+  return null
+}
+
 function mapEnrollmentProgressToUiDay(progressDay: number | null | undefined, duration?: number): number {
   const mapped = Math.max(1, (progressDay ?? 0) + 1)
   return typeof duration === "number" && duration > 0 ? Math.min(mapped, duration) : mapped
@@ -829,6 +837,19 @@ function ChallengeDetailPage() {
   const MAX_PROOF_FILES = 10
   const MAX_PROOF_FILE_SIZE_BYTES = 15 * 1024 * 1024
   const PROOF_STORAGE_BUCKET = "proofs"
+
+  /** Remove objects we uploaded when proof was not accepted (keeps bucket aligned with “accepted only”). */
+  const removeProofFilesFromSupabase = async (paths: string[]): Promise<void> => {
+    if (paths.length === 0) return
+    const client = getSupabaseBrowserClient()
+    if (!client) return
+    const session = await ensureSupabaseSession(client)
+    if (session.error || !session.userId) return
+    const { error } = await client.storage.from(PROOF_STORAGE_BUCKET).remove(paths)
+    if (error && process.env.NODE_ENV === "development") {
+      console.debug("[proof storage cleanup]", paths.length, "object(s):", error.message)
+    }
+  }
   const ACCEPTED_PROOF_FILE_EXTENSIONS = [
     ".png",
     ".jpg",
@@ -958,8 +979,11 @@ function ChallengeDetailPage() {
   const uploadProofFilesToStorage = async (
     files: File[],
     userChallengeId: string
-  ): Promise<{ ok: true; attachments: ProofAttachment[] } | { ok: false; message: string }> => {
-    if (files.length === 0) return { ok: true, attachments: [] }
+  ): Promise<
+    | { ok: true; attachments: ProofAttachment[]; storagePaths: string[] }
+    | { ok: false; message: string }
+  > => {
+    if (files.length === 0) return { ok: true, attachments: [], storagePaths: [] }
 
     const client = getSupabaseBrowserClient()
     if (!client) {
@@ -980,14 +1004,20 @@ function ChallengeDetailPage() {
     }
 
     const uploaded: ProofAttachment[] = []
-    for (const file of files) {
+    const storagePaths: string[] = []
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i]
       const safeName = file.name.replace(/[^\w.\-]+/g, "_")
-      const path = `${userId}/${userChallengeId}/${Date.now()}-${safeName}`
+      const path = `${userId}/${userChallengeId}/${Date.now()}-${i}-${safeName}`
       const { error: uploadError } = await client.storage
         .from(PROOF_STORAGE_BUCKET)
         .upload(path, file, { contentType: file.type || "application/octet-stream", upsert: false })
 
       if (uploadError) {
+        if (storagePaths.length > 0) {
+          await client.storage.from(PROOF_STORAGE_BUCKET).remove(storagePaths)
+        }
         const raw = uploadError.message
         const hint =
           /invalid compact jws|jwt|malformed/i.test(raw)
@@ -1002,16 +1032,21 @@ function ChallengeDetailPage() {
       const { data: publicUrlData } = client.storage.from(PROOF_STORAGE_BUCKET).getPublicUrl(path)
       const publicUrl = publicUrlData?.publicUrl
       if (!publicUrl || !/^https?:\/\//i.test(publicUrl)) {
+        await client.storage.from(PROOF_STORAGE_BUCKET).remove([path])
+        if (storagePaths.length > 0) {
+          await client.storage.from(PROOF_STORAGE_BUCKET).remove(storagePaths)
+        }
         return {
           ok: false,
           message: `Upload succeeded but could not resolve a public URL for "${file.name}".`,
         }
       }
 
+      storagePaths.push(path)
       uploaded.push({ url: publicUrl, assetType: detectAttachmentAssetType(file) })
     }
 
-    return { ok: true, attachments: uploaded }
+    return { ok: true, attachments: uploaded, storagePaths }
   }
 
   const buildProofBodyJson = (
@@ -1075,6 +1110,7 @@ function ChallengeDetailPage() {
     }
 
     setProofSubmitting(true)
+    let uploadedStoragePaths: string[] = []
     try {
       let attachments: ProofAttachment[] = []
       if (validation.files.length > 0) {
@@ -1089,6 +1125,7 @@ function ChallengeDetailPage() {
           return
         }
         attachments = uploadResult.attachments
+        uploadedStoragePaths = uploadResult.storagePaths
       }
 
       const body = buildProofBodyJson(
@@ -1131,24 +1168,35 @@ function ChallengeDetailPage() {
 
       if (!res.ok) {
         const detail = typeof data.detail === "string" ? data.detail : ""
+        const messageFromApi = extractProblemMessage(data, "")
+        const combined = `${detail} ${messageFromApi}`.toLowerCase()
         const hasExistingSubmissionConflict =
           res.status === 409 &&
-          /already exists|already submitted|pending|needs_review|rejected/i.test(detail)
+          /already exists|already submitted|pending|needs_review|rejected|duplicate/i.test(combined)
 
         if (hasExistingSubmissionConflict) {
-          const cachedSubmissionId = readPendingSubmissionId(enrollment.userChallengeId)
-          if (cachedSubmissionId) {
+          const idFromBody = readSubmissionIdFromBody(data)
+          const conflictId = readPendingSubmissionId(enrollment.userChallengeId) ?? idFromBody
+          if (conflictId) {
+            savePendingSubmissionId(enrollment.userChallengeId, conflictId)
+            await removeProofFilesFromSupabase(uploadedStoragePaths)
             setProofAttempt(2)
-            setLastSubmissionId(cachedSubmissionId)
+            setLastSubmissionId(conflictId)
             setProofVerdict("rejected")
             setProofFeedback(
-              "A submission already exists for this day. Updating the same entry via Resubmit."
+              "This day already has a proof on file. Update your text or choose new files, then tap Resubmit — only an accepted proof keeps uploads in storage."
             )
+            setProofError(null)
+            return
           }
-        } else if (res.status >= 500) {
+        }
+
+        if (res.status >= 500) {
           setProofAttempt(1)
           setLastSubmissionId(null)
         }
+
+        await removeProofFilesFromSupabase(uploadedStoragePaths)
 
         const fallback =
           res.status === 400
@@ -1160,7 +1208,7 @@ function ChallengeDetailPage() {
             : res.status === 404
             ? "Challenge not found."
             : res.status === 409
-            ? "Cannot submit: a proof for this day already exists or challenge is not active."
+            ? "This day already has a proof on file. Use Resubmit after updating your proof, or reload the page."
             : res.status === 502 || res.status === 503 || res.status === 504
             ? "The challenges service is temporarily unavailable. Please try again in a moment."
             : res.status >= 500
@@ -1183,18 +1231,24 @@ function ChallengeDetailPage() {
         clearPendingSubmissionId(enrollment.userChallengeId)
         await advanceAfterSuccess(completedDay, earnedEliteScore)
       } else {
+        await removeProofFilesFromSupabase(uploadedStoragePaths)
         if (data.id) {
           savePendingSubmissionId(enrollment.userChallengeId, data.id)
         }
         setProofAttempt(2)
         setProofVerdict("rejected")
-        setProofFeedback(feedback ?? "AI rejected this proof. Improve and resubmit within 24 hours.")
+        setProofFeedback(
+          feedback ??
+            "AI did not accept this proof yet. Change your text or upload new files and tap Resubmit — rejected attempts are not kept in storage."
+        )
         setLastSubmissionId(data.id ?? null)
+        setProofError(null)
       }
     } catch (err) {
       if (process.env.NODE_ENV === "development") {
         console.debug("[Proof submit] fetch error", err)
       }
+      await removeProofFilesFromSupabase(uploadedStoragePaths)
       setProofAttempt(1)
       setLastSubmissionId(null)
       setProofError("Network error — could not reach the proof service.")
@@ -1231,6 +1285,7 @@ function ChallengeDetailPage() {
     }
 
     setProofSubmitting(true)
+    let uploadedStoragePaths: string[] = []
     try {
       let attachments: ProofAttachment[] = []
       if (validation.files.length > 0) {
@@ -1245,6 +1300,7 @@ function ChallengeDetailPage() {
           return
         }
         attachments = uploadResult.attachments
+        uploadedStoragePaths = uploadResult.storagePaths
       }
 
       const body = buildProofBodyJson(
@@ -1289,6 +1345,7 @@ function ChallengeDetailPage() {
       }
 
       if (!res.ok) {
+        await removeProofFilesFromSupabase(uploadedStoragePaths)
         if (res.status === 410 || res.status === 404) {
           clearPendingSubmissionId(enrollment.userChallengeId)
           setLastSubmissionId(null)
@@ -1331,6 +1388,7 @@ function ChallengeDetailPage() {
         clearPendingSubmissionId(enrollment.userChallengeId)
         await advanceAfterSuccess(completedDay, earnedEliteScore)
       } else {
+        await removeProofFilesFromSupabase(uploadedStoragePaths)
         // Attempt 2 rejected: backend auto-applies missed-day penalty.
         const justMissedDay = challenge?.todayTask.day ?? null
         if (justMissedDay != null) {
@@ -1372,7 +1430,10 @@ function ChallengeDetailPage() {
           }
         }
         setProofVerdict("rejected")
-        setProofFeedback(feedback ?? "AI rejected the resubmission.")
+        setProofFeedback(
+          feedback ??
+            "AI rejected the resubmission. Uploaded files for this attempt were removed from storage."
+        )
         clearPendingSubmissionId(enrollment.userChallengeId)
         setLastSubmissionId(null)
         setProofAttempt(1)
@@ -1381,6 +1442,7 @@ function ChallengeDetailPage() {
       if (process.env.NODE_ENV === "development") {
         console.debug("[Proof resubmit] fetch error", err)
       }
+      await removeProofFilesFromSupabase(uploadedStoragePaths)
       setLastSubmissionId(null)
       setProofAttempt(1)
       setProofError("Network error — could not reach the proof service.")
@@ -2070,7 +2132,7 @@ function ChallengeDetailPage() {
             aria-modal="true"
             aria-labelledby="proof-modal-title"
           >
-            <div className="flex min-h-0 flex-1 flex-col px-4 pb-3 pt-3 sm:px-6 sm:pb-4 sm:pt-4">
+            <div className="flex min-h-0 flex-1 flex-col px-4 pb-0 pt-3 sm:px-6 sm:pt-4">
               <p className="shrink-0 text-[10px] font-semibold uppercase tracking-widest text-slate-500">
                 Submit proof
               </p>
@@ -2094,7 +2156,12 @@ function ChallengeDetailPage() {
                 </p>
               )}
 
-              <div className="mt-3 flex min-h-0 flex-1 flex-col gap-2 sm:mt-4 sm:gap-3">
+              <div className="mt-3 flex min-h-0 flex-1 flex-col gap-0 overflow-hidden sm:mt-4">
+                <div
+                  className="min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-y-contain pr-0.5 [-webkit-overflow-scrolling:touch] sm:space-y-3"
+                  role="region"
+                  aria-label="Proof form"
+                >
                 {proofVerdict !== "accepted" && (
                   <>
                     <div className="shrink-0">
@@ -2241,14 +2308,16 @@ function ChallengeDetailPage() {
                 )}
                 {proofError && (
                   <div
-                    className="shrink-0 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700 max-md:line-clamp-4 sm:py-2.5"
+                    className="shrink-0 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700 sm:py-2.5"
                     role="alert"
                   >
                     {proofError}
                   </div>
                 )}
+                </div>
 
-                <p className="mt-2 shrink-0 text-center text-[11px] leading-snug text-slate-500 sm:text-xs">
+                <div className="shrink-0 border-t border-slate-100 bg-white px-0 pt-2 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:-mx-6 sm:px-6 sm:pt-3">
+                <p className="shrink-0 text-center text-[11px] leading-snug text-slate-500 sm:text-xs">
                   Something wrong? Contact us at{" "}
                   <a
                     href={ELITESCORE_SUPPORT_MAILTO}
@@ -2258,7 +2327,7 @@ function ChallengeDetailPage() {
                   </a>
                 </p>
 
-                <div className="mt-2 shrink-0 border-t border-slate-100 bg-white pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] sm:-mx-6 sm:mx-0 sm:border-t sm:px-6 sm:pt-3 sm:pb-[max(0.5rem,env(safe-area-inset-bottom))]">
+                <div className="mt-2 shrink-0 sm:pt-0">
                   {proofSubmitting && (
                     <p className="mb-2 text-center text-xs text-slate-500 max-md:line-clamp-2 sm:line-clamp-none">
                       {proofUploading
@@ -2316,6 +2385,7 @@ function ChallengeDetailPage() {
                       </button>
                     )}
                   </div>
+                </div>
                 </div>
               </div>
             </div>
