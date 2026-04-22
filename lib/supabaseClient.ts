@@ -35,7 +35,6 @@ export async function ensureSupabaseSession(
 
   const accessToken = localStorage.getItem("elitescore_access_token")
   const refreshToken = localStorage.getItem("elitescore_refresh_token") ?? ""
-  const storedUserId = localStorage.getItem("elitescore_user_id")
 
   if (!accessToken) {
     return { userId: null, error: "Not signed in (missing access token)." }
@@ -43,7 +42,13 @@ export async function ensureSupabaseSession(
 
   const { data: existing } = await client.auth.getUser(accessToken)
   if (existing?.user?.id) {
-    await client.auth.setSession({ access_token: accessToken, refresh_token: refreshToken })
+    const { error: setErr } = await client.auth.setSession({
+      access_token: accessToken,
+      refresh_token: refreshToken,
+    })
+    if (setErr) {
+      return { userId: null, error: setErr.message }
+    }
     return { userId: existing.user.id, error: null }
   }
 
@@ -52,8 +57,10 @@ export async function ensureSupabaseSession(
     refresh_token: refreshToken,
   })
   if (sessionError || !session?.user?.id) {
+    // Do not fall back to storedUserId: Storage uses the JWT on the client session;
+    // a failed setSession means uploads would fail with errors like "Invalid Compact JWS".
     return {
-      userId: storedUserId,
+      userId: null,
       error:
         sessionError?.message ??
         "Could not attach the EliteScore session to Supabase. File uploads may fail.",

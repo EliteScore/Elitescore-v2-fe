@@ -988,9 +988,14 @@ function ChallengeDetailPage() {
         .upload(path, file, { contentType: file.type || "application/octet-stream", upsert: false })
 
       if (uploadError) {
+        const raw = uploadError.message
+        const hint =
+          /invalid compact jws|jwt|malformed/i.test(raw)
+            ? "Your session token is missing, expired, or not valid for this site’s Supabase project. Sign out, sign in again, and retry. On localhost, set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY to the same Supabase project your auth service uses."
+            : raw
         return {
           ok: false,
-          message: `Failed to upload "${file.name}": ${uploadError.message}`,
+          message: `Failed to upload "${file.name}": ${hint}`,
         }
       }
 
