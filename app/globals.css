@@ -125,10 +125,12 @@
   }
 }
 
-/* Auth pages (login/signup): no scroll, no bottom padding – avoids flash when switching between them */
+/* Auth pages: no bottom padding; allow vertical scroll (signup is long; body overflow:hidden hid the submit button on phones) */
 html.auth-open,
 body.auth-open {
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   padding-bottom: 0 !important;
 }
 

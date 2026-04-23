@@ -31,13 +31,29 @@
   -webkit-font-smoothing: antialiased;
 }
 
-/* Login/signup: fixed full viewport, no scroll, no footer strip */
+/* Login/signup: fixed on desktop; phones/tablets use document scroll (fixes iOS nested flex/scroll) */
 .login-page,
 .signup-page {
   position: fixed;
   inset: 0;
   z-index: 50;
   overflow: hidden;
+}
+
+@media (max-width: 1023px) {
+  .login-page,
+  .signup-page {
+    position: relative;
+    inset: auto;
+    z-index: auto;
+    min-height: 100dvh;
+    min-height: 100svh;
+    min-height: -webkit-fill-available;
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain;
+  }
 }
 
 @keyframes authGradientShift {

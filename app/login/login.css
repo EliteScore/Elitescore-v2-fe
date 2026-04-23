@@ -273,11 +273,10 @@
     width: 100%;
     max-width: none;
     margin: 0;
-    padding: 0;
+    padding: 0 0 max(0.5rem, env(safe-area-inset-bottom));
     align-items: stretch;
     justify-content: flex-start;
-    min-height: 100dvh;
-    min-height: 100vh;
+    min-height: 0;
   }
 
   .login-split-card {
@@ -286,11 +285,11 @@
     width: 100%;
     max-width: 100%;
     min-width: 0;
-    height: 100dvh;
-    height: 100vh;
+    height: auto;
     min-height: 0;
     border-radius: 0;
     box-shadow: none;
+    overflow: visible;
   }
 
   .login-split-left {
@@ -318,11 +317,11 @@
   }
 
   .login-split-right {
-    flex: 1 1 0;
+    flex: 0 1 auto;
     min-height: 0;
-    padding: 1.5rem max(1.25rem, env(safe-area-inset-right)) max(1.5rem, env(safe-area-inset-bottom)) max(1.25rem, env(safe-area-inset-left));
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
+    padding: 1.5rem max(1.25rem, env(safe-area-inset-right)) max(2rem, calc(1rem + env(safe-area-inset-bottom))) max(1.25rem, env(safe-area-inset-left));
+    overflow-x: hidden;
+    overflow-y: visible;
   }
 
   .login-form-title {
@@ -332,7 +331,20 @@
 
   .login-form-sub {
     font-size: 0.875rem;
-    margin-bottom: 1.25rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .login-mobile-signup-hint {
+    display: block;
+    margin: 0 0 1.25rem;
+    text-align: center;
+    font-size: 0.875rem;
+    line-height: 1.4;
+    color: var(--gray, #64748b);
+  }
+
+  .login-mobile-signup-hint .auth-cross-link {
+    font-weight: 600;
   }
 
   .login-form {
@@ -384,7 +396,10 @@
 
   .login-form-footer {
     margin-top: 0.75rem;
+    margin-bottom: 0;
+    padding-bottom: max(0.5rem, env(safe-area-inset-bottom, 0px));
     font-size: 0.875rem;
+    flex-shrink: 0;
   }
 
   .login-form-link {
@@ -398,6 +413,13 @@
   .login-forgot-copy,
   .login-form-success {
     font-size: 0.8125rem;
+  }
+}
+
+/* Stacked layout only: top signup CTA; wide split uses footer link only */
+@media (min-width: 1024px) {
+  .login-mobile-signup-hint {
+    display: none;
   }
 }
 
@@ -415,7 +437,7 @@
   }
 
   .login-split-right {
-    padding: 1.25rem 1rem max(1.25rem, env(safe-area-inset-bottom));
+    padding: 1.25rem 1rem max(2rem, calc(0.5rem + env(safe-area-inset-bottom)));
   }
 
   .login-form-title {

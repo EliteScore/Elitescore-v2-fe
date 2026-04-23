@@ -261,7 +261,9 @@
 /* Stacked layout: phones and tablets — full device width */
 @media (max-width: 1023px) {
   .signup-page {
-    overflow: hidden;
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
     width: 100%;
     max-width: 100%;
     left: 0;
@@ -272,11 +274,10 @@
     width: 100%;
     max-width: none;
     margin: 0;
-    padding: 0;
+    padding: 0 0 max(0.5rem, env(safe-area-inset-bottom));
     align-items: stretch;
     justify-content: flex-start;
-    min-height: 100dvh;
-    min-height: 100vh;
+    min-height: 0;
   }
 
   .signup-split-card {
@@ -285,11 +286,11 @@
     width: 100%;
     max-width: 100%;
     min-width: 0;
-    height: 100dvh;
-    height: 100vh;
+    height: auto;
     min-height: 0;
     border-radius: 0;
     box-shadow: none;
+    overflow: visible;
   }
 
   .signup-split-left {
@@ -317,12 +318,11 @@
   }
 
   .signup-split-right {
-    flex: 1 1 0;
+    flex: 0 1 auto;
     min-height: 0;
-    padding: 1.1rem max(1.1rem, env(safe-area-inset-right)) max(1.1rem, env(safe-area-inset-bottom)) max(1.1rem, env(safe-area-inset-left));
+    padding: 1.1rem max(1.1rem, env(safe-area-inset-right)) max(2rem, calc(1rem + env(safe-area-inset-bottom))) max(1.1rem, env(safe-area-inset-left));
     overflow-x: hidden;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
+    overflow-y: visible;
   }
 
   .signup-split-right .signup-form {
@@ -423,8 +423,9 @@
   }
 
   .signup-split-right {
-    padding: 1rem 0.9rem max(1rem, env(safe-area-inset-bottom));
-    overflow: hidden;
+    padding: 1rem 0.9rem max(2rem, calc(1rem + env(safe-area-inset-bottom)));
+    overflow-x: hidden;
+    overflow-y: visible;
   }
 
   .signup-form-title {

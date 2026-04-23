@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import Link from "next/link"
 import { useRouter, usePathname } from "next/navigation"
 import { Eye, EyeOff } from "lucide-react"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -204,6 +205,12 @@ export default function LoginPage() {
           <div className="login-split-right">
             <h1 className="auth-title login-form-title">Welcome back</h1>
             <p className="auth-sub login-form-sub">Enter your email and password to access your account</p>
+            <p className="login-mobile-signup-hint" aria-label="New user signup">
+              New here?{" "}
+              <Link href="/signup" className="auth-cross-link">
+                Create an account
+              </Link>
+            </p>
 
             <form onSubmit={form.handleSubmit(onSubmit)} className="auth-form login-form">
               {loginError && <p className="auth-error login-form-error" role="alert">{loginError}</p>}
@@ -314,7 +321,7 @@ export default function LoginPage() {
               </button>
 
               <p className="auth-footer-text login-form-footer">
-                No account yet? <a href="/signup" className="auth-cross-link">Sign up</a>
+                No account yet? <Link href="/signup" className="auth-cross-link">Sign up</Link>
               </p>
             </form>
           </div>
