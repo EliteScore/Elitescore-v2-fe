@@ -642,3 +642,32 @@ curl -X POST "$BASE/api/invites/<token>/accept" \
 # Unsubscribe from emails for this invite
 curl -X GET "$BASE/api/invites/<token>/unsubscribe"
 ```
+
+### GET /api/challenges/my/history
+
+**Summary:** List the authenticated user's challenge history grouped for UI sections (`current` and `history`).  
+**Auth:** required (User)  
+**Produces:** application/json
+
+**Headers:** `Authorization: Bearer <token>`
+
+**Responses:**
+
+- **200 OK** — Grouped challenge payload:
+  - `current`: active challenges (`status = "active"`)
+  - `history`: non-active challenges (`status = "completed" | "failed" | "abandoned"`)
+
+Response item fields include:
+- `userChallengeId`, `challengeTemplateId`
+- `challengeName`, `track`, `difficulty`, `durationDays`
+- `status`, `startDate`, `endDate`, `currentDay`, `missedDaysCount`
+- `createdAt`, `completedAt`, `failedAt`
+
+- **401 Unauthorized** — Missing or invalid token Body: ProblemDetails
+
+**Notes:**
+
+- Use `current` to render "Current Commitments".
+- Use `history` to render "Past commitments" (pass/fail/abandoned cards).
+- `history` is sorted by terminal timestamp (`completedAt`/`failedAt`) descending; `current` by `createdAt` descending.
+

@@ -429,6 +429,9 @@ export default function LandingPage() {
               Sign up for free
             </Link>
           </div>
+          <p className="mt-5 max-w-xl mx-auto px-2 text-[10px] leading-snug text-slate-400">
+            EliteScore is not affiliated with the original publishers of the provided courses.
+          </p>
           <p className="mt-4 text-[10px] text-slate-400">© 2026 EliteScore</p>
         </footer>
       </main>
