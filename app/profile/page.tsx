@@ -693,15 +693,15 @@ export default function ProfilePage() {
                   </p>
                 ) : null}
                 <div className="space-y-1.5">
-                  <Button size="sm" variant="outline" className="w-full justify-start text-xs min-h-[44px] bg-slate-100 border-slate-200 rounded-xl touch-manipulation text-slate-700 hover:bg-slate-200/80" onClick={handleOpenSetPassword}>
+                  <Button size="sm" variant="outline" className="w-full justify-start text-xs min-h-[44px] bg-white border-slate-200 rounded-xl touch-manipulation text-slate-700 hover:bg-slate-50" onClick={handleOpenSetPassword}>
                     <Lock className="w-3.5 h-3.5 mr-2" aria-hidden />
                     Set New Password
                   </Button>
-                  <Button size="sm" variant="outline" className="w-full justify-start text-xs min-h-[44px] bg-slate-100 border-slate-200 rounded-xl touch-manipulation text-slate-700 hover:bg-slate-200/80" onClick={handleLogout} disabled={isLogoutLoading}>
+                  <Button size="sm" variant="outline" className="w-full justify-start text-xs min-h-[44px] bg-white border-slate-200 rounded-xl touch-manipulation text-slate-700 hover:bg-slate-50" onClick={handleLogout} disabled={isLogoutLoading}>
                     <LogOut className="w-3.5 h-3.5 mr-2" aria-hidden />
                     {isLogoutLoading ? "Logging out..." : "Logout"}
                   </Button>
-                  <Button size="sm" variant="outline" className="w-full justify-start text-xs min-h-[44px] bg-transparent border-red-500/30 text-red-500 hover:bg-red-50 rounded-xl touch-manipulation focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500/30" onClick={handleOpenDeleteConfirm} disabled={isDeleteLoading}>
+                  <Button size="sm" variant="outline" className="w-full justify-start text-xs min-h-[44px] bg-white border-red-200/60 text-red-500 hover:bg-red-50 rounded-xl touch-manipulation focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500/30" onClick={handleOpenDeleteConfirm} disabled={isDeleteLoading}>
                     <Trash2 className="w-3.5 h-3.5 mr-2" aria-hidden />
                     Delete Account
                   </Button>
