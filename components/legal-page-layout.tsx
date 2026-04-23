@@ -2,7 +2,7 @@ import Link from "next/link"
 import type { ReactNode } from "react"
 import { ArrowLeft } from "lucide-react"
 
-export const LEGAL_LAST_UPDATED = "22 April 2026"
+export const LEGAL_LAST_UPDATED = "23 April 2026"
 
 type Props = {
   title: string

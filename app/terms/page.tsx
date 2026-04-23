@@ -6,7 +6,7 @@ import { ELITESCORE_SUPPORT_EMAIL, ELITESCORE_SUPPORT_MAILTO } from "@/lib/suppo
 export const metadata: Metadata = {
   title: "Terms of Service | EliteScore",
   description:
-    "EliteScore Terms of Service (Beta). Rules for using the challenge and gamification platform in the EEA and the Netherlands.",
+    "EliteScore Terms of Service (Beta). Accountability buddies, third-party courses, and platform rules in the EEA and the Netherlands.",
 }
 
 const BETA_VERSION = "Beta / Pre-registration"
@@ -82,10 +82,46 @@ export default function TermsOfServicePage() {
           reasonable notice where a change significantly affects your use of the Service, but this is not always possible
           during active development.
         </p>
+        <p>
+          <strong>Leaderboards and display names:</strong> Your activity may appear on public leaderboards. By default,
+          your leaderboard entry will display your chosen nickname or username. You may optionally choose to display
+          your real name instead; this setting can be changed at any time in your account preferences.
+        </p>
       </section>
 
       <section>
-        <h2>5. Your content</h2>
+        <h2>5. Accountability buddy feature</h2>
+        <p>EliteScore allows you to designate another person as an &quot;accountability buddy&quot; when joining a challenge. If you use this feature:</p>
+        <ul>
+          <li>
+            You confirm that you have a genuine, pre-existing relationship with the person you are inviting and that
+            they can reasonably expect to be contacted by you in connection with your learning activities.
+          </li>
+          <li>
+            You must not use this feature to send unsolicited messages to strangers or to contact anyone without a
+            legitimate reason to do so.
+          </li>
+          <li>
+            The buddy will receive an invitation email that explains the feature, what data is held about them, and how
+            to opt out at any time. That email will include a link to these Terms of Service and our Privacy Policy, and
+            a clear mechanism for the buddy to confirm that they have read them and to opt out if they do not wish to
+            participate.
+          </li>
+          <li>Opting out removes the buddy&apos;s contact details from our systems within a reasonable period.</li>
+          <li>
+            We process the buddy&apos;s contact details solely to operate this feature on your behalf. You must not
+            provide someone&apos;s contact details if you do not have their prior knowledge and a legitimate reason to
+            do so.
+          </li>
+          <li>
+            If the buddy opts out, or when the associated challenge ends or you delete your account (whichever occurs
+            first), their data is deleted from our systems.
+          </li>
+        </ul>
+      </section>
+
+      <section>
+        <h2>6. Your content and proof submissions</h2>
         <p>
           You keep all intellectual property rights in any content you upload or submit (such as proof of challenge
           completion, photos, or text).
@@ -101,10 +137,50 @@ export default function TermsOfServicePage() {
           may remove content or restrict access to accounts where necessary to comply with law or to protect the safety
           of users.
         </p>
+        <p>
+          Where you submit screenshots, screen recordings, or other visual materials as proof of challenge completion,
+          you are solely responsible for ensuring that your submission complies with the terms of use of the platform
+          from which it originates and does not infringe any third-party intellectual property rights. EliteScore does
+          not review proof submissions for copyright compliance and accepts no liability in connection with any
+          intellectual property claims arising from user-submitted proof materials. We reserve the right to remove any
+          submission if we receive a credible complaint that it infringes a third party&apos;s rights.
+        </p>
       </section>
 
       <section>
-        <h2>6. Fees and paid features</h2>
+        <h2>7. Third-party courses and no affiliation</h2>
+        <p>
+          EliteScore is an independent gamification and accountability platform. We are not affiliated with, endorsed
+          by, sponsored by, or in any commercial or legal partnership with any of the educational institutions or
+          organisations whose courses appear on this Service, including but not limited to:
+        </p>
+        <ul>
+          <li>Harvard University</li>
+          <li>Google LLC</li>
+          <li>Massachusetts Institute of Technology (MIT)</li>
+          <li>Microsoft Corporation</li>
+        </ul>
+        <p>
+          All course names, trademarks, service marks, and logos referenced on this Service belong exclusively to their
+          respective owners. Their appearance on EliteScore does not imply any relationship beyond the fact that their
+          course materials are publicly available on the internet and have been listed here for user convenience. Any
+          trademarks remain the property of their respective owners.
+        </p>
+      </section>
+
+      <section>
+        <h2>8. Account deletion and leaderboard entries</h2>
+        <p>
+          When you delete your account, your personal data is deleted or anonymised in accordance with our Privacy
+          Policy. Any historical leaderboard entries associated with your account will either be removed or converted to
+          an anonymous entry (for example, displayed as &quot;Deleted User&quot;) at your request and where technically
+          feasible. We will not continue to display your name or username in connection with any ranking after account
+          deletion.
+        </p>
+      </section>
+
+      <section>
+        <h2>9. Fees and paid features</h2>
         <p>
           The Service is currently free to use. If we introduce paid features in the future, we will clearly show
           pricing, billing terms, and applicable taxes before you are charged. Any payment processing will be handled
@@ -113,7 +189,7 @@ export default function TermsOfServicePage() {
       </section>
 
       <section>
-        <h2>7. Limitation of liability</h2>
+        <h2>10. Limitation of liability</h2>
         <p>Nothing in these Terms limits or excludes liability for:</p>
         <ul>
           <li>death or personal injury caused by negligence;</li>
@@ -129,9 +205,9 @@ export default function TermsOfServicePage() {
           loss of data, loss of profits, or loss of business.
         </p>
         <p>
-          Where we are liable and where such a limit is permitted under applicable law, our total aggregate liability in
-          any twelve-month period is limited to the greater of: (a) the fees you actually paid us in that period, or (b){" "}
-          €150.
+          Where we are liable and where such a limit is permitted under applicable law, our total aggregate liability
+          in any twelve-month period is limited to the greater of: (a) the fees you actually paid us in that period, or
+          (b) €150.
         </p>
         <p>
           If you are a consumer in the Netherlands or the EEA, mandatory local law may give you stronger rights than
@@ -140,7 +216,27 @@ export default function TermsOfServicePage() {
       </section>
 
       <section>
-        <h2>8. Termination</h2>
+        <h2>11. Security incidents and data breaches</h2>
+        <p>In the event of a personal data breach, we will comply with our obligations under Articles 33 and 34 GDPR:</p>
+        <ul>
+          <li>
+            We will notify the Autoriteit Persoonsgegevens (AP) within 72 hours of becoming aware of a breach that is
+            likely to result in a risk to your rights and freedoms, where technically and operationally feasible.
+          </li>
+          <li>
+            Where a breach is likely to result in a high risk to your rights and freedoms, we will notify you directly
+            without undue delay by email to the address associated with your account and/or through a prominent notice
+            on the Service.
+          </li>
+          <li>
+            We will document all breaches, including those that do not require notification to the AP or to users, in an
+            internal breach register as required by Article 33(5) GDPR.
+          </li>
+        </ul>
+      </section>
+
+      <section>
+        <h2>12. Termination</h2>
         <p>
           You may stop using the Service at any time and request deletion of your account by contacting us at{" "}
           <a href={ELITESCORE_SUPPORT_MAILTO}>{ELITESCORE_SUPPORT_EMAIL}</a>.
@@ -153,7 +249,7 @@ export default function TermsOfServicePage() {
       </section>
 
       <section>
-        <h2>9. Governing law and disputes</h2>
+        <h2>13. Governing law and disputes</h2>
         <p>
           These Terms are governed by the laws of the Netherlands, without prejudice to any mandatory consumer
           protection laws of your country of habitual residence.
@@ -179,17 +275,17 @@ export default function TermsOfServicePage() {
       </section>
 
       <section>
-        <h2>10. Changes to these Terms</h2>
+        <h2>14. Changes to these Terms</h2>
         <p>
           We may update these Terms from time to time. We will post the updated version with a new &quot;Last
           updated&quot; date. If a change is material, we will notify you by email or through the Service before it
-          takes effect. If you do not accept the updated Terms, please stop using the Service and request deletion of your
-          account.
+          takes effect. If you do not accept the updated Terms, please stop using the Service and request deletion of
+          your account.
         </p>
       </section>
 
       <section>
-        <h2>11. Contact</h2>
+        <h2>15. Contact</h2>
         <p>
           Questions about these Terms:{" "}
           <a href={ELITESCORE_SUPPORT_MAILTO}>
@@ -197,6 +293,13 @@ export default function TermsOfServicePage() {
           </a>
         </p>
       </section>
+
+      <blockquote className="mt-4 rounded-r-xl border-l-4 border-slate-300 bg-slate-50/90 py-3 pl-4 pr-3 text-slate-600 not-italic">
+        <p className="text-sm font-semibold text-slate-800">Footer note (homepage and emails)</p>
+        <p className="mt-1.5 text-sm leading-relaxed italic text-slate-600">
+          EliteScore is not affiliated with the original publishers of the provided courses.
+        </p>
+      </blockquote>
     </LegalPageLayout>
   )
 }

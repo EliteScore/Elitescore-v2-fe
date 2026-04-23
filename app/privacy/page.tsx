@@ -6,7 +6,7 @@ import { ELITESCORE_SUPPORT_EMAIL, ELITESCORE_SUPPORT_MAILTO } from "@/lib/suppo
 export const metadata: Metadata = {
   title: "Privacy Policy | EliteScore",
   description:
-    "How EliteScore processes personal data under the GDPR, Dutch (AVG/UAVG) law, and ePrivacy rules. Beta / pre-registration version.",
+    "How EliteScore processes personal data under the GDPR, accountability buddies, and Dutch (AVG/UAVG) law. Beta / pre-registration.",
 }
 
 const BETA_VERSION = "Beta / Pre-registration"
@@ -29,6 +29,11 @@ export default function PrivacyPolicyPage() {
           This Policy explains how the individual operator of EliteScore (the &quot;controller&quot; for GDPR purposes)
           collects and uses personal data when you use the EliteScore website, application, and related services
           (together, the &quot;Service&quot;), or when you contact us.
+        </p>
+        <p>
+          This Policy also applies to accountability buddies — third parties whose email addresses are provided by
+          users of the Service. If you have received an accountability buddy invitation email, this Policy explains what
+          data we hold about you, why, and what rights you have. Your rights are set out in Section 8.
         </p>
         <p>This Policy is prepared in accordance with:</p>
         <ul>
@@ -73,12 +78,22 @@ export default function PrivacyPolicyPage() {
           streaks, ranks, and any content you submit as part of a challenge.
         </p>
         <p>
+          <strong>Leaderboard display preference:</strong> your choice of whether your leaderboard entry shows your
+          nickname (the default) or your real name. This preference can be changed at any time in your account settings.
+        </p>
+        <p>
           <strong>Communications data:</strong> messages and emails you send us, for example for support requests.
         </p>
         <p>
           <strong>Integration data:</strong> if you sign in using a third-party provider (such as Google), we receive
-          only the information that provider makes available to us. If you provide a spectator email address as part of
-          a challenge feature, we use that email solely to operate that feature.
+          only the information that provider makes available to us.
+        </p>
+        <p>
+          <strong>Accountability buddy data:</strong> if you choose to use the accountability buddy feature, we collect
+          your full name (as provided at registration) and the email address you supply for your buddy. Your full name
+          may be included in notification emails sent to your buddy so they can identify who has added them. The
+          buddy&apos;s email address is used solely to send challenge-related notifications and an initial opt-out
+          notice (see Section 4 below for the legal basis).
         </p>
         <p>
           <strong>Technical and usage data:</strong> IP address, browser type, device type, operating system, language
@@ -101,9 +116,21 @@ export default function PrivacyPolicyPage() {
         </p>
         <p>
           <strong>Legitimate interests (Art. 6(1)(f) GDPR):</strong> We process technical and usage data to keep the
-          Service secure, detect and prevent abuse and fraud, fix bugs, and improve the Service. Our legitimate
-          interests in running a functioning and secure service are balanced against your rights and interests. You may
-          object to this processing at any time (see Section 7).
+          Service secure, detect and prevent abuse and fraud, fix bugs, and improve the Service. Our legitimate interests
+          in running a functioning and secure service are balanced against your rights and interests. You may object to
+          this processing at any time (see Section 8).
+        </p>
+        <p>
+          <strong>Accountability buddy notifications (Art. 6(1)(f) GDPR — Legitimate interests):</strong> When you
+          activate the accountability buddy feature, we process your full name and your buddy&apos;s email address to
+          send the buddy notifications about your challenge progress. This processing is based on our legitimate interest
+          in operating a feature you have explicitly activated. The buddy&apos;s legitimate interests and rights are
+          protected by: (a) receiving a first-contact notification that explains the processing in accordance with Articles
+          13–14 GDPR, sets out their rights, includes a link to these Terms and this Privacy Policy, and provides a clear
+          opt-out mechanism; and (b) the deletion of their data when the challenge ends, when you delete your account, or
+          when the buddy opts out — whichever occurs first. If you are an accountability buddy reading this, you can opt
+          out at any time by clicking the unsubscribe link in any email you receive from us, or by contacting{" "}
+          <a href={ELITESCORE_SUPPORT_MAILTO}>{ELITESCORE_SUPPORT_EMAIL}</a>.
         </p>
         <p>
           <strong>Legal obligation (Art. 6(1)(c) GDPR):</strong> We may process data where we are required to do so by
@@ -111,8 +138,14 @@ export default function PrivacyPolicyPage() {
         </p>
         <p>
           <strong>Consent (Art. 6(1)(a) GDPR):</strong> Where we ask for your consent — for example for non-essential
-          cookies or any optional communications — we will request it clearly and separately. You can withdraw consent
-          at any time without affecting the lawfulness of any processing carried out before withdrawal.
+          cookies — we will request it clearly and separately. You can withdraw consent at any time without affecting
+          the lawfulness of any processing carried out before withdrawal.
+        </p>
+        <p>
+          <strong>Marketing communications:</strong> We do not send marketing communications on the basis of legitimate
+          interests. Any marketing or promotional communications will only be sent where you have given separate, explicit
+          consent by ticking an opt-in checkbox at the relevant point of collection. You can withdraw that consent at
+          any time.
         </p>
       </section>
 
@@ -135,10 +168,26 @@ export default function PrivacyPolicyPage() {
           mechanism. Supplementary measures are applied where required by applicable guidance (including post-Schrems II
           requirements).
         </p>
+        <p>
+          <strong>Course publishers:</strong> We do not share your personal data with any of the third-party educational
+          institutions or course publishers whose content is referenced on this Service. EliteScore has no data-sharing
+          agreements, affiliate arrangements, or commercial relationships with these organisations.
+        </p>
       </section>
 
       <section>
-        <h2>6. How long we keep your data</h2>
+        <h2>6. Third-party courses and no affiliation</h2>
+        <p>
+          EliteScore is an independent gamification and accountability platform. We are not affiliated with, endorsed
+          by, sponsored by, or in any commercial or legal partnership with any of the educational institutions or
+          organisations whose courses appear on this Service, including but not limited to Harvard University, Google
+          LLC, Massachusetts Institute of Technology (MIT), and Microsoft Corporation. All course names, trademarks,
+          service marks, and logos referenced on this Service belong exclusively to their respective owners.
+        </p>
+      </section>
+
+      <section>
+        <h2>7. How long we keep your data</h2>
         <p>
           We keep your personal data only for as long as necessary for the purposes described above, or as required by
           law.
@@ -151,6 +200,13 @@ export default function PrivacyPolicyPage() {
           <li>
             <strong>Activity and challenge data</strong> is kept for the duration of the relevant challenge, plus a
             reasonable period for dispute resolution.
+          </li>
+          <li>
+            <strong>Accountability buddy data</strong> is deleted when the associated challenge ends, when you delete
+            your account, or when the buddy opts out — whichever occurs first.
+          </li>
+          <li>
+            <strong>Leaderboard entries</strong> are anonymised or removed upon account deletion.
           </li>
           <li>
             <strong>Security and technical logs</strong> are kept for a short period (typically weeks to a few months)
@@ -168,8 +224,11 @@ export default function PrivacyPolicyPage() {
       </section>
 
       <section>
-        <h2>7. Your rights under GDPR (Articles 12–22)</h2>
-        <p>As a data subject, you have the following rights, subject to the conditions and limitations set out in the GDPR:</p>
+        <h2>8. Your rights under GDPR (Articles 12–22)</h2>
+        <p>
+          As a data subject — including if you are an accountability buddy — you have the following rights, subject to
+          the conditions and limitations set out in the GDPR:
+        </p>
         <ul>
           <li>
             <strong>Right of access (Art. 15):</strong> You can request a copy of the personal data we hold about you.
@@ -179,20 +238,20 @@ export default function PrivacyPolicyPage() {
           </li>
           <li>
             <strong>Right to erasure (Art. 17):</strong> You can ask us to delete your data where the conditions under
-            Art. 17 are met, for example if the data is no longer necessary for the purpose it was collected.
+            Art. 17 are met.
           </li>
           <li>
             <strong>Right to restriction of processing (Art. 18):</strong> You can ask us to limit how we use your data
             in certain circumstances.
           </li>
           <li>
-            <strong>Right to data portability (Art. 20):</strong> Where processing is based on contract or consent and
-            carried out by automated means, you can ask for your data in a structured, machine-readable format.
+            <strong>Right to data portability (Art. 20):</strong> Where processing is based on contract or consent
+            and carried out by automated means, you can ask for your data in a structured, machine-readable format.
           </li>
           <li>
             <strong>Right to object (Art. 21):</strong> You can object at any time to processing based on legitimate
-            interests, including any profiling. You also have an unconditional right to object to processing for
-            direct marketing.
+            interests, including profiling. You also have an unconditional right to object to processing for direct
+            marketing.
           </li>
           <li>
             <strong>Right to withdraw consent:</strong> Where we rely on consent, you can withdraw it at any time.
@@ -201,7 +260,7 @@ export default function PrivacyPolicyPage() {
           <li>
             <strong>Rights related to automated decision-making (Art. 22):</strong> We do not currently make decisions
             about you solely by automated means that produce legal or similarly significant effects. If this changes, we
-            will inform you and provide the rights required by Art. 22.
+            will inform you and provide the applicable rights.
           </li>
         </ul>
         <p>
@@ -216,7 +275,7 @@ export default function PrivacyPolicyPage() {
       </section>
 
       <section>
-        <h2>8. Complaints and supervisory authority</h2>
+        <h2>9. Complaints and supervisory authority</h2>
         <p>
           If you are unhappy with how we handle your data, please contact us first. If your concern is not resolved, you
           have the right to lodge a complaint with a data protection supervisory authority.
@@ -235,7 +294,7 @@ export default function PrivacyPolicyPage() {
       </section>
 
       <section>
-        <h2>9. Cookies and similar technologies</h2>
+        <h2>10. Cookies and similar technologies</h2>
         <p>We may use cookies and similar technologies for the following purposes:</p>
         <ul>
           <li>
@@ -260,11 +319,19 @@ export default function PrivacyPolicyPage() {
       </section>
 
       <section>
-        <h2>10. Security</h2>
+        <h2>11. Security and data breaches</h2>
         <p>
           We apply appropriate technical and organisational measures to protect your personal data, as required by
           Article 32 GDPR. During the beta phase, these measures include password hashing, encrypted data transmission
           (HTTPS), and access controls. We keep our security practices under review.
+        </p>
+        <p>
+          In the event of a personal data breach, we will act in accordance with our obligations under Articles 33 and
+          34 GDPR. Where a breach is likely to result in a risk to your rights and freedoms, we will notify the
+          Autoriteit Persoonsgegevens within 72 hours. Where the risk is assessed as high, we will also notify you
+          directly by email without undue delay, describing the nature of the breach, the categories of data affected,
+          the likely consequences, and the measures taken or proposed to address it. We maintain an internal record of
+          all data breaches in accordance with Article 33(5) GDPR.
         </p>
         <p>
           No system is completely secure. Please use a strong and unique password and notify us immediately if you
@@ -273,7 +340,7 @@ export default function PrivacyPolicyPage() {
       </section>
 
       <section>
-        <h2>11. Children</h2>
+        <h2>12. Children</h2>
         <p>
           The Service is not directed at anyone under the age of 16. We do not knowingly collect personal data from
           children under 16. If you believe a child has registered or provided us with data, please contact us at{" "}
@@ -283,7 +350,7 @@ export default function PrivacyPolicyPage() {
       </section>
 
       <section>
-        <h2>12. Changes to this Policy</h2>
+        <h2>13. Changes to this Policy</h2>
         <p>
           We may update this Policy from time to time. The &quot;Last updated&quot; date at the top of this page will
           reflect any changes. If we make a material change to how we process your data, we will notify you by email or
@@ -293,7 +360,7 @@ export default function PrivacyPolicyPage() {
       </section>
 
       <section>
-        <h2>13. Contact</h2>
+        <h2>14. Contact</h2>
         <p>
           Privacy and data protection questions:{" "}
           <a href={ELITESCORE_SUPPORT_MAILTO}>
