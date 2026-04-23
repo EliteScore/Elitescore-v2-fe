@@ -127,7 +127,7 @@ export default function SignupPage() {
       localStorage.setItem("elitescore_email", email)
       localStorage.removeItem(ONBOARDING_DONE_KEY)
       localStorage.setItem(ONBOARDING_PENDING_KEY, "true")
-      router.replace("/home")
+      router.replace("/challenges?onboard=1")
     } catch (error) {
       console.error("Signup error:", error)
       setSignupError("Something went wrong. Please try again.")

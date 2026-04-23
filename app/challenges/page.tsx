@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import {
@@ -12,6 +12,9 @@ import { resolveChallengeThumbnail } from "@/lib/challengeThumbnails"
 import { detectChallengeProvider, providerLogoUrl } from "@/lib/challengeProvider"
 import { difficultyToLabel, isFeaturedChallenge } from "@/lib/challengeDifficulty"
 import { ELITESCORE_SUPPORT_EMAIL, ELITESCORE_SUPPORT_MAILTO } from "@/lib/supportContact"
+
+const ONBOARDING_PENDING_KEY = "elitescore_onboarding_pending"
+const ONBOARDING_DONE_KEY = "elitescore_onboarding_done"
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -263,6 +266,11 @@ export default function ChallengesPage() {
   )
   const [libraryLoading, setLibraryLoading] = useState(false)
 
+  const [pendingOnboardSelect, setPendingOnboardSelect] = useState(false)
+  const [showOnboardWelcome, setShowOnboardWelcome] = useState(false)
+  const onboardUrlHandled = useRef(false)
+  const autoOpenChallengeDone = useRef(false)
+
   type ChallengeTemplateApi = {
     id?: string
     name?: string
@@ -511,6 +519,32 @@ export default function ChallengesPage() {
     }
   }, [router])
 
+  useEffect(() => {
+    if (onboardUrlHandled.current) return
+    if (typeof window === "undefined") return
+    const params = new URLSearchParams(window.location.search)
+    if (params.get("onboard") !== "1") return
+    onboardUrlHandled.current = true
+    setActiveTab("library")
+    setPendingOnboardSelect(true)
+    setShowOnboardWelcome(true)
+    router.replace("/challenges", { scroll: false })
+  }, [router])
+
+  useEffect(() => {
+    if (!pendingOnboardSelect) return
+    if (libraryLoading) return
+    if (autoOpenChallengeDone.current) return
+    if (libraryChallenges.length === 0) {
+      setPendingOnboardSelect(false)
+      return
+    }
+    autoOpenChallengeDone.current = true
+    const pick = libraryChallenges.find((c) => c.featured) ?? libraryChallenges[0]
+    setSelectedId(pick.id)
+    setPendingOnboardSelect(false)
+  }, [pendingOnboardSelect, libraryLoading, libraryChallenges])
+
   const activeCount = activeChallenges.length
   const canJoin = activeCount < MAX_ACTIVE
   const selectedLibrary = libraryChallenges.find((c) => c.id === selectedId) ?? null
@@ -625,6 +659,13 @@ export default function ChallengesPage() {
     }
 
     setLockInStep("success")
+    try {
+      localStorage.setItem(ONBOARDING_DONE_KEY, "true")
+      localStorage.removeItem(ONBOARDING_PENDING_KEY)
+    } catch {
+      // ignore storage errors
+    }
+    setShowOnboardWelcome(false)
     setTimeout(() => {
       setShowLockIn(false)
       setSelectedId(null)
@@ -741,6 +782,28 @@ export default function ChallengesPage() {
           </div>
         </div>
       </section>
+
+      {showOnboardWelcome ? (
+        <div
+          className="flex flex-col gap-3 rounded-2xl border border-emerald-200/80 bg-emerald-50/90 px-4 py-3 shadow-sm sm:flex-row sm:items-center sm:justify-between"
+          role="status"
+        >
+          <div className="min-w-0">
+            <p className="text-sm font-bold text-emerald-900">Welcome to EliteScore</p>
+            <p className="mt-0.5 text-xs leading-relaxed text-emerald-800/95">
+              Your account is ready. We opened a challenge below — review it, add at least one spectator email, then
+              lock in to start earning EliteScore and streaks.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowOnboardWelcome(false)}
+            className="shrink-0 self-end rounded-xl border border-emerald-300/80 bg-white px-3 py-1.5 text-xs font-semibold text-emerald-900 hover:bg-emerald-100/50 sm:self-center"
+          >
+            Dismiss
+          </button>
+        </div>
+      ) : null}
 
       <div className="max-md:space-y-6 max-md:px-3 max-md:pl-[max(0.75rem,env(safe-area-inset-left))] max-md:pr-[max(0.75rem,env(safe-area-inset-right))] md:contents">
       {/* Tab nav */}

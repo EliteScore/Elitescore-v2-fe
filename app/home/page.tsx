@@ -312,38 +312,31 @@ export default function HomePage() {
 
   const onboardingSteps: OnboardingStep[] = [
     {
-      title: "Join your first challenge",
+      title: "Lock in a challenge",
       description:
-        "Start in Challenges and lock in one challenge. This unlocks your daily tasks and score gains.",
-      actionLabel: "Open Challenges",
+        "Everything starts in Challenges: pick one, add a spectator email (accountability partner), then commit. That unlocks daily tasks and EliteScore.",
+      actionLabel: "Go to Challenges",
       actionHref: "/challenges",
     },
     {
-      title: "Add one accountability friend",
+      title: "Complete today’s task",
       description:
-        "When you lock in, add at least one friend email. They keep you accountable and can follow your progress.",
-      actionLabel: "Invite from Challenges",
+        "Open your active challenge, read the day’s instructions, then submit valid proof before the deadline.",
+      actionLabel: "My challenges",
       actionHref: "/challenges",
     },
     {
-      title: "Open your challenge and read today's task",
+      title: "Proof & streaks",
       description:
-        "Go to your active challenge and check the day task before you submit anything.",
-      actionLabel: "View My Challenges",
+        "Proof is timestamped. Miss a day or submit late or invalid work and you risk failing the day—consistency builds your streak.",
+      actionLabel: "Challenges",
       actionHref: "/challenges",
     },
     {
-      title: "Submit proof correctly",
+      title: "Climb the board",
       description:
-        "Proof must be valid and on time. Late, invalid, or missing proof can fail the day and hurt your streak.",
-      actionLabel: "See Proof Flow",
-      actionHref: "/challenges",
-    },
-    {
-      title: "Track EliteScore and leaderboard",
-      description:
-        "EliteScore, streak, and weekly gains move your rank. Stay consistent to climb the leaderboard faster.",
-      actionLabel: "Open Leaderboard",
+        "EliteScore and weekly activity update your global rank. Check the leaderboard anytime.",
+      actionLabel: "Leaderboard",
       actionHref: "/leaderboard",
     },
   ]
@@ -369,6 +362,22 @@ export default function HomePage() {
       setShowOnboarding(true)
     }
   }, [authChecked])
+
+  useEffect(() => {
+    if (!authChecked || !showOnboarding || myChallengesLoading) return
+    const hasActive = myChallenges.some((c) => {
+      const s = (c.status ?? "").toLowerCase()
+      return s === "" || s === "active" || s === "in_progress" || s === "in progress"
+    })
+    if (!hasActive) return
+    setShowOnboarding(false)
+    try {
+      localStorage.setItem(ONBOARDING_DONE_KEY, "true")
+      localStorage.removeItem(ONBOARDING_PENDING_KEY)
+    } catch {
+      // ignore
+    }
+  }, [authChecked, showOnboarding, myChallengesLoading, myChallenges])
 
   useEffect(() => {
     if (!authChecked) return
