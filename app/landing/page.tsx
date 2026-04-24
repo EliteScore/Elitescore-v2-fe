@@ -154,13 +154,10 @@ function challengeCoverSrc(c: LandingChallenge): string {
 
 export default function LandingPage() {
   const [menuOpen, setMenuOpen] = useState(false)
-  const [waitlistEmail, setWaitlistEmail] = useState("")
-  const [submitted, setSubmitted] = useState(false)
   const [heroReady, setHeroReady] = useState(false)
   const credibilityRef = useInView()
   const stepsRef = useInView()
   const challengesRef = useInView()
-  const waitlistRef = useInView()
 
   useEffect(() => {
     const t = requestAnimationFrame(() => setTimeout(() => setHeroReady(true), 100))
@@ -171,11 +168,6 @@ export default function LandingPage() {
     const el = document.getElementById(id)
     if (el) el.scrollIntoView({ behavior: "smooth" })
     setMenuOpen(false)
-  }
-
-  const handleWaitlist = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    if (waitlistEmail.trim()) setSubmitted(true)
   }
 
   const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, id: string) => {
@@ -214,7 +206,7 @@ export default function LandingPage() {
               className="landing-nav-cta inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition-transform"
               style={{ background: APP_GRADIENT }}
             >
-              Sign up for free
+              Get Started For Free
             </Link>
           </nav>
         </div>
@@ -249,7 +241,7 @@ export default function LandingPage() {
               className={`landing-cta-btn inline-flex items-center justify-center rounded-xl bg-white px-6 py-3.5 text-base font-bold text-slate-800 shadow-lg transition-[opacity,transform] duration-500 ease-out ${heroReady ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}
               style={{ transitionDelay: "350ms" }}
             >
-              Sign up for free
+              Get Started For Free
             </Link>
             <div
               className={`mt-10 flex flex-wrap items-center justify-center gap-4 transition-all duration-500 ease-out sm:gap-6 ${heroReady ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}
@@ -370,48 +362,6 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* Waitlist – scroll-in (24px up) + gradient shift on section background */}
-        <section id="waitlist" ref={waitlistRef[0]} className="relative pt-20">
-          <div
-            className="landing-waitlist-gradient pointer-events-none absolute inset-0 top-20 rounded-2xl opacity-[0.08]"
-            style={{ background: APP_GRADIENT, backgroundSize: "200% 200%" }}
-            aria-hidden
-          />
-          <div
-            className={`landing-waitlist-in relative z-10 rounded-2xl border border-slate-200/80 bg-white p-8 shadow-sm sm:p-10 ${waitlistRef[1] ? "landing-waitlist-in-visible" : ""}`}
-          >
-            {!submitted ? (
-              <>
-                <h2 className="mb-2 text-center text-2xl font-bold text-slate-800 sm:text-3xl">Get on the board</h2>
-                <p className="mb-8 text-center text-slate-600">Subscribe for updates.</p>
-                <form onSubmit={handleWaitlist} className="mx-auto flex max-w-md flex-col gap-3 sm:flex-row">
-                  <input
-                    type="email"
-                    placeholder="you@email.com"
-                    value={waitlistEmail}
-                    onChange={(e) => setWaitlistEmail(e.target.value)}
-                    className="flex-1 rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-slate-800 placeholder:text-slate-400 focus:border-pink-500/50 focus:outline-none focus:ring-2 focus:ring-pink-500/20"
-                    required
-                    aria-label="Email for waitlist"
-                  />
-                  <button
-                    type="submit"
-                    className="landing-cta-btn rounded-xl px-6 py-3 font-semibold text-white"
-                    style={{ background: APP_GRADIENT }}
-                  >
-                    Sign up for free
-                  </button>
-                </form>
-              </>
-            ) : (
-              <div className="text-center">
-                <h2 className="mb-2 text-2xl font-bold text-slate-800 sm:text-3xl">You&apos;re in.</h2>
-                <p className="text-slate-600">Check your email. We&apos;ll see you on the board.</p>
-              </div>
-            )}
-          </div>
-        </section>
-
         {/* Minimal light footer – no black */}
         <footer className="mt-20 border-t border-slate-200/80 pt-8 text-center">
           <Link href="/" className="mb-2 inline-block hover:opacity-90" aria-label="EliteScore Home">
@@ -426,7 +376,7 @@ export default function LandingPage() {
               Challenges
             </a>
             <Link href="/login" className="text-slate-500 hover:text-slate-800">
-              Sign up for free
+              Get Started For Free
             </Link>
           </div>
           <p className="mt-5 max-w-xl mx-auto px-2 text-[10px] leading-snug text-slate-400">
