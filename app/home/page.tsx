@@ -3,8 +3,30 @@
 import React, { useMemo, useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { Clock, Flame, TrendingUp, Trophy, ArrowUpRight, CheckCircle2, Upload, ChevronRight, X, Sparkles } from "lucide-react"
+import {
+  AlertTriangle,
+  Clock,
+  Flame,
+  TrendingUp,
+  Trophy,
+  ArrowUpRight,
+  CheckCircle2,
+  Upload,
+  ChevronRight,
+  X,
+  XCircle,
+  Sparkles,
+} from "lucide-react"
 import { difficultyToLabel, isFeaturedChallenge } from "@/lib/challengeDifficulty"
+import type { ChallengeScoring } from "@/lib/challengeScoring"
+import {
+  effectiveMaxMissedDays,
+  formatElitePoints,
+  hasChallengeScoringFields,
+  parseChallengeScoringFromRow,
+  readDurationDaysFromRow,
+} from "@/lib/challengeScoring"
+import { ChallengeScoringDisplay } from "@/components/challenge-scoring-display"
 
 const DASHBOARD_URL = "/api/dashboard"
 const CHALLENGES_MY_URL = "/api/challenges/my"
@@ -63,6 +85,7 @@ type ChallengeTemplateApi = {
   dailyRewardEliteScore?: number
   completionBonus?: number
   featured?: boolean
+  scoring?: ChallengeScoring
 }
 
 type ActiveChallengeUi = {
@@ -82,6 +105,7 @@ type ActiveChallengeUi = {
   durationDays: number
   rewardPoints: number
   featured: boolean
+  scoring: ChallengeScoring
 }
 
 type OnboardingStep = {
@@ -231,15 +255,18 @@ function parseChallengeTemplates(raw: unknown): Record<string, ChallengeTemplate
     const row = item as Record<string, unknown>
     const id = typeof row.id === "string" ? row.id : undefined
     if (!id) return
+    const scoring = parseChallengeScoringFromRow(row)
+    const durationDays = readDurationDaysFromRow(row)
     map[id] = {
       id,
       name: typeof row.name === "string" ? row.name : undefined,
       track: typeof row.track === "string" ? row.track : undefined,
       difficulty: typeof row.difficulty === "number" ? row.difficulty : undefined,
-      durationDays: typeof row.durationDays === "number" ? row.durationDays : undefined,
-      dailyRewardEliteScore: typeof row.dailyRewardEliteScore === "number" ? row.dailyRewardEliteScore : undefined,
-      completionBonus: typeof row.completionBonus === "number" ? row.completionBonus : undefined,
+      durationDays,
+      dailyRewardEliteScore: scoring.dailyRewardEliteScore,
+      completionBonus: scoring.completionBonus,
       featured: typeof row.featured === "boolean" ? row.featured : undefined,
+      scoring: hasChallengeScoringFields(scoring) ? scoring : undefined,
     }
   })
   return map
@@ -293,6 +320,7 @@ function mapToActiveChallengeUi(
     durationDays,
     rewardPoints,
     featured: isFeaturedChallenge({ name: template?.name, featured: template?.featured }),
+    scoring: template?.scoring ?? {},
   }
 }
 
@@ -486,10 +514,15 @@ export default function HomePage() {
         if (!res.ok || !Array.isArray(body)) {
           return { templatesMap: {}, templatesList: [] as ChallengeTemplateApi[] }
         }
-        return {
-          templatesMap: parseChallengeTemplates(body),
-          templatesList: body as ChallengeTemplateApi[],
-        }
+        const templatesMap = parseChallengeTemplates(body)
+        const templatesList: ChallengeTemplateApi[] = body.map((item) => {
+          if (!item || typeof item !== "object") return item as ChallengeTemplateApi
+          const id = (item as Record<string, unknown>).id
+          const idStr = typeof id === "string" ? id : undefined
+          if (!idStr || !templatesMap[idStr]) return item as ChallengeTemplateApi
+          return { ...(item as ChallengeTemplateApi), ...templatesMap[idStr] }
+        })
+        return { templatesMap, templatesList }
       }),
       fetch(CHALLENGES_MY_URL, { method: "GET", headers }).then(async (res) => {
         const body = await res.json().catch(() => null)
@@ -560,6 +593,7 @@ export default function HomePage() {
     featured: boolean
     members: string
     gradientClass: string
+    scoring: ChallengeScoring
   }
   const recommendedForUi: RecommendationUi[] = useMemo(
     () =>
@@ -589,6 +623,7 @@ export default function HomePage() {
           featured: isFeaturedChallenge({ name: c.name, featured: c.featured }),
           members: "",
           gradientClass: GRADIENT_BY_TRACK[category] ?? GRADIENT_BY_TRACK.default,
+          scoring: c.scoring ?? {},
         }
       }),
     [challengeLibrary]
@@ -608,6 +643,19 @@ export default function HomePage() {
       return status === "" || status === "active" || status === "in_progress" || status === "in progress"
     })
     .map((challenge) => mapToActiveChallengeUi(challenge, challengeTemplatesById))
+
+  const challengesWithMissedDays = useMemo(
+    () => activeChallenges.filter((c) => c.missedDaysCount > 0),
+    [activeChallenges],
+  )
+
+  const failedChallenges = useMemo(
+    () =>
+      myChallenges
+        .filter((ch) => (ch.status ?? "").toLowerCase() === "failed")
+        .map((ch) => mapToActiveChallengeUi(ch, challengeTemplatesById)),
+    [myChallenges, challengeTemplatesById],
+  )
 
   const handleCategoryClick = (cat: string) => setActiveCategory(cat)
   const onboardingStep = onboardingSteps[onboardingStepIndex]
@@ -853,6 +901,90 @@ export default function HomePage() {
 
         {/* Left column */}
         <div className="space-y-6 lg:col-span-8">
+          {!myChallengesLoading && failedChallenges.length > 0 ? (
+            <div
+              className="space-y-3"
+              role="region"
+              aria-live="polite"
+              aria-label="Failed challenges"
+            >
+              {failedChallenges.map((c) => {
+                const maxM = effectiveMaxMissedDays(c.scoring)
+                const failP = c.scoring?.failPenalty
+                return (
+                  <div
+                    key={c.id}
+                    className="flex gap-3 rounded-2xl border border-red-300/80 bg-red-50/95 px-4 py-3 shadow-sm"
+                  >
+                    <XCircle className="h-5 w-5 shrink-0 text-red-600" aria-hidden />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-bold text-red-950">Challenge failed</p>
+                      <p className="mt-0.5 text-sm leading-snug text-red-900">
+                        You missed {c.missedDaysCount}/{maxM} days on the{" "}
+                        <span className="font-semibold">{c.title}</span> challenge.
+                      </p>
+                      {typeof failP === "number" && Number.isFinite(failP) ? (
+                        <p className="mt-1.5 text-sm font-bold text-red-800">
+                          {formatElitePoints(failP > 0 ? -failP : failP)} EliteScore
+                          <span className="ml-1 text-xs font-normal text-red-800/85">(fail penalty)</span>
+                        </p>
+                      ) : (
+                        <p className="mt-1 text-xs text-red-800/90">
+                          A fail penalty may apply to your EliteScore.
+                        </p>
+                      )}
+                      {c.templateId ? (
+                        <Link
+                          href={`/challenges/${c.templateId}`}
+                          className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-pink-600 hover:underline"
+                        >
+                          View challenge <ArrowUpRight className="h-3.5 w-3.5" aria-hidden />
+                        </Link>
+                      ) : null}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          ) : null}
+          {!myChallengesLoading && challengesWithMissedDays.length > 0 ? (
+            <div
+              className="space-y-3"
+              role="status"
+              aria-live="polite"
+              aria-label="Challenges with missed days"
+            >
+              {challengesWithMissedDays.map((c) => {
+                const maxM = effectiveMaxMissedDays(c.scoring)
+                return (
+                  <div
+                    key={c.id}
+                    className="flex gap-3 rounded-2xl border border-amber-300/80 bg-amber-50/95 px-4 py-3 shadow-sm"
+                  >
+                    <AlertTriangle
+                      className="h-5 w-5 shrink-0 text-amber-600"
+                      aria-hidden
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium leading-snug text-amber-950">
+                        Missed {c.missedDaysCount}/{maxM} days of the{" "}
+                        <span className="font-semibold text-amber-950">{c.title}</span>{" "}
+                        challenge.
+                      </p>
+                      {c.templateId ? (
+                        <Link
+                          href={`/challenges/${c.templateId}`}
+                          className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-pink-600 hover:underline"
+                        >
+                          View challenge <ArrowUpRight className="h-3.5 w-3.5" aria-hidden />
+                        </Link>
+                      ) : null}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          ) : null}
 
           {/* Active Challenges */}
           <section className={`${CARD_BASE} p-6`} aria-labelledby="active-title">
@@ -875,6 +1007,13 @@ export default function HomePage() {
                 View all <ArrowUpRight className="h-3.5 w-3.5" aria-hidden />
               </Link>
             </div>
+
+            {!myChallengesLoading && activeChallenges.length > 0 ? (
+              <p className="mt-3 rounded-xl border border-amber-200/80 bg-amber-50/90 px-3 py-2 text-xs leading-relaxed text-amber-950" role="note">
+                <strong className="font-semibold">Missed day:</strong> If you don&apos;t submit anything for 24 hours,
+                that day counts as a missed day on your active challenge.
+              </p>
+            ) : null}
 
             <div className="mt-5 grid gap-4 sm:grid-cols-2">
               {myChallengesLoading ? (
@@ -934,6 +1073,11 @@ export default function HomePage() {
                         {challenge.rewardPoints > 0 ? ` · ${challenge.rewardPoints} pts` : ""}
                         {` · ${challenge.difficultyLabel} (${challenge.difficulty}/5)`}
                       </p>
+                      <ChallengeScoringDisplay
+                        variant="inline"
+                        scoring={challenge.scoring}
+                        className="mt-1.5"
+                      />
                       <div className="mt-3">
                         <div className="flex items-center justify-between text-xs">
                           <span className="text-slate-500">Current day</span>
@@ -971,7 +1115,8 @@ export default function HomePage() {
                           Enrollment details
                         </p>
                         <p className="mt-0.5 text-xs leading-relaxed text-slate-700">
-                          Missed days: {challenge.missedDaysCount}
+                          Missed days: {challenge.missedDaysCount}/
+                          {effectiveMaxMissedDays(challenge.scoring)}
                         </p>
                       </div>
                       <div className="mt-3 grid grid-cols-2 gap-2">
@@ -1073,6 +1218,11 @@ export default function HomePage() {
                       {item.difficulty != null && ` · ${item.difficulty}/5`}
                       {item.members ? ` · ${item.members} members` : ""}
                     </p>
+                    <ChallengeScoringDisplay
+                      variant="inline"
+                      scoring={item.scoring}
+                      className="mt-1"
+                    />
                     <Link
                       href={item.id ? `/challenges/${item.id}` : "/challenges"}
                       className="mt-3 flex w-full items-center justify-center rounded-xl py-2.5 text-xs font-bold text-white transition-transform hover:scale-[1.02]"

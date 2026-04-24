@@ -1,10 +1,12 @@
 "use client"
 
-import { Suspense, useEffect, useState } from "react"
+import { Suspense, useEffect, useMemo, useState } from "react"
 import { useParams, useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import {
+  AlertTriangle,
   ArrowLeft,
+  CheckCircle2,
   ChevronDown,
   ChevronUp,
   Check,
@@ -21,6 +23,15 @@ import {
 import { ELITESCORE_SUPPORT_EMAIL, ELITESCORE_SUPPORT_MAILTO } from "@/lib/supportContact"
 import { ensureSupabaseSession, getSupabaseBrowserClient } from "@/lib/supabaseClient"
 import { proofUploadDebug, shortIdForLog, supabaseUrlHost } from "@/lib/proofUploadDebug"
+import type { ChallengeScoring } from "@/lib/challengeScoring"
+import {
+  effectiveMaxMissedDays,
+  formatElitePoints,
+  hasChallengeScoringFields,
+  parseChallengeScoringFromRow,
+  readDurationDaysFromRow,
+} from "@/lib/challengeScoring"
+import { ChallengeScoringDisplay } from "@/components/challenge-scoring-display"
 
 const APP_GRADIENT = "linear-gradient(135deg, #db2777 0%, #ea580c 35%, #2563eb 70%, #7c3aed 100%)"
 const CARD_BASE = "rounded-2xl border border-slate-200/80 bg-white shadow-sm"
@@ -488,7 +499,15 @@ function ChallengeDetailPage() {
   const [loading, setLoading] = useState(true)
   const [enrollment, setEnrollment] = useState<EnrollmentInfo | null>(null)
   const [enrollmentLoading, setEnrollmentLoading] = useState(true)
-  const [challengeFailedBanner, setChallengeFailedBanner] = useState<string | null>(null)
+  const [challengeFailedInfo, setChallengeFailedInfo] = useState<{
+    missedCount: number
+    maxMissed: number
+    failPenalty: number | null
+  } | null>(null)
+  const [challengePassedInfo, setChallengePassedInfo] = useState<{
+    completionBonus: number | null
+    lastDayEliteScore: number | null
+  } | null>(null)
   const [dayAdvanceBanner, setDayAdvanceBanner] = useState<string | null>(null)
 
   // Proof modal state
@@ -506,6 +525,17 @@ function ChallengeDetailPage() {
   const [proofAttempt, setProofAttempt] = useState<ProofAttempt>(1)
   const [missedDayNotice, setMissedDayNotice] = useState<string | null>(null)
   const [lockedProofDay, setLockedProofDay] = useState<number | null>(null)
+  /** Resubmit rejected → day marked missed; show summary and block submit/resubmit. */
+  const [postResubmitMissed, setPostResubmitMissed] = useState<{
+    missedCount: number
+    maxMissed: number
+    dayNumber: number
+    penalty: number | null
+    failPenalty: number | null
+    challengeFailed: boolean
+  } | null>(null)
+  const [templateScoring, setTemplateScoring] = useState<ChallengeScoring>({})
+  const maxMissedDays = useMemo(() => effectiveMaxMissedDays(templateScoring), [templateScoring])
 
   useEffect(() => {
     let cancelled = false
@@ -541,16 +571,33 @@ function ChallengeDetailPage() {
 
         if (!tpl && steps.length === 0) {
           setChallenge(null)
+          setTemplateScoring({})
           setLoading(false)
           return
         }
 
-        const duration = typeof tpl?.durationDays === "number" ? tpl.durationDays : steps.length
+        const tplRow: Record<string, unknown> = tpl != null
+          ? (tpl as unknown as Record<string, unknown>)
+          : {}
+        const templateScoringParsed = parseChallengeScoringFromRow(tpl != null ? tplRow : {})
+        setTemplateScoring(tpl != null ? templateScoringParsed : {})
+
+        const stepCount = steps.length
+        const duration =
+          tpl != null
+            ? readDurationDaysFromRow(tplRow) ?? (stepCount > 0 ? stepCount : 0)
+            : stepCount > 0
+              ? stepCount
+              : 0
         const reward =
-          typeof tpl?.completionBonus === "number"
-            ? tpl.completionBonus
-            : typeof tpl?.dailyRewardEliteScore === "number" && duration > 0
-            ? tpl.dailyRewardEliteScore * duration
+          tpl != null
+            ? typeof templateScoringParsed.completionBonus === "number" &&
+                Number.isFinite(templateScoringParsed.completionBonus)
+              ? templateScoringParsed.completionBonus
+              : typeof templateScoringParsed.dailyRewardEliteScore === "number" &&
+                  duration > 0
+                ? templateScoringParsed.dailyRewardEliteScore * duration
+                : 0
             : 0
         const difficulty =
           typeof tpl?.difficulty === "number" && tpl.difficulty > 0 ? tpl.difficulty : 3
@@ -621,6 +668,7 @@ function ChallengeDetailPage() {
       } catch (err) {
         if (!cancelled) {
           setChallenge(null)
+          setTemplateScoring({})
           setLoading(false)
         }
       }
@@ -631,6 +679,36 @@ function ChallengeDetailPage() {
       cancelled = true
     }
   }, [rawId, requestedDay])
+
+  useEffect(() => {
+    if (!enrollment || enrollment.status !== "failed") {
+      setChallengeFailedInfo(null)
+      return
+    }
+    const maxM = effectiveMaxMissedDays(templateScoring)
+    const fp = templateScoring.failPenalty
+    setChallengeFailedInfo({
+      missedCount: Math.max(0, enrollment.missedDaysCount),
+      maxMissed: maxM,
+      failPenalty: typeof fp === "number" && Number.isFinite(fp) ? fp : null,
+    })
+  }, [enrollment, templateScoring])
+
+  useEffect(() => {
+    const s = (enrollment?.status ?? "").toLowerCase()
+    if (s !== "completed") {
+      setChallengePassedInfo(null)
+      return
+    }
+    setChallengePassedInfo((prev) => {
+      if (prev) return prev
+      const cb = templateScoring.completionBonus
+      return {
+        completionBonus: typeof cb === "number" && Number.isFinite(cb) ? cb : null,
+        lastDayEliteScore: null,
+      }
+    })
+  }, [enrollment, templateScoring])
 
   const fetchEnrollment = async (): Promise<EnrollmentInfo | null> => {
     const token =
@@ -677,13 +755,6 @@ function ChallengeDetailPage() {
           console.debug("[Challenge Detail] enrollment resolved", info)
         }
         setEnrollment(info)
-        if (info?.status === "failed") {
-          if (info.missedDaysCount >= 3) {
-            setChallengeFailedBanner("Missed 3/3 days: you have failed the challenge.")
-          } else {
-            setChallengeFailedBanner("This challenge has been auto-failed (max missed days reached).")
-          }
-        }
       })
       .finally(() => {
         if (!cancelled) setEnrollmentLoading(false)
@@ -715,6 +786,7 @@ function ChallengeDetailPage() {
     setLastSubmissionId(null)
     setProofAttempt(1)
     setMissedDayNotice(null)
+    setPostResubmitMissed(null)
   }
 
   const closeProofModal = () => {
@@ -819,15 +891,22 @@ function ChallengeDetailPage() {
     const info = await fetchEnrollment()
     if (info) {
       setEnrollment(info)
-      if (info.status === "failed") {
-        setChallengeFailedBanner(
-          "This challenge has been auto-failed (max missed days reached)."
+      const status = (info.status ?? "").toLowerCase()
+      const nextDay = mapEnrollmentProgressToUiDay(info.currentDay, challenge?.duration)
+      const cb = templateScoring.completionBonus
+      const completionBonus = typeof cb === "number" && Number.isFinite(cb) ? cb : null
+
+      if (status === "completed") {
+        setChallengePassedInfo({
+          completionBonus,
+          lastDayEliteScore: earnedEliteScore > 0 ? earnedEliteScore : null,
+        })
+        setDayAdvanceBanner(null)
+      } else {
+        setDayAdvanceBanner(
+          `Congrats! Day ${completedDay} complete — you got +${earnedEliteScore} EliteScore. Now on Day ${nextDay}.`
         )
       }
-      const nextDay = mapEnrollmentProgressToUiDay(info.currentDay, challenge?.duration)
-      setDayAdvanceBanner(
-        `Congrats! Day ${completedDay} complete — you got +${earnedEliteScore} EliteScore. Now on Day ${nextDay}.`
-      )
       setShowUploadProof(false)
       resetProofModalState()
       // Navigating updates ?day= which triggers the existing load effect to rebuild todayTask.
@@ -1311,6 +1390,7 @@ function ChallengeDetailPage() {
     if (proofSubmitting) return
     setProofError(null)
     setMissedDayNotice(null)
+    setPostResubmitMissed(null)
 
     if (!enrollment) {
       setProofError("Enrollment unavailable. Please reload the page.")
@@ -1442,12 +1522,15 @@ function ChallengeDetailPage() {
         const info = await fetchEnrollment()
         const newMissed = info?.missedDaysCount ?? enrollment.missedDaysCount + 1
         const isFailed = info?.status === "failed"
-        const shouldFailChallenge = isFailed || newMissed >= 3
+        const maxM = effectiveMaxMissedDays(templateScoring)
+        const shouldFailChallenge = isFailed || newMissed >= maxM
         if (info) {
           setEnrollment({
             ...info,
             status: shouldFailChallenge ? "failed" : info.status,
-            missedDaysCount: shouldFailChallenge ? Math.max(3, info.missedDaysCount) : info.missedDaysCount,
+            missedDaysCount: shouldFailChallenge
+              ? Math.max(maxM, info.missedDaysCount)
+              : info.missedDaysCount,
           })
         } else {
           setEnrollment((prev) =>
@@ -1455,24 +1538,31 @@ function ChallengeDetailPage() {
               ? {
                   ...prev,
                   status: shouldFailChallenge ? "failed" : prev.status,
-                  missedDaysCount: shouldFailChallenge ? Math.max(3, newMissed) : newMissed,
+                  missedDaysCount: shouldFailChallenge ? Math.max(maxM, newMissed) : newMissed,
                 }
               : prev
           )
         }
 
-        if (shouldFailChallenge) {
-          setChallengeFailedBanner("Missed 3/3 days: you have failed the challenge.")
-          setMissedDayNotice("Missed 3/3 days: you have failed the challenge.")
-        } else {
-          setMissedDayNotice(
-            `Day marked as missed (${newMissed}/3). Moving to the next day.`
-          )
+        const penaltyRaw = templateScoring.missedDayPenalty
+        const penaltyForUi =
+          typeof penaltyRaw === "number" && Number.isFinite(penaltyRaw) ? penaltyRaw : null
+        const failRaw = templateScoring.failPenalty
+        const failPenaltyForUi =
+          typeof failRaw === "number" && Number.isFinite(failRaw) ? failRaw : null
+        setPostResubmitMissed({
+          missedCount: newMissed,
+          maxMissed: maxM,
+          dayNumber: justMissedDay ?? challenge?.todayTask.day ?? 0,
+          penalty: penaltyForUi,
+          failPenalty: failPenaltyForUi,
+          challengeFailed: shouldFailChallenge,
+        })
+        setMissedDayNotice(null)
+        if (!shouldFailChallenge && info) {
           // Advance to next day silently
-          if (info) {
-            const nextDay = mapEnrollmentProgressToUiDay(info.currentDay, challenge?.duration)
-            router.replace(`/challenges/${rawId}?day=${nextDay}`)
-          }
+          const nextDay = mapEnrollmentProgressToUiDay(info.currentDay, challenge?.duration)
+          router.replace(`/challenges/${rawId}?day=${nextDay}`)
         }
         setProofVerdict("rejected")
         setProofFeedback(
@@ -1862,12 +1952,107 @@ function ChallengeDetailPage() {
               </button>
             </div>
 
-            {challengeFailedBanner && (
-              <div
-                className="mb-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
-                role="alert"
+            {hasChallengeScoringFields(templateScoring) && (
+              <section
+                className={`${CARD_BASE} p-4 sm:p-5`}
+                aria-labelledby="scoring-penalties-heading"
               >
-                {challengeFailedBanner}
+                <h2 id="scoring-penalties-heading" className="text-sm font-bold text-slate-800 sm:text-base">
+                  Scoring and penalties
+                </h2>
+                <p className="mt-1 text-xs text-slate-500">
+                  EliteScore rules for this challenge template (when you complete days, miss days, or exit).
+                </p>
+                <ChallengeScoringDisplay
+                  variant="grid"
+                  scoring={templateScoring}
+                  className="mt-3"
+                />
+              </section>
+            )}
+
+            {challengeFailedInfo && enrollment?.status === "failed" && (
+              <div
+                className="mb-2 flex gap-3 rounded-2xl border border-red-300/80 bg-red-50/95 px-4 py-4 text-sm text-red-950 shadow-sm"
+                role="alert"
+                aria-live="polite"
+              >
+                <AlertTriangle className="h-5 w-5 shrink-0 text-red-600" aria-hidden />
+                <div className="min-w-0">
+                  <p className="font-bold leading-snug text-red-950">Challenge failed</p>
+                  <p className="mt-1 leading-snug text-red-900">
+                    You missed {challengeFailedInfo.missedCount}/{challengeFailedInfo.maxMissed} days
+                    {challenge ? (
+                      <>
+                        {" "}
+                        on the <span className="font-semibold">{challenge.name}</span> challenge
+                      </>
+                    ) : null}
+                    .
+                  </p>
+                  {challengeFailedInfo.failPenalty != null ? (
+                    <p className="mt-2 text-base font-bold text-red-800">
+                      {formatElitePoints(
+                        challengeFailedInfo.failPenalty > 0
+                          ? -challengeFailedInfo.failPenalty
+                          : challengeFailedInfo.failPenalty
+                      )}{" "}
+                      EliteScore
+                    </p>
+                  ) : (
+                    <p className="mt-2 text-xs text-red-800/90">
+                      A fail penalty may apply to your EliteScore.
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
+            {challengePassedInfo && (enrollment?.status ?? "").toLowerCase() === "completed" && (
+              <div
+                className="mb-2 flex gap-3 rounded-2xl border border-emerald-300/80 bg-emerald-50/95 px-4 py-4 text-sm text-emerald-950 shadow-sm"
+                role="status"
+                aria-live="polite"
+              >
+                <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-600" aria-hidden />
+                <div className="min-w-0">
+                  <p className="font-bold leading-snug text-emerald-950">Challenge passed</p>
+                  <p className="mt-1 leading-snug text-emerald-900">
+                    You finished the{" "}
+                    <span className="font-semibold">{challenge.name}</span> challenge.
+                  </p>
+                  {challengePassedInfo.completionBonus != null ? (
+                    <p className="mt-2 text-base font-bold text-emerald-800">
+                      {formatElitePoints(challengePassedInfo.completionBonus)}{" "}
+                      EliteScore
+                      <span className="mt-0.5 block text-xs font-normal text-emerald-800/90">
+                        Completion bonus
+                      </span>
+                    </p>
+                  ) : challengePassedInfo.lastDayEliteScore != null &&
+                    challengePassedInfo.lastDayEliteScore > 0 ? (
+                    <p className="mt-2 text-base font-bold text-emerald-800">
+                      {formatElitePoints(challengePassedInfo.lastDayEliteScore)} EliteScore
+                      <span className="mt-0.5 block text-xs font-normal text-emerald-800/90">
+                        Final day reward
+                      </span>
+                    </p>
+                  ) : null}
+                  {challengePassedInfo.completionBonus != null &&
+                    challengePassedInfo.lastDayEliteScore != null &&
+                    challengePassedInfo.lastDayEliteScore > 0 && (
+                      <p className="mt-1.5 text-sm font-semibold text-emerald-800/95">
+                        Including {formatElitePoints(challengePassedInfo.lastDayEliteScore)} EliteScore from your last
+                        accepted proof
+                      </p>
+                    )}
+                  {challengePassedInfo.completionBonus == null &&
+                  (challengePassedInfo.lastDayEliteScore == null ||
+                    challengePassedInfo.lastDayEliteScore <= 0) ? (
+                    <p className="mt-2 text-xs text-emerald-800/90">
+                      Your completion reward will show in your EliteScore history.
+                    </p>
+                  ) : null}
+                </div>
               </div>
             )}
             {dayAdvanceBanner && (
@@ -1878,10 +2063,28 @@ function ChallengeDetailPage() {
                 {dayAdvanceBanner}
               </div>
             )}
+            {enrollment && enrollment.status === "active" && (
+              <div
+                className="mb-2 rounded-xl border border-amber-200/80 bg-amber-50/90 px-4 py-3 text-xs leading-relaxed text-amber-950"
+                role="note"
+              >
+                <strong className="font-semibold">Missed day:</strong> If you don&apos;t submit anything for 24 hours,
+                that day counts as a missed day on this active challenge.
+              </div>
+            )}
             {enrollment && enrollment.missedDaysCount > 0 && enrollment.status === "active" && (
-              <div className="mb-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800">
-                You have {enrollment.missedDaysCount}/3 missed day
-                {enrollment.missedDaysCount === 1 ? "" : "s"} on this challenge.
+              <div
+                className="mb-2 flex gap-3 rounded-2xl border border-amber-300/80 bg-amber-50/95 px-4 py-3 text-sm text-amber-950 shadow-sm"
+                role="status"
+                aria-live="polite"
+              >
+                <AlertTriangle className="h-5 w-5 shrink-0 text-amber-600" aria-hidden />
+                <p className="min-w-0 leading-snug">
+                  <span className="font-semibold">
+                    Missed {enrollment.missedDaysCount}/{maxMissedDays} days
+                  </span>{" "}
+                  of the <span className="font-semibold">{challenge.name}</span> challenge.
+                </p>
               </div>
             )}
             {isViewingPastDay && (
@@ -2183,11 +2386,15 @@ function ChallengeDetailPage() {
                 id="proof-modal-title"
                 className="mt-0.5 shrink-0 text-base font-bold text-slate-800 sm:text-lg"
               >
-                {proofVerdict === "accepted"
-                  ? "Proof accepted"
-                  : proofVerdict === "rejected"
-                  ? "AI feedback — please resubmit"
-                  : "Upload your completion proof"}
+                {postResubmitMissed?.challengeFailed
+                  ? "Challenge failed"
+                  : postResubmitMissed
+                    ? "Day failed"
+                    : proofVerdict === "accepted"
+                      ? "Proof accepted"
+                      : proofVerdict === "rejected"
+                        ? "AI feedback — please resubmit"
+                        : "Upload your completion proof"}
               </h3>
 
               {enrollmentLoading && (
@@ -2205,7 +2412,74 @@ function ChallengeDetailPage() {
                   role="region"
                   aria-label="Proof form"
                 >
-                {proofVerdict !== "accepted" && (
+                {postResubmitMissed && (
+                  <div
+                    className="shrink-0 rounded-2xl border border-red-200/90 bg-red-50 px-3 py-3 text-sm sm:px-4"
+                    role="status"
+                    aria-live="assertive"
+                  >
+                    {postResubmitMissed.challengeFailed ? (
+                      <>
+                        <p className="font-bold leading-snug text-red-950">Challenge failed</p>
+                        <p className="mt-1.5 font-semibold leading-snug text-red-900">
+                          You missed {postResubmitMissed.missedCount}/{postResubmitMissed.maxMissed} days — max
+                          missed days reached.
+                        </p>
+                        {postResubmitMissed.failPenalty != null ? (
+                          <p className="mt-2 text-base font-bold text-red-800">
+                            {formatElitePoints(
+                              postResubmitMissed.failPenalty > 0
+                                ? -postResubmitMissed.failPenalty
+                                : postResubmitMissed.failPenalty
+                            )}{" "}
+                            EliteScore
+                          </p>
+                        ) : (
+                          <p className="mt-2 text-xs text-red-800/90">
+                            A fail penalty may apply to your EliteScore.
+                          </p>
+                        )}
+                        {postResubmitMissed.penalty != null && postResubmitMissed.failPenalty == null && (
+                          <p className="mt-2 text-sm font-bold text-red-800">
+                            {formatElitePoints(
+                              postResubmitMissed.penalty > 0
+                                ? -postResubmitMissed.penalty
+                                : postResubmitMissed.penalty
+                            )}{" "}
+                            EliteScore (missed day)
+                          </p>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        <p className="font-semibold leading-snug text-red-900">
+                          Day failed: missed {postResubmitMissed.missedCount}/
+                          {postResubmitMissed.maxMissed} days
+                          {postResubmitMissed.dayNumber > 0
+                            ? ` (day ${postResubmitMissed.dayNumber})`
+                            : ""}
+                          .
+                        </p>
+                        {postResubmitMissed.penalty != null && (
+                          <p className="mt-1.5 text-sm font-bold text-red-800">
+                            {formatElitePoints(
+                              postResubmitMissed.penalty > 0
+                                ? -postResubmitMissed.penalty
+                                : postResubmitMissed.penalty
+                            )}{" "}
+                            EliteScore
+                          </p>
+                        )}
+                        {postResubmitMissed.penalty == null && (
+                          <p className="mt-1 text-xs text-red-800/80">
+                            A missed-day penalty may apply to your EliteScore.
+                          </p>
+                        )}
+                      </>
+                    )}
+                  </div>
+                )}
+                {proofVerdict !== "accepted" && !postResubmitMissed && (
                   <>
                     <div className="shrink-0">
                       <p className="mb-1.5 text-xs font-semibold text-slate-700 sm:mb-2">Proof type</p>
@@ -2332,13 +2606,19 @@ function ChallengeDetailPage() {
                     <p className="mt-1 whitespace-pre-wrap break-words max-md:line-clamp-6">{proofFeedback}</p>
                   </div>
                 )}
-                {proofVerdict === "rejected" && proofFeedback && (
+                {proofVerdict === "rejected" && proofFeedback && !postResubmitMissed && (
                   <div className="min-h-0 shrink-0 overflow-hidden rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs leading-relaxed text-red-800 sm:py-2.5">
                     <p className="font-semibold">AI feedback</p>
                     <p className="mt-1 whitespace-pre-wrap break-words max-md:line-clamp-5">{proofFeedback}</p>
                     <p className="mt-2 text-[11px] text-red-700/80 max-md:line-clamp-2">
                       You can edit your inputs above and click Resubmit. You have a 24-hour window.
                     </p>
+                  </div>
+                )}
+                {postResubmitMissed && proofFeedback && (
+                  <div className="min-h-0 shrink-0 overflow-hidden rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs leading-relaxed text-slate-800 sm:py-2.5">
+                    <p className="font-semibold">AI feedback</p>
+                    <p className="mt-1 whitespace-pre-wrap break-words max-md:line-clamp-5">{proofFeedback}</p>
                   </div>
                 )}
                 {missedDayNotice && (
@@ -2379,53 +2659,76 @@ function ChallengeDetailPage() {
                     </p>
                   )}
                   <div className="flex gap-2 sm:gap-3">
-                    <button
-                      type="button"
-                      onClick={closeProofModal}
-                      className="flex-1 rounded-xl border border-slate-200 bg-white py-2 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-50 sm:py-3"
-                      disabled={proofSubmitting}
-                    >
-                      {proofVerdict === "accepted" ? "Close" : "Cancel"}
-                    </button>
-                    {proofVerdict === "accepted" ? (
-                      <button
-                        type="button"
-                        onClick={closeProofModal}
-                        className="flex flex-1 items-center justify-center gap-2 rounded-xl py-2 text-sm font-bold text-white transition-transform hover:scale-[1.02] sm:py-3"
-                        style={{ background: APP_GRADIENT }}
-                      >
-                        <Check className="h-4 w-4" aria-hidden /> Continue
-                      </button>
-                    ) : proofAttempt === 2 && lastSubmissionId ? (
-                      <button
-                        type="button"
-                        onClick={resubmitProof}
-                        disabled={proofSubmitting || !enrollment || isCurrentDayLocked}
-                        className="flex flex-1 items-center justify-center gap-2 rounded-xl py-2 text-sm font-bold text-white transition-transform hover:scale-[1.02] disabled:opacity-60 sm:py-3"
-                        style={{ background: APP_GRADIENT }}
-                      >
-                        <Upload className="h-4 w-4" aria-hidden />
-                        {proofUploading
-                          ? "Uploading..."
-                          : proofSubmitting
-                          ? "Resubmitting..."
-                          : "Resubmit"}
-                      </button>
+                    {postResubmitMissed ? (
+                      <>
+                        <button
+                          type="button"
+                          onClick={closeProofModal}
+                          className="flex-1 rounded-xl border border-slate-200 bg-white py-2 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-50 sm:py-3"
+                        >
+                          Close
+                        </button>
+                        <button
+                          type="button"
+                          onClick={closeProofModal}
+                          className="flex flex-1 items-center justify-center gap-2 rounded-xl py-2 text-sm font-bold text-white transition-transform hover:scale-[1.02] sm:py-3"
+                          style={{ background: APP_GRADIENT }}
+                        >
+                          <Check className="h-4 w-4" aria-hidden />
+                          {postResubmitMissed.challengeFailed ? "Done" : "Continue"}
+                        </button>
+                      </>
                     ) : (
-                      <button
-                        type="button"
-                        onClick={submitProof}
-                        disabled={proofSubmitting || !enrollment || isCurrentDayLocked}
-                        className="flex flex-1 items-center justify-center gap-2 rounded-xl py-2 text-sm font-bold text-white transition-transform hover:scale-[1.02] disabled:opacity-60 sm:py-3"
-                        style={{ background: APP_GRADIENT }}
-                      >
-                        <Upload className="h-4 w-4" aria-hidden />
-                        {proofUploading
-                          ? "Uploading..."
-                          : proofSubmitting
-                          ? "Submitting..."
-                          : "Submit"}
-                      </button>
+                      <>
+                        <button
+                          type="button"
+                          onClick={closeProofModal}
+                          className="flex-1 rounded-xl border border-slate-200 bg-white py-2 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-50 sm:py-3"
+                          disabled={proofSubmitting}
+                        >
+                          {proofVerdict === "accepted" ? "Close" : "Cancel"}
+                        </button>
+                        {proofVerdict === "accepted" ? (
+                          <button
+                            type="button"
+                            onClick={closeProofModal}
+                            className="flex flex-1 items-center justify-center gap-2 rounded-xl py-2 text-sm font-bold text-white transition-transform hover:scale-[1.02] sm:py-3"
+                            style={{ background: APP_GRADIENT }}
+                          >
+                            <Check className="h-4 w-4" aria-hidden /> Continue
+                          </button>
+                        ) : proofAttempt === 2 && lastSubmissionId ? (
+                          <button
+                            type="button"
+                            onClick={resubmitProof}
+                            disabled={proofSubmitting || !enrollment || isCurrentDayLocked}
+                            className="flex flex-1 items-center justify-center gap-2 rounded-xl py-2 text-sm font-bold text-white transition-transform hover:scale-[1.02] disabled:opacity-60 sm:py-3"
+                            style={{ background: APP_GRADIENT }}
+                          >
+                            <Upload className="h-4 w-4" aria-hidden />
+                            {proofUploading
+                              ? "Uploading..."
+                              : proofSubmitting
+                                ? "Resubmitting..."
+                                : "Resubmit"}
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={submitProof}
+                            disabled={proofSubmitting || !enrollment || isCurrentDayLocked}
+                            className="flex flex-1 items-center justify-center gap-2 rounded-xl py-2 text-sm font-bold text-white transition-transform hover:scale-[1.02] disabled:opacity-60 sm:py-3"
+                            style={{ background: APP_GRADIENT }}
+                          >
+                            <Upload className="h-4 w-4" aria-hidden />
+                            {proofUploading
+                              ? "Uploading..."
+                              : proofSubmitting
+                                ? "Submitting..."
+                                : "Submit"}
+                          </button>
+                        )}
+                      </>
                     )}
                   </div>
                 </div>

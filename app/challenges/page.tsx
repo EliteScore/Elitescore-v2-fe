@@ -12,6 +12,15 @@ import { resolveChallengeThumbnail } from "@/lib/challengeThumbnails"
 import { detectChallengeProvider, providerLogoUrl } from "@/lib/challengeProvider"
 import { difficultyToLabel, isFeaturedChallenge } from "@/lib/challengeDifficulty"
 import { ELITESCORE_SUPPORT_EMAIL, ELITESCORE_SUPPORT_MAILTO } from "@/lib/supportContact"
+import type { ChallengeScoring } from "@/lib/challengeScoring"
+import {
+  effectiveMaxMissedDays,
+  formatElitePoints,
+  hasChallengeScoringFields,
+  parseChallengeScoringFromRow,
+  readDurationDaysFromRow,
+} from "@/lib/challengeScoring"
+import { ChallengeScoringDisplay } from "@/components/challenge-scoring-display"
 
 const ONBOARDING_PENDING_KEY = "elitescore_onboarding_pending"
 const ONBOARDING_DONE_KEY = "elitescore_onboarding_done"
@@ -43,6 +52,15 @@ type ActiveChallenge = {
   deadlineUrgent: boolean
 }
 
+type FailedChallengeRow = {
+  id: string
+  templateId: string
+  name: string
+  missedCount: number
+  maxMissed: number
+  failPenalty: number | null
+}
+
 /** From GET /api/challenges/my */
 type UserEnrollment = {
   id: string
@@ -72,6 +90,8 @@ type LibraryChallenge = {
   providerLogoUrl?: string
   /** Shown as a “Featured” badge; from API or name heuristics (see isFeaturedChallenge). */
   featured?: boolean
+  /** Per-template EliteScore rules from API. */
+  scoring?: ChallengeScoring
 }
 
 type HistoryChallenge = {
@@ -252,6 +272,7 @@ export default function ChallengesPage() {
   const [quitError, setQuitError] = useState<string | null>(null)
 
   const [activeChallenges, setActiveChallenges] = useState<ActiveChallenge[]>([])
+  const [failedChallenges, setFailedChallenges] = useState<FailedChallengeRow[]>([])
   const [activeLoading, setActiveLoading] = useState(true)
   const [history, setHistory] = useState<HistoryChallenge[]>(INITIAL_HISTORY)
 
@@ -290,6 +311,7 @@ export default function ChallengesPage() {
     if (!token) {
       setLibraryLoading(false)
       setActiveLoading(false)
+      setFailedChallenges([])
       router.replace("/login")
       return
     }
@@ -375,13 +397,15 @@ export default function ChallengesPage() {
 
         if (templates) {
           const mapped: LibraryChallenge[] = templates.map((t, index) => {
-            const duration = typeof t.durationDays === "number" ? t.durationDays : 0
+            const row = t as unknown as Record<string, unknown>
+            const scoring = parseChallengeScoringFromRow(row)
+            const duration = readDurationDaysFromRow(row) ?? 0
             const reward =
-              typeof t.completionBonus === "number"
-                ? t.completionBonus
-                : typeof t.dailyRewardEliteScore === "number" && duration > 0
-                ? t.dailyRewardEliteScore * duration
-                : 0
+              typeof scoring.completionBonus === "number" && Number.isFinite(scoring.completionBonus)
+                ? scoring.completionBonus
+                : typeof scoring.dailyRewardEliteScore === "number" && duration > 0
+                  ? scoring.dailyRewardEliteScore * duration
+                  : 0
             const completionRate =
               typeof t.completionRateCached === "number" ? Math.round(t.completionRateCached) : 0
 
@@ -409,6 +433,7 @@ export default function ChallengesPage() {
               gradientClass,
               templateId: t.id,
               featured: t.featured,
+              scoring,
             })
           })
           if (mapped.length > 0) setLibraryChallenges(mapped)
@@ -419,17 +444,23 @@ export default function ChallengesPage() {
             .filter((e) => String(e.status).toLowerCase() === "active")
             .map((enrollment) => {
               const tpl = templates.find((t) => t.id === enrollment.challengeTemplateId)
+              const scoringActive = tpl
+                ? parseChallengeScoringFromRow(tpl as unknown as Record<string, unknown>)
+                : {}
               const duration =
-                typeof tpl?.durationDays === "number" ? tpl.durationDays : 0
+                tpl != null ? (readDurationDaysFromRow(tpl as unknown as Record<string, unknown>) ?? 0) : 0
               const currentDay = typeof enrollment.currentDay === "number" ? enrollment.currentDay : 1
               const totalDays = duration || 1
               const daysRemaining = Math.max(0, totalDays - currentDay)
               const progress = totalDays > 0 ? Math.round((currentDay / totalDays) * 100) : 0
               const reward =
-                typeof tpl?.completionBonus === "number"
-                  ? tpl.completionBonus
-                  : typeof tpl?.dailyRewardEliteScore === "number" && duration > 0
-                  ? tpl.dailyRewardEliteScore * duration
+                tpl != null
+                  ? typeof scoringActive.completionBonus === "number" &&
+                      Number.isFinite(scoringActive.completionBonus)
+                    ? scoringActive.completionBonus
+                    : typeof scoringActive.dailyRewardEliteScore === "number" && duration > 0
+                      ? scoringActive.dailyRewardEliteScore * duration
+                      : 0
                   : 0
               const track = tpl?.track ?? "General"
               const accents = TRACK_ACCENTS[track?.toLowerCase() ?? ""] ?? TRACK_ACCENTS.default
@@ -463,6 +494,27 @@ export default function ChallengesPage() {
               }
             })
           setActiveChallenges(active)
+
+          const failedRows: FailedChallengeRow[] = enrollments
+            .filter((e) => String(e.status).toLowerCase() === "failed")
+            .map((enrollment) => {
+              const tpl = templates.find((t) => t.id === enrollment.challengeTemplateId)
+              const sc = tpl
+                ? parseChallengeScoringFromRow(tpl as unknown as Record<string, unknown>)
+                : ({} as ChallengeScoring)
+              const fp = sc.failPenalty
+              return {
+                id: enrollment.id,
+                templateId: enrollment.challengeTemplateId,
+                name: tpl?.name ?? "Challenge",
+                missedCount: Math.max(0, enrollment.missedDaysCount ?? 0),
+                maxMissed: effectiveMaxMissedDays(sc),
+                failPenalty: typeof fp === "number" && Number.isFinite(fp) ? fp : null,
+              }
+            })
+          setFailedChallenges(failedRows)
+        } else {
+          setFailedChallenges([])
         }
 
         if (historyPayload && Array.isArray(historyPayload.history)) {
@@ -849,6 +901,46 @@ export default function ChallengesPage() {
             </div>
           )}
 
+          {!activeLoading && failedChallenges.length > 0 ? (
+            <div
+              className="space-y-3"
+              role="region"
+              aria-label="Failed challenges"
+            >
+              {failedChallenges.map((c) => (
+                <div
+                  key={c.id}
+                  className="flex gap-3 rounded-2xl border border-red-300/80 bg-red-50/95 px-4 py-3 shadow-sm"
+                >
+                  <XCircle className="h-5 w-5 shrink-0 text-red-600" aria-hidden />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-bold text-red-950">Challenge failed</p>
+                    <p className="mt-0.5 text-sm leading-snug text-red-900">
+                      You missed {c.missedCount}/{c.maxMissed} days on the{" "}
+                      <span className="font-semibold">{c.name}</span> challenge.
+                    </p>
+                    {c.failPenalty != null ? (
+                      <p className="mt-1.5 text-sm font-bold text-red-800">
+                        {formatElitePoints(c.failPenalty > 0 ? -c.failPenalty : c.failPenalty)} EliteScore
+                        <span className="ml-1 text-xs font-normal text-red-800/85">(fail penalty)</span>
+                      </p>
+                    ) : (
+                      <p className="mt-1 text-xs text-red-800/90">
+                        A fail penalty may apply to your EliteScore.
+                      </p>
+                    )}
+                    <Link
+                      href={`/challenges/${c.templateId}`}
+                      className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-pink-600 hover:underline"
+                    >
+                      View challenge <ArrowUpRight className="h-3.5 w-3.5" aria-hidden />
+                    </Link>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : null}
+
           {/* Today's tasks */}
           <section className={`${CARD_BASE} p-6`} aria-labelledby="tasks-heading">
             <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-500">Today · Daily tasks</p>
@@ -859,6 +951,16 @@ export default function ChallengesPage() {
                 ? `${activeChallenges.length} task${activeChallenges.length > 1 ? "s" : ""} due today`
                 : "No tasks today"}
             </h2>
+
+            {!activeLoading && activeChallenges.length > 0 ? (
+              <p
+                className="mt-3 rounded-xl border border-amber-200/80 bg-amber-50/90 px-3 py-2 text-xs leading-relaxed text-amber-950"
+                role="note"
+              >
+                <strong className="font-semibold">Missed day:</strong> If you don&apos;t submit anything for 24 hours,
+                that day counts as a missed day on your active challenge.
+              </p>
+            ) : null}
 
             {!activeLoading && activeChallenges.length > 0 ? (
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -1167,6 +1269,7 @@ export default function ChallengesPage() {
                       <p className="text-sm font-bold text-slate-800">{challenge.completionRate}%</p>
                     </div>
                   </div>
+                  <ChallengeScoringDisplay scoring={challenge.scoring} variant="inline" className="mt-2" />
 
                   <div className="mt-3 flex items-center gap-2">
                     <button
@@ -1431,6 +1534,15 @@ export default function ChallengesPage() {
                       ))}
                     </div>
                   </div>
+
+                  {hasChallengeScoringFields(selectedLibrary?.scoring) ? (
+                    <section className="space-y-2">
+                      <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 sm:text-sm sm:normal-case sm:tracking-normal">
+                        EliteScore rules
+                      </h3>
+                      <ChallengeScoringDisplay scoring={selectedLibrary?.scoring} variant="grid" />
+                    </section>
+                  ) : null}
                 </div>
               </div>
             </div>
