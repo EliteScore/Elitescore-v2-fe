@@ -37,8 +37,8 @@ const CREDIBILITY = [
 const STEPS = [
   {
     num: "1",
-    title: "Pick a challenge",
-    desc: "CS50, Google certs, MIT courses. Now with stakes.",
+    title: "Pick a course",
+    desc: "Harvard CS50, MIT, Google — pick one you've been putting off.",
     icon: (
       <svg className="h-8 w-8 text-pink-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} aria-hidden>
         <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
@@ -47,8 +47,8 @@ const STEPS = [
   },
   {
     num: "2",
-    title: "Submit proof",
-    desc: "Screenshots, links. We verify. No proof, no points.",
+    title: "Submit proof, weekly",
+    desc: "Screenshots, code, links. We verify. No proof, no progress.",
     icon: (
       <svg className="h-8 w-8 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} aria-hidden>
         <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
@@ -71,7 +71,7 @@ type LandingChallenge = {
   title: string
   tag: string
   level: string
-  url: string
+  slug: string
   videoId: string | null
   gradient: string
   description: string
@@ -82,7 +82,7 @@ const CHALLENGES: LandingChallenge[] = [
     title: "Harvard CS50 — Intro to CS",
     tag: "Harvard",
     level: "Beginner",
-    url: "https://www.youtube.com/playlist?list=PLWKjhJtqVAbmGw5fN5BQlwuug-8bDmabi",
+    slug: "cs50",
     videoId: null,
     gradient: "from-pink-500/90 to-orange-500/90",
     description: "Harvard University CS50 introduction to computer science, algorithms, and programming fundamentals.",
@@ -91,7 +91,7 @@ const CHALLENGES: LandingChallenge[] = [
     title: "Google Data Analytics",
     tag: "Google",
     level: "Beginner",
-    url: "https://youtube.com/playlist?list=PLBgogxgQVM9tcNYUyRL2jvFNm7jsYlyPv",
+    slug: "google-data-analytics",
     videoId: null,
     gradient: "from-blue-500/90 to-indigo-500/90",
     description: "Google Career Certificate in data analytics, spreadsheets, SQL, and visualization.",
@@ -100,7 +100,7 @@ const CHALLENGES: LandingChallenge[] = [
     title: "Harvard CS50 AI with Python",
     tag: "Harvard",
     level: "Advanced",
-    url: "https://youtu.be/5NgNicANyqM",
+    slug: "cs50-ai-python",
     videoId: "5NgNicANyqM",
     gradient: "from-violet-500/90 to-purple-500/90",
     description: "Harvard CS50 artificial intelligence with Python, machine learning, and neural networks.",
@@ -109,7 +109,7 @@ const CHALLENGES: LandingChallenge[] = [
     title: "MIT 6.S191 — Introduction to Deep Learning",
     tag: "MIT",
     level: "Advanced",
-    url: "https://www.youtube.com/playlist?list=PLtBw6njQRU-rwp5__7C0oIVt26ZgjG9NI",
+    slug: "mit-6s191",
     videoId: null,
     gradient: "from-pink-500/90 to-rose-500/90",
     description: "MIT introduction to deep learning, neural networks, and TensorFlow.",
@@ -118,7 +118,7 @@ const CHALLENGES: LandingChallenge[] = [
     title: "MIT — The Missing Semester",
     tag: "MIT",
     level: "Intermediate",
-    url: "https://missing.csail.mit.edu/",
+    slug: "missing-semester",
     videoId: null,
     gradient: "from-slate-600/90 to-slate-800/90",
     description: "MIT Missing Semester — shell, editors, Git, debugging, and command-line tools for CS students.",
@@ -127,7 +127,7 @@ const CHALLENGES: LandingChallenge[] = [
     title: "Google IT Automation",
     tag: "Google",
     level: "Intermediate",
-    url: "https://www.youtube.com/playlist?list=PLTZYG7bZ1u6qck0rYNHO2Yfjzq5ZRRTCe",
+    slug: "google-it-automation",
     videoId: null,
     gradient: "from-amber-500/90 to-orange-500/90",
     description: "Google IT Automation with Python Professional Certificate — Git, Python, and automation.",
@@ -136,7 +136,7 @@ const CHALLENGES: LandingChallenge[] = [
     title: "Harvard CS50 Cybersecurity",
     tag: "Harvard",
     level: "Intermediate",
-    url: "https://youtu.be/9HOpanT0GRs",
+    slug: "cs50-cybersecurity",
     videoId: "9HOpanT0GRs",
     gradient: "from-emerald-500/90 to-teal-500/90",
     description: "Harvard CS50 cybersecurity track — threats, cryptography, and secure systems.",
@@ -202,7 +202,7 @@ export default function LandingPage() {
               Challenges
             </a>
             <Link
-              href="/login"
+              href="/signup"
               className="landing-nav-cta inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition-transform"
               style={{ background: APP_GRADIENT }}
             >
@@ -226,23 +226,32 @@ export default function LandingPage() {
               className={`mb-4 max-w-2xl text-3xl font-extrabold leading-tight text-white transition-all duration-500 ease-out sm:text-4xl md:text-5xl ${heroReady ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}
               style={{ transitionDelay: "100ms" }}
             >
-              Online courses.
+              You signed up for CS50.
               <br />
-              Now a game.
+              You quit in week 2.
             </h1>
             <p
               className={`mb-8 max-w-lg text-base text-white/90 transition-all duration-500 ease-out sm:text-lg ${heroReady ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}
               style={{ transitionDelay: "200ms" }}
             >
-              Learn from Harvard, Google & MIT. Submit proof. Climb the leaderboard. Finish What You Start.
+              Not this time. Pick a free course from Harvard, MIT or Google. Submit proof every week. Climb a public leaderboard. Finish what you start — with everyone watching.
             </p>
             <Link
-              href="/login"
+              href="/signup"
               className={`landing-cta-btn inline-flex items-center justify-center rounded-xl bg-white px-6 py-3.5 text-base font-bold text-slate-800 shadow-lg transition-[opacity,transform] duration-500 ease-out ${heroReady ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}
               style={{ transitionDelay: "350ms" }}
             >
               Get Started For Free
             </Link>
+            <p
+              className={`mt-3 text-sm text-white/90 transition-all duration-500 ease-out ${heroReady ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}
+              style={{ transitionDelay: "400ms" }}
+            >
+              Already have an account?{" "}
+              <Link href="/login" className="font-medium underline decoration-white/50 underline-offset-2 hover:decoration-white">
+                Log in
+              </Link>
+            </p>
             <div
               className={`mt-10 flex flex-wrap items-center justify-center gap-4 transition-all duration-500 ease-out sm:gap-6 ${heroReady ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}
               style={{ transitionDelay: "450ms" }}
@@ -261,6 +270,12 @@ export default function LandingPage() {
                 )
               })}
             </div>
+            <p
+              className={`mt-4 max-w-xl px-2 text-center text-[10px] leading-snug text-white/80 transition-all duration-500 ease-out ${heroReady ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}
+              style={{ transitionDelay: "500ms" }}
+            >
+              EliteScore is not affiliated with the original publishers of the provided courses.
+            </p>
           </div>
         </section>
 
@@ -312,21 +327,19 @@ export default function LandingPage() {
 
         {/* Challenges – scroll-in + staggered cards, hover lift + pink shadow + play scale */}
         <section id="challenges" ref={challengesRef[0]} className={`pt-20 landing-scroll-in ${challengesRef[1] ? "landing-scroll-in-visible" : ""}`}>
-          <h2 className="mb-2 text-center text-2xl font-bold text-slate-800 sm:text-3xl">Challenges with stakes</h2>
-          <p className="mb-10 text-center text-slate-600">Harvard CS50, Google certs, MIT— compete on the popular courses. Proof required.</p>
+          <h2 className="mb-2 text-center text-2xl font-bold text-slate-800 sm:text-3xl">Real courses. Real stakes.</h2>
+          <p className="mb-10 text-center text-slate-600">Pick one. Climb the board, or fall off it. Either way, everyone sees.</p>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {CHALLENGES.map((c, i) => {
               const coverSrc = challengeCoverSrc(c)
               const brandLogo = providerLogoUrl(c.tag)
               return (
-                <a
+                <Link
                   key={i}
-                  href={c.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                  href={`/signup?challenge=${encodeURIComponent(c.slug)}`}
                   className={`landing-challenge-card group overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm landing-fade-up ${challengesRef[1] ? "landing-fade-up-visible" : ""}`}
                   style={{ transitionDelay: `${i * 60}ms` }}
-                  aria-label={`Open ${c.title}`}
+                  aria-label={`Get started with ${c.title}`}
                 >
                   <div className={`relative aspect-video bg-gradient-to-br ${c.gradient}`}>
                     <img
@@ -356,7 +369,7 @@ export default function LandingPage() {
                     <h3 className="font-semibold text-slate-800 group-hover:text-pink-600">{c.title}</h3>
                     <span className="text-xs text-slate-500">{c.level}</span>
                   </div>
-                </a>
+                </Link>
               )
             })}
           </div>
@@ -375,16 +388,13 @@ export default function LandingPage() {
             <a href="#challenges" onClick={(e) => handleNavClick(e, "challenges")} className="text-slate-500 hover:text-slate-800">
               Challenges
             </a>
-            <Link href="/login" className="text-slate-500 hover:text-slate-800">
+            <Link href="/signup" className="text-slate-500 hover:text-slate-800">
               Get Started For Free
             </Link>
             <Link href="/privacy" className="text-slate-500 hover:text-slate-800">
               Privacy Policy
             </Link>
           </div>
-          <p className="mt-5 max-w-xl mx-auto px-2 text-[10px] leading-snug text-slate-400">
-            EliteScore is not affiliated with the original publishers of the provided courses.
-          </p>
           <p className="mt-4 text-[10px] text-slate-400">© 2026 EliteScore</p>
         </footer>
       </main>

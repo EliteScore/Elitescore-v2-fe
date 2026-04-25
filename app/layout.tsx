@@ -3,6 +3,7 @@ import type { Metadata } from "next"
 import { Geist, Geist_Mono } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import { AppChrome } from "@/components/app-chrome"
+import { MicrosoftClarity } from "@/components/microsoft-clarity"
 import "./globals.css"
 
 const _geist = Geist({ subsets: ["latin"] })
@@ -44,6 +45,7 @@ export default function RootLayout({
         <AppChrome>
           <main>{children}</main>
         </AppChrome>
+        <MicrosoftClarity />
         <Analytics />
       </body>
     </html>
