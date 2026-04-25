@@ -378,6 +378,9 @@ export default function LandingPage() {
             <Link href="/login" className="text-slate-500 hover:text-slate-800">
               Get Started For Free
             </Link>
+            <Link href="/privacy" className="text-slate-500 hover:text-slate-800">
+              Privacy Policy
+            </Link>
           </div>
           <p className="mt-5 max-w-xl mx-auto px-2 text-[10px] leading-snug text-slate-400">
             EliteScore is not affiliated with the original publishers of the provided courses.
