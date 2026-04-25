@@ -35,6 +35,8 @@ const APP_GRADIENT = "linear-gradient(135deg, #db2777 0%, #ea580c 35%, #2563eb 7
 const CARD_BASE = "rounded-2xl border border-slate-200/80 bg-white shadow-sm"
 const ONBOARDING_PENDING_KEY = "elitescore_onboarding_pending"
 const ONBOARDING_DONE_KEY = "elitescore_onboarding_done"
+/** Failed-challenge alert strips hide after this long on a page visit. */
+const FAILED_CHALLENGE_BANNERS_DISMISS_MS = 60_000
 
 type DashboardStreaks = { streakCurrent?: number; streakLongest?: number; lastActiveAt?: string | null }
 type LeaderboardSummary = { currentRank?: number; eliteScore?: number; percentile?: number }
@@ -337,6 +339,7 @@ export default function HomePage() {
   const [activeCategory, setActiveCategory] = useState("Top")
   const [showOnboarding, setShowOnboarding] = useState(false)
   const [onboardingStepIndex, setOnboardingStepIndex] = useState(0)
+  const [showFailedChallengeBanners, setShowFailedChallengeBanners] = useState(true)
 
   const onboardingSteps: OnboardingStep[] = [
     {
@@ -406,6 +409,12 @@ export default function HomePage() {
       // ignore
     }
   }, [authChecked, showOnboarding, myChallengesLoading, myChallenges])
+
+  useEffect(() => {
+    if (!authChecked) return
+    const id = window.setTimeout(() => setShowFailedChallengeBanners(false), FAILED_CHALLENGE_BANNERS_DISMISS_MS)
+    return () => window.clearTimeout(id)
+  }, [authChecked])
 
   useEffect(() => {
     if (!authChecked) return
@@ -901,7 +910,7 @@ export default function HomePage() {
 
         {/* Left column */}
         <div className="space-y-6 lg:col-span-8">
-          {!myChallengesLoading && failedChallenges.length > 0 ? (
+          {!myChallengesLoading && failedChallenges.length > 0 && showFailedChallengeBanners ? (
             <div
               className="space-y-3"
               role="region"

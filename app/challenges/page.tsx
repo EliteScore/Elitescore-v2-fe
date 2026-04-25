@@ -140,6 +140,7 @@ type HistoryApiResponse = {
 const APP_GRADIENT = "linear-gradient(135deg, #db2777 0%, #ea580c 35%, #2563eb 70%, #7c3aed 100%)"
 const CARD_BASE = "rounded-2xl border border-slate-200/80 bg-white shadow-sm"
 const MAX_ACTIVE = 2
+const FAILED_CHALLENGE_BANNERS_DISMISS_MS = 60_000
 
 const TRACK_ACCENTS: Record<string, { from: string; to: string }> = {
   git: { from: "#db2777", to: "#ea580c" },
@@ -273,6 +274,7 @@ export default function ChallengesPage() {
 
   const [activeChallenges, setActiveChallenges] = useState<ActiveChallenge[]>([])
   const [failedChallenges, setFailedChallenges] = useState<FailedChallengeRow[]>([])
+  const [showFailedChallengeBanners, setShowFailedChallengeBanners] = useState(true)
   const [activeLoading, setActiveLoading] = useState(true)
   const [history, setHistory] = useState<HistoryChallenge[]>(INITIAL_HISTORY)
 
@@ -291,6 +293,11 @@ export default function ChallengesPage() {
   const [showOnboardWelcome, setShowOnboardWelcome] = useState(false)
   const onboardUrlHandled = useRef(false)
   const autoOpenChallengeDone = useRef(false)
+
+  useEffect(() => {
+    const id = window.setTimeout(() => setShowFailedChallengeBanners(false), FAILED_CHALLENGE_BANNERS_DISMISS_MS)
+    return () => window.clearTimeout(id)
+  }, [])
 
   type ChallengeTemplateApi = {
     id?: string
@@ -901,7 +908,7 @@ export default function ChallengesPage() {
             </div>
           )}
 
-          {!activeLoading && failedChallenges.length > 0 ? (
+          {!activeLoading && failedChallenges.length > 0 && showFailedChallengeBanners ? (
             <div
               className="space-y-3"
               role="region"
