@@ -279,6 +279,23 @@ function shortTemplateId(value: string): string {
   return `${value.slice(0, 4)}...${value.slice(-4)}`
 }
 
+function hasChallengeTemplateId(row: UserChallenge): boolean {
+  if (row.challengeTemplateId == null) return false
+  if (typeof row.challengeTemplateId === "string" && !row.challengeTemplateId.trim()) return false
+  return true
+}
+
+/** Real enrollment: linked to a template and actively in progress (or started with a known start date if API omits status). */
+function isUserEnrolledInChallenge(row: UserChallenge): boolean {
+  if (!hasChallengeTemplateId(row)) return false
+  const s = (row.status ?? "").trim().toLowerCase()
+  if (!s) {
+    return Boolean(row.startDate)
+  }
+  const one = s.replace(/_/g, " ")
+  return one === "active" || one === "in progress" || s === "in_progress"
+}
+
 function mapToActiveChallengeUi(
   challenge: UserChallenge,
   templatesById: Record<string, ChallengeTemplateApi>,
@@ -653,10 +670,15 @@ export default function HomePage() {
     })
     .map((challenge) => mapToActiveChallengeUi(challenge, challengeTemplatesById))
 
-  const challengesWithMissedDays = useMemo(
-    () => activeChallenges.filter((c) => c.missedDaysCount > 0),
-    [activeChallenges],
-  )
+  const challengesWithMissedDays = useMemo(() => {
+    return activeChallenges.filter((c) => {
+      if (c.missedDaysCount <= 0) return false
+      if (!c.templateId) return false
+      const row = myChallenges.find((r) => String(r.id) === c.id)
+      if (!row) return false
+      return isUserEnrolledInChallenge(row)
+    })
+  }, [activeChallenges, myChallenges])
 
   const failedChallenges = useMemo(
     () =>
