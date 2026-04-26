@@ -14,8 +14,6 @@ import { difficultyToLabel, isFeaturedChallenge } from "@/lib/challengeDifficult
 import { ELITESCORE_SUPPORT_EMAIL, ELITESCORE_SUPPORT_MAILTO } from "@/lib/supportContact"
 import type { ChallengeScoring } from "@/lib/challengeScoring"
 import {
-  effectiveMaxMissedDays,
-  formatElitePoints,
   hasChallengeScoringFields,
   parseChallengeScoringFromRow,
   readDurationDaysFromRow,
@@ -50,15 +48,6 @@ type ActiveChallenge = {
   accentTo: string
   deadline: string
   deadlineUrgent: boolean
-}
-
-type FailedChallengeRow = {
-  id: string
-  templateId: string
-  name: string
-  missedCount: number
-  maxMissed: number
-  failPenalty: number | null
 }
 
 /** From GET /api/challenges/my */
@@ -140,7 +129,6 @@ type HistoryApiResponse = {
 const APP_GRADIENT = "linear-gradient(135deg, #db2777 0%, #ea580c 35%, #2563eb 70%, #7c3aed 100%)"
 const CARD_BASE = "rounded-2xl border border-slate-200/80 bg-white shadow-sm"
 const MAX_ACTIVE = 2
-const FAILED_CHALLENGE_BANNERS_DISMISS_MS = 60_000
 
 const TRACK_ACCENTS: Record<string, { from: string; to: string }> = {
   git: { from: "#db2777", to: "#ea580c" },
@@ -273,8 +261,6 @@ export default function ChallengesPage() {
   const [quitError, setQuitError] = useState<string | null>(null)
 
   const [activeChallenges, setActiveChallenges] = useState<ActiveChallenge[]>([])
-  const [failedChallenges, setFailedChallenges] = useState<FailedChallengeRow[]>([])
-  const [showFailedChallengeBanners, setShowFailedChallengeBanners] = useState(true)
   const [activeLoading, setActiveLoading] = useState(true)
   const [history, setHistory] = useState<HistoryChallenge[]>(INITIAL_HISTORY)
 
@@ -293,11 +279,6 @@ export default function ChallengesPage() {
   const [showOnboardWelcome, setShowOnboardWelcome] = useState(false)
   const onboardUrlHandled = useRef(false)
   const autoOpenChallengeDone = useRef(false)
-
-  useEffect(() => {
-    const id = window.setTimeout(() => setShowFailedChallengeBanners(false), FAILED_CHALLENGE_BANNERS_DISMISS_MS)
-    return () => window.clearTimeout(id)
-  }, [])
 
   type ChallengeTemplateApi = {
     id?: string
@@ -318,7 +299,6 @@ export default function ChallengesPage() {
     if (!token) {
       setLibraryLoading(false)
       setActiveLoading(false)
-      setFailedChallenges([])
       router.replace("/login")
       return
     }
@@ -501,27 +481,6 @@ export default function ChallengesPage() {
               }
             })
           setActiveChallenges(active)
-
-          const failedRows: FailedChallengeRow[] = enrollments
-            .filter((e) => String(e.status).toLowerCase() === "failed")
-            .map((enrollment) => {
-              const tpl = templates.find((t) => t.id === enrollment.challengeTemplateId)
-              const sc = tpl
-                ? parseChallengeScoringFromRow(tpl as unknown as Record<string, unknown>)
-                : ({} as ChallengeScoring)
-              const fp = sc.failPenalty
-              return {
-                id: enrollment.id,
-                templateId: enrollment.challengeTemplateId,
-                name: tpl?.name ?? "Challenge",
-                missedCount: Math.max(0, enrollment.missedDaysCount ?? 0),
-                maxMissed: effectiveMaxMissedDays(sc),
-                failPenalty: typeof fp === "number" && Number.isFinite(fp) ? fp : null,
-              }
-            })
-          setFailedChallenges(failedRows)
-        } else {
-          setFailedChallenges([])
         }
 
         if (historyPayload && Array.isArray(historyPayload.history)) {
@@ -907,46 +866,6 @@ export default function ChallengesPage() {
               <p className="text-sm text-slate-500">Loading your active challenges...</p>
             </div>
           )}
-
-          {!activeLoading && failedChallenges.length > 0 && showFailedChallengeBanners ? (
-            <div
-              className="space-y-3"
-              role="region"
-              aria-label="Failed challenges"
-            >
-              {failedChallenges.map((c) => (
-                <div
-                  key={c.id}
-                  className="flex gap-3 rounded-2xl border border-red-300/80 bg-red-50/95 px-4 py-3 shadow-sm"
-                >
-                  <XCircle className="h-5 w-5 shrink-0 text-red-600" aria-hidden />
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-bold text-red-950">Challenge failed</p>
-                    <p className="mt-0.5 text-sm leading-snug text-red-900">
-                      You missed {c.missedCount}/{c.maxMissed} days on the{" "}
-                      <span className="font-semibold">{c.name}</span> challenge.
-                    </p>
-                    {c.failPenalty != null ? (
-                      <p className="mt-1.5 text-sm font-bold text-red-800">
-                        {formatElitePoints(c.failPenalty > 0 ? -c.failPenalty : c.failPenalty)} EliteScore
-                        <span className="ml-1 text-xs font-normal text-red-800/85">(fail penalty)</span>
-                      </p>
-                    ) : (
-                      <p className="mt-1 text-xs text-red-800/90">
-                        A fail penalty may apply to your EliteScore.
-                      </p>
-                    )}
-                    <Link
-                      href={`/challenges/${c.templateId}`}
-                      className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-pink-600 hover:underline"
-                    >
-                      View challenge <ArrowUpRight className="h-3.5 w-3.5" aria-hidden />
-                    </Link>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : null}
 
           {/* Today's tasks */}
           <section className={`${CARD_BASE} p-6`} aria-labelledby="tasks-heading">
