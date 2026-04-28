@@ -8,13 +8,31 @@ import "./globals.css"
 
 const _geist = Geist({ subsets: ["latin"] })
 const _geistMono = Geist_Mono({ subsets: ["latin"] })
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://elitescore.com"
+const SITE_TITLE = "EliteScore - Gamification Learning Platform for Self-Improvement"
+const SITE_DESCRIPTION = "Join EliteScore, a gamification learning platform for career upskilling through student challenges and leaderboards."
 
 export const metadata: Metadata = {
-  title: "EliteScore - Level Up In Real Life",
-  description:
-    "The competitive social network where students transform learning, habits, and skills into quantifiable achievements. Join thousands leveling up across Europe.",
+  metadataBase: new URL(SITE_URL),
+  title: SITE_TITLE,
+  description: SITE_DESCRIPTION,
+  robots: {
+    index: true,
+    follow: true,
+  },
+  openGraph: {
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+    type: "website",
+    url: "/",
+    siteName: "EliteScore",
+  },
+  twitter: {
+    card: "summary",
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+  },
   generator: "v0.app",
-  keywords: ["gamification", "self-improvement", "learning platform", "student challenges", "leaderboard"],
   icons: {
     icon: [
       {

@@ -47,7 +47,7 @@ const STEPS = [
   },
   {
     num: "2",
-    title: "Submit proof, weekly",
+    title: "Submit proof weekly",
     desc: "Screenshots, code, links. We verify. No proof, no progress.",
     icon: (
       <svg className="h-8 w-8 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} aria-hidden>
@@ -57,7 +57,7 @@ const STEPS = [
   },
   {
     num: "3",
-    title: "Climb the board",
+    title: "Climb the leaderboard",
     desc: "Rank, streak, movement. All public. Game on.",
     icon: (
       <svg className="h-8 w-8 text-violet-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} aria-hidden>
@@ -177,6 +177,12 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-[#f5f5f6] font-sans text-slate-800 antialiased">
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-white focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-slate-900 focus:shadow-lg"
+      >
+        Skip to main content
+      </a>
       {/* Light header – no black bar */}
       <header className="sticky top-0 z-10 border-b border-slate-200/80 bg-white/95 backdrop-blur-sm">
         <div className="mx-auto flex h-14 max-w-4xl items-center justify-between px-4 sm:px-6">
@@ -188,31 +194,46 @@ export default function LandingPage() {
             className="flex h-10 w-10 flex-col items-center justify-center gap-1.5 rounded-lg text-slate-600 hover:bg-slate-100 md:hidden"
             onClick={() => setMenuOpen(!menuOpen)}
             aria-expanded={menuOpen}
+            aria-controls="primary-navigation"
             aria-label="Toggle menu"
           >
             <span className={`block h-0.5 w-5 rounded-full bg-current transition-all duration-200 ${menuOpen ? "translate-y-2 rotate-45" : ""}`} />
             <span className={`block h-0.5 w-5 rounded-full bg-current transition-opacity duration-200 ${menuOpen ? "opacity-0" : ""}`} />
             <span className={`block h-0.5 w-5 rounded-full bg-current transition-all duration-200 ${menuOpen ? "-translate-y-2 -rotate-45" : ""}`} />
           </button>
-          <nav className={`absolute left-0 right-0 top-14 flex flex-col gap-2 border-b border-slate-200 bg-white px-4 py-4 md:static md:top-0 md:flex md:flex-row md:items-center md:gap-8 md:border-0 md:bg-transparent md:py-0 ${menuOpen ? "flex" : "hidden"}`}>
-            <a href="#how" onClick={(e) => handleNavClick(e, "how")} className="text-sm font-medium text-slate-600 hover:text-slate-800 md:py-2">
+          <nav
+            id="primary-navigation"
+            className={`absolute left-0 right-0 top-14 flex flex-col gap-2 border-b border-slate-200 bg-white px-4 py-4 md:static md:top-0 md:flex md:flex-row md:items-center md:gap-8 md:border-0 md:bg-transparent md:py-0 ${menuOpen ? "flex" : "hidden"}`}
+          >
+            <a
+              href="#how"
+              onClick={(e) => handleNavClick(e, "how")}
+              className="text-sm font-medium text-slate-600 hover:text-slate-800 md:py-2"
+              aria-label="Learn more about how it works"
+            >
               How it works
             </a>
-            <a href="#challenges" onClick={(e) => handleNavClick(e, "challenges")} className="text-sm font-medium text-slate-600 hover:text-slate-800 md:py-2">
+            <a
+              href="#challenges"
+              onClick={(e) => handleNavClick(e, "challenges")}
+              className="text-sm font-medium text-slate-600 hover:text-slate-800 md:py-2"
+              aria-label="Explore the challenges available"
+            >
               Challenges
             </a>
             <Link
               href="/signup"
               className="landing-nav-cta inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition-transform"
               style={{ background: APP_GRADIENT }}
+              aria-label="Sign up for free to get started"
             >
-              Get Started For Free
+              Get Started With Our Gamification Learning Platform - Free
             </Link>
           </nav>
         </div>
       </header>
 
-      <main className="mx-auto max-w-4xl px-4 pb-16 pt-6 sm:px-6 sm:pb-20">
+      <main id="main-content" role="main" className="mx-auto max-w-4xl px-4 pb-16 pt-6 sm:px-6 sm:pb-20">
         {/* Hero – gradient card with gradientShift + floating orbs */}
         <section
           className="landing-hero-gradient relative overflow-hidden rounded-2xl shadow-xl"
@@ -226,22 +247,28 @@ export default function LandingPage() {
               className={`mb-4 max-w-2xl text-3xl font-extrabold leading-tight text-white transition-all duration-500 ease-out sm:text-4xl md:text-5xl ${heroReady ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}
               style={{ transitionDelay: "100ms" }}
             >
-              You signed up for CS50.
-              <br />
-              You quit in week 2.
+              You enrolled in CS50 but gave up after week 2.
             </h1>
             <p
               className={`mb-8 max-w-lg text-base text-white/90 transition-all duration-500 ease-out sm:text-lg ${heroReady ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}
               style={{ transitionDelay: "200ms" }}
             >
-              Not this time. Pick a free course from Harvard, MIT or Google. Submit proof every week. Climb a public leaderboard. Finish what you start — with everyone watching.
+              Choose a free course from Harvard, MIT, or Google. Submit proof weekly and climb the public leaderboard.
             </p>
             <Link
               href="/signup"
               className={`landing-cta-btn inline-flex items-center justify-center rounded-xl bg-white px-6 py-3.5 text-base font-bold text-slate-800 shadow-lg transition-[opacity,transform] duration-500 ease-out ${heroReady ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}
               style={{ transitionDelay: "350ms" }}
             >
-              Get Started For Free
+              Get Started With Our Gamification Learning Platform - Free
+            </Link>
+            <Link
+              href="#challenges"
+              onClick={(e) => handleNavClick(e, "challenges")}
+              className={`mt-3 inline-flex items-center justify-center rounded-xl border border-white/70 bg-white/10 px-5 py-2.5 text-sm font-semibold text-white transition-[opacity,transform] duration-500 ease-out hover:bg-white/20 ${heroReady ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}
+              style={{ transitionDelay: "380ms" }}
+            >
+              View Courses
             </Link>
             <p
               className={`mt-3 text-sm text-white/90 transition-all duration-500 ease-out ${heroReady ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}
@@ -252,11 +279,11 @@ export default function LandingPage() {
                 Log in
               </Link>
             </p>
-            <div
+            <section
               className={`mt-10 flex flex-wrap items-center justify-center gap-4 transition-all duration-500 ease-out sm:gap-6 ${heroReady ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}
               style={{ transitionDelay: "450ms" }}
-              aria-label="Partner institutions"
             >
+              <h2 className="sr-only">Partner institutions</h2>
               {HERO_PARTNERS.map((name) => {
                 const src = providerLogoUrl(name)
                 if (!src) return null
@@ -269,7 +296,7 @@ export default function LandingPage() {
                   </div>
                 )
               })}
-            </div>
+            </section>
             <p
               className={`mt-4 max-w-xl px-2 text-center text-[10px] leading-snug text-white/80 transition-all duration-500 ease-out ${heroReady ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}
               style={{ transitionDelay: "500ms" }}
@@ -281,7 +308,7 @@ export default function LandingPage() {
 
         {/* Credibility – staggered fade-in up when in view */}
         <section ref={credibilityRef[0]} className="pt-16">
-          <p className="mb-6 text-center text-xs font-semibold uppercase tracking-widest text-slate-500">Learn from the best</p>
+          <p className="mb-6 text-center text-xs font-semibold uppercase tracking-widest text-slate-500">Learn from world-class partners like Harvard, MIT, Google, and Microsoft.</p>
           <div className="flex flex-wrap items-center justify-center gap-6 sm:gap-10">
             {CREDIBILITY.map((item, i) => {
               const logo = providerLogoUrl(item.name)
@@ -327,8 +354,8 @@ export default function LandingPage() {
 
         {/* Challenges – scroll-in + staggered cards, hover lift + pink shadow + play scale */}
         <section id="challenges" ref={challengesRef[0]} className={`pt-20 landing-scroll-in ${challengesRef[1] ? "landing-scroll-in-visible" : ""}`}>
-          <h2 className="mb-2 text-center text-2xl font-bold text-slate-800 sm:text-3xl">Real courses. Real stakes.</h2>
-          <p className="mb-10 text-center text-slate-600">Pick one. Climb the board, or fall off it. Either way, everyone sees.</p>
+          <h2 className="mb-2 text-center text-2xl font-bold text-slate-800 sm:text-3xl">Real courses. Real stakes. Compete publicly and stay motivated.</h2>
+          <p className="mb-10 text-center text-slate-600">Choose a course, climb the board, and share your progress with everyone.</p>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {CHALLENGES.map((c, i) => {
               const coverSrc = challengeCoverSrc(c)
@@ -339,7 +366,7 @@ export default function LandingPage() {
                   href={`/signup?challenge=${encodeURIComponent(c.slug)}`}
                   className={`landing-challenge-card group overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm landing-fade-up ${challengesRef[1] ? "landing-fade-up-visible" : ""}`}
                   style={{ transitionDelay: `${i * 60}ms` }}
-                  aria-label={`Get started with ${c.title}`}
+                  aria-label={`Start ${c.title} now and climb the leaderboard`}
                 >
                   <div className={`relative aspect-video bg-gradient-to-br ${c.gradient}`}>
                     <img
@@ -368,6 +395,7 @@ export default function LandingPage() {
                   <div className="p-4">
                     <h3 className="font-semibold text-slate-800 group-hover:text-pink-600">{c.title}</h3>
                     <span className="text-xs text-slate-500">{c.level}</span>
+                    <p className="mt-2 text-xs font-semibold text-pink-600">Start {c.title} now and climb the leaderboard</p>
                   </div>
                 </Link>
               )
@@ -383,13 +411,13 @@ export default function LandingPage() {
           <p className="mb-4 text-xs text-slate-500">Online courses, done right. Prove it.</p>
           <div className="flex flex-wrap justify-center gap-4 text-xs">
             <a href="#how" onClick={(e) => handleNavClick(e, "how")} className="text-slate-500 hover:text-slate-800">
-              How it works
+              Learn more about how it works
             </a>
             <a href="#challenges" onClick={(e) => handleNavClick(e, "challenges")} className="text-slate-500 hover:text-slate-800">
-              Challenges
+              Explore the challenges available
             </a>
             <Link href="/signup" className="text-slate-500 hover:text-slate-800">
-              Get Started For Free
+              Sign up for free to get started
             </Link>
             <Link href="/privacy" className="text-slate-500 hover:text-slate-800">
               Privacy Policy
